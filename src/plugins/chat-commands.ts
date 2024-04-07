@@ -20,7 +20,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     stvolTimeout,
     adminsMessage,
     reportMessage,
-    stvolMessage,
+    stvolTimeOutMessage,
     discordMessage,
     statsTimeOutMessage,
     statsPlayerNotFoundMessage,
@@ -57,7 +57,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     const { name, steamID } = data;
 
     if (players.find((player) => player === steamID)) {
-      sendWarningMessages(steamID, stvolMessage);
+      sendWarningMessages(steamID, stvolTimeOutMessage);
       return;
     }
 
