@@ -48,9 +48,9 @@ export const rnsStats: TPluginProps = (state) => {
       if (possess?.toLowerCase().includes('developeradmincam')) return;
       if (!winner) return;
       if (teamID === winner) {
-        updateGames(steamID, 'won');
+        await updateGames(steamID, 'won');
       } else {
-        updateGames(steamID, 'lose');
+        await updateGames(steamID, 'lose');
       }
     }
     winner = '';
@@ -107,7 +107,7 @@ export const rnsStats: TPluginProps = (state) => {
     });
   };
 
-  const onDied = (data: TPlayerDied) => {
+  const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
     if (currentMap?.layer?.toLowerCase().includes('seed')) return;
     const { attackerSteamID, victimName, attackerEOSID } = data;
@@ -116,19 +116,19 @@ export const rnsStats: TPluginProps = (state) => {
 
     if (!victim) return;
     if (attacker?.teamID === victim?.teamID && attacker.name !== victim.name) {
-      return updateUser(attackerSteamID, 'teamkills');
+      return await updateUser(attackerSteamID, 'teamkills');
     }
-    updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
-    updateUser(victim.steamID, 'death');
+    await updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
+    await updateUser(victim.steamID, 'death');
   };
 
-  const onRevived = (data: TPlayerRevived) => {
+  const onRevived = async (data: TPlayerRevived) => {
     const { currentMap } = state;
     if (currentMap?.layer?.toLowerCase().includes('seed')) return;
 
     const { reviverSteamID } = data;
 
-    updateUser(reviverSteamID, 'revives');
+    await updateUser(reviverSteamID, 'revives');
   };
 
   listener.on(EVENTS.UPDATED_PLAYERS, updatedPlayers);
