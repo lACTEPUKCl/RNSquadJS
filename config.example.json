@@ -6,6 +6,7 @@
     "logFilePath": "/SquadGame/Saved/Logs/SquadGame.log",
     "adminsFilePath": "/SquadGame/ServerConfig/Admins.cfg",
     "mapsName": "vanilla.json",
+    "db": "mongodb://name:password@ip:port/",
     "mapsRegExp": "(?<layerName>[a-zA-Z]+)_(?<layerMode>.*) (?<team1>.*) (?<team2>.*)",
     "plugins": [
       {
