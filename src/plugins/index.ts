@@ -5,6 +5,7 @@ import { bonuses } from './bonuses';
 import { broadcast } from './broadcast';
 import { chatCommands } from './chat-commands';
 import { fobExplosionDamage } from './fobexplosiondamage';
+import { mySquadStats } from './my-squad-stats';
 import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
@@ -26,6 +27,7 @@ const plugins = [
   bonuses,
   rnsLogs,
   broadcast,
+  mySquadStats,
 ];
 
 export const initPlugins = async (id: number) => {
