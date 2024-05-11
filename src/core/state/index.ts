@@ -7,6 +7,7 @@ import { updateAdmins } from './updateAdmins';
 import { updateCurrentMap } from './updateCurrentMap';
 import { updateNextMap } from './updateNextMap';
 import { updatePlayers } from './updatePlayers';
+import { updateServerInfo } from './updateServerInfo';
 import { updateSquads } from './updateSquads';
 
 export const initState = async (id: number, getAdmins: TGetAdmins) => {
@@ -15,6 +16,7 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
   await updateNextMap(id);
   await updatePlayers(id);
   await updateSquads(id);
+  await updateServerInfo(id);
 
   const state = getServersState(id);
   const { coreListener, listener } = state;
@@ -49,6 +51,7 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
         await updateAdmins(id, getAdmins);
         await updateCurrentMap(id);
         await updateNextMap(id);
+        await updateServerInfo(id);
       }
 
       // if (event === EVENTS.PLAYER_ROLE_CHANGED) {
