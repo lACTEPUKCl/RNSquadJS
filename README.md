@@ -43,33 +43,6 @@ Create a `config.json` file in the main folder.
 }
 ```
 
-#### Remote Configuration
-
-```json
-{
-  "1": {
-    "host": "127.0.0.1",
-    "password": "pass",
-    "port": 21110,
-    "logFilePath": "/SquadGame/Saved/Logs/SquadGame.log",
-    "adminsFilePath": "/SquadGame/ServerConfig/Admins.cfg",
-    "mapsName": "mee.json",
-    "mapsRegExp": "([a-zA-Z]+)_(?<layerName>[a-zA-Z]+)_(?<layerMode>.*)",
-    "plugins": [
-      {
-        "name": "skipmap",
-        "enabled": true,
-        "options": {}
-      }
-    ],
-    "ftp": {
-      "username": "root",
-      "password": "pass"
-    }
-  }
-}
-```
-
 - `1` - an string ID to uniquely identify the server.
 - `host` - the IP of the server.
 - `port` - the RCON port of the server.
