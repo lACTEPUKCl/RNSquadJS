@@ -11,7 +11,6 @@ export type TConfig = {
   port: number;
   db: string;
   mapsName: string;
-  mapsRegExp: string;
   plugins: TPlugin[];
   adminsFilePath: string;
   logFilePath: string;
@@ -30,7 +29,7 @@ export type TServersState = {
     execute: TExecute;
     coreListener: EventEmitter;
     listener: EventEmitter;
-    maps: TMaps;
+    maps: TMapTeams;
     plugins: TPlugin[];
     // boolean for check current voting in plugins
     // votemap or skipmap
@@ -54,6 +53,18 @@ export type TServersState = {
 
 export type TMaps = {
   [key in string]: { layerName: string; layerMode: string };
+};
+
+export type TFactionUnitTypes = {
+  [faction: string]: string[];
+};
+
+export type TTeamFactions = {
+  [team: string]: TFactionUnitTypes;
+};
+
+export type TMapTeams = {
+  [map: string]: TTeamFactions;
 };
 
 export type TAdmin = {
@@ -111,7 +122,6 @@ export type TSquad = {
 export type TSquadJS = {
   id: number;
   mapsName: string;
-  mapsRegExp: string;
   plugins: TPlugin[];
   rcon: TRcon;
   logs: TLogs;

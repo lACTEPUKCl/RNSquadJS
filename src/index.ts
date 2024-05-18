@@ -16,7 +16,6 @@ const initial = async () => {
           logs,
           id: config.id,
           mapsName: config.mapsName,
-          mapsRegExp: config.mapsRegExp,
           plugins: config.plugins,
         });
 

@@ -1,10 +1,6 @@
 import { EVENTS } from '../constants';
 import { adminSetNextLayer } from '../core';
-import {
-  cleanHistoryLayers,
-  getHistoryLayers,
-  serverHistoryLayers,
-} from '../rnsdb';
+import { cleanHistoryLayers, getHistoryLayers } from '../rnsdb';
 import { TPluginProps } from '../types';
 
 export const randomizerMaps: TPluginProps = (state) => {
@@ -42,10 +38,10 @@ export const randomizerMaps: TPluginProps = (state) => {
     }
 
     const layer = getRandomLayer();
-    if (!rnsHistoryLayers.find((e) => e === layer.layer)) {
-      await serverHistoryLayers(id, layer.layer);
-      return layer.map;
-    }
+    // if (!rnsHistoryLayers.find((e) => e === layer.layer)) {
+    //   await serverHistoryLayers(id, layer.layer);
+    //   return layer.map;
+    // }
 
     return recursiveGenerate();
   };
