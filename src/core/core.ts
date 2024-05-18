@@ -9,7 +9,6 @@ import { initState } from './state';
 export const initSquadJS = async ({
   id,
   mapsName,
-  mapsRegExp,
   plugins,
   rcon,
   logs,
@@ -21,7 +20,7 @@ export const initSquadJS = async ({
     logsEmitter,
   });
   const logger = initLogger(id, true);
-  const maps = await initMaps(mapsName, mapsRegExp, logger);
+  const maps = await initMaps(mapsName, logger);
 
   serversState[id] = {
     id,

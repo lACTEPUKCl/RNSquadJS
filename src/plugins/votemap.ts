@@ -1,10 +1,10 @@
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
-import { TPluginProps } from '../types';
+import { TMapTeams, TPluginProps } from '../types';
 
 export const voteMap: TPluginProps = (state, options) => {
-  const { listener, execute } = state;
+  const { listener, execute, maps } = state;
   const { voteTick, voteDuration, onlyForVip, needVotes } = options;
   let voteReadyToStart = true;
   let voteStarting = false;
@@ -12,11 +12,86 @@ export const voteMap: TPluginProps = (state, options) => {
   let timer: NodeJS.Timeout;
   let timerDelayStarting: NodeJS.Timeout;
   let timerDelayNextStart: NodeJS.Timeout;
+  let tempAlliance: string | undefined;
   let vote = false;
   let historyPlayers: string[] = [];
   let votes: { [key in string]: string[] } = {
     '+': [],
     '-': [],
+  };
+
+  const findFactionAlliance = (
+    faction: string,
+    teamData: any,
+    subFaction: string,
+  ): string | undefined => {
+    for (const alliance in teamData) {
+      if (teamData[alliance][faction]) {
+        if (teamData[alliance][faction].includes(subFaction)) {
+          return alliance;
+        }
+        return;
+      }
+    }
+    return undefined;
+  };
+
+  const validateFactionSubFaction = (
+    mapData: TMapTeams,
+    mapName: string,
+    teamName: string,
+    faction: string,
+    subFaction: string,
+  ): boolean => {
+    if (Object.keys(mapData[mapName])[0].includes('Team 1 / Team 2')) {
+      teamName = 'Team 1 / Team 2';
+    }
+
+    const teamData = mapData[mapName]?.[teamName];
+    const alliance = findFactionAlliance(faction, teamData, subFaction);
+
+    if (tempAlliance === alliance) {
+      tempAlliance = '';
+      return false;
+    }
+    if (!alliance) {
+      tempAlliance = '';
+      return false;
+    }
+    tempAlliance = alliance;
+
+    return true;
+  };
+
+  const validateSelectedMapAndTeams = (
+    mapData: TMapTeams,
+    mapName: string,
+    team1Faction: string,
+    team1SubFaction: string,
+    team2Faction: string,
+    team2SubFaction: string,
+  ): boolean => {
+    const team1Valid = validateFactionSubFaction(
+      mapData,
+      mapName,
+      'Team 1',
+      team1Faction,
+      team1SubFaction,
+    );
+
+    const team2Valid = validateFactionSubFaction(
+      mapData,
+      mapName,
+      'Team 2',
+      team2Faction,
+      team2SubFaction,
+    );
+
+    if (team1Valid && team2Valid) {
+      return true;
+    }
+
+    return false;
   };
 
   const chatCommand = (data: TChatMessage) => {
@@ -56,21 +131,48 @@ export const voteMap: TPluginProps = (state, options) => {
       return;
     }
 
-    const layersToLowerCase = new Set(
-      Object.keys(state.maps).map((map) => map.toLowerCase()),
-    );
-    const messageToLower = message.toLowerCase().trim();
+    const parseMessage = (message: string) => {
+      const [layerName, team1, team2] = message.split(/\s+/);
 
-    let foundMap = false;
-
-    layersToLowerCase.forEach((e) => {
-      if (e === messageToLower) {
-        foundMap = true;
-        return;
+      if (!layerName || !team1 || !team2) {
+        throw new Error('Неправильный формат сообщения');
       }
-    });
 
-    if (!foundMap || message.length === 0) {
+      const [mapName] = layerName.split('_');
+
+      const [team1Faction, team1SubFaction] = team1.split('+');
+      const [team2Faction, team2SubFaction] = team2.split('+');
+
+      return {
+        mapName,
+        layerName,
+        team1Faction,
+        team1SubFaction,
+        team2Faction,
+        team2SubFaction,
+      };
+    };
+
+    // Пример использования функции parseMessage
+    const parsedMessage = parseMessage(message);
+    const {
+      layerName,
+      team1Faction,
+      team1SubFaction,
+      team2Faction,
+      team2SubFaction,
+    } = parsedMessage;
+
+    const isValidMapAndTeams = validateSelectedMapAndTeams(
+      maps,
+      layerName,
+      team1Faction,
+      team1SubFaction,
+      team2Faction,
+      team2SubFaction,
+    );
+
+    if (!isValidMapAndTeams || message.length === 0) {
       adminWarn(
         execute,
         steamID,
@@ -105,7 +207,7 @@ export const voteMap: TPluginProps = (state, options) => {
           );
 
           reset();
-          adminSetNextLayer(execute, messageToLower);
+          adminSetNextLayer(execute, message);
           vote = true;
           return;
         }

@@ -24,7 +24,6 @@ export const getConfigs = (): TConfig[] | null => {
       'logFilePath',
       'adminsFilePath',
       'mapsName',
-      'mapsRegExp',
       'plugins',
     ])
       if (!(option in config[key])) {
