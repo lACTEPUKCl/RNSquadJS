@@ -1,97 +1,24 @@
+import fs from 'fs';
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
-import { TMapTeams, TPluginProps } from '../types';
+import { TPluginProps } from '../types';
 
-export const voteMap: TPluginProps = (state, options) => {
-  const { listener, execute, maps } = state;
-  const { voteTick, voteDuration, onlyForVip, needVotes } = options;
+export const voteMapMods: TPluginProps = (state, options) => {
+  const { listener, execute } = state;
+  const { voteTick, voteDuration, onlyForVip, needVotes, mapFileName } =
+    options;
   let voteReadyToStart = true;
   let voteStarting = false;
   let secondsToEnd = voteDuration / 1000;
   let timer: NodeJS.Timeout;
   let timerDelayStarting: NodeJS.Timeout;
   let timerDelayNextStart: NodeJS.Timeout;
-  let tempAlliance: string | undefined;
   let vote = false;
   let historyPlayers: string[] = [];
   let votes: { [key in string]: string[] } = {
     '+': [],
     '-': [],
-  };
-
-  const findFactionAlliance = (
-    faction: string,
-    teamData: any,
-    subFaction: string,
-  ): string | undefined => {
-    for (const alliance in teamData) {
-      if (teamData[alliance][faction]) {
-        if (teamData[alliance][faction].includes(subFaction)) {
-          return alliance;
-        }
-        return;
-      }
-    }
-    return undefined;
-  };
-
-  const validateFactionSubFaction = (
-    mapData: TMapTeams,
-    mapName: string,
-    teamName: string,
-    faction: string,
-    subFaction: string,
-  ): boolean => {
-    if (Object.keys(mapData[mapName])[0].includes('Team 1 / Team 2')) {
-      teamName = 'Team 1 / Team 2';
-    }
-
-    const teamData = mapData[mapName]?.[teamName];
-    const alliance = findFactionAlliance(faction, teamData, subFaction);
-
-    if (tempAlliance === alliance) {
-      tempAlliance = '';
-      return false;
-    }
-    if (!alliance) {
-      tempAlliance = '';
-      return false;
-    }
-    tempAlliance = alliance;
-
-    return true;
-  };
-
-  const validateSelectedMapAndTeams = (
-    mapData: TMapTeams,
-    mapName: string,
-    team1Faction: string,
-    team1SubFaction: string,
-    team2Faction: string,
-    team2SubFaction: string,
-  ): boolean => {
-    const team1Valid = validateFactionSubFaction(
-      mapData,
-      mapName,
-      'Team 1',
-      team1Faction,
-      team1SubFaction,
-    );
-
-    const team2Valid = validateFactionSubFaction(
-      mapData,
-      mapName,
-      'Team 2',
-      team2Faction,
-      team2SubFaction,
-    );
-
-    if (team1Valid && team2Valid) {
-      return true;
-    }
-
-    return false;
   };
 
   const chatCommand = (data: TChatMessage) => {
@@ -131,64 +58,26 @@ export const voteMap: TPluginProps = (state, options) => {
       return;
     }
 
-    const parseMessage = (message: string) => {
-      const [layerName, team1, team2] = message.split(/\s+/);
-
-      if (!layerName || !team1 || !team2) {
-        return { isValid: false };
-      }
-
-      const [mapName] = layerName.split('_');
-
-      const [team1Faction, team1SubFaction] = team1.split('+');
-      const [team2Faction, team2SubFaction] = team2.split('+');
-
-      return {
-        isValid: true,
-        mapName,
-        layerName,
-        team1Faction,
-        team1SubFaction,
-        team2Faction,
-        team2SubFaction,
-      };
-    };
-
-    const parsedMessage = parseMessage(message);
-
-    if (!parsedMessage.isValid) {
-      adminWarn(
-        execute,
-        steamID,
-        'Неправильный формат сообщения (Нужно указать название карты фракции и тип воиск!)',
-      );
-      return;
-    }
-
-    const {
-      layerName,
-      team1Faction,
-      team1SubFaction,
-      team2Faction,
-      team2SubFaction,
-    } = parsedMessage;
-
-    if (!layerName) return;
-
-    const isValidMapAndTeams = validateSelectedMapAndTeams(
-      maps,
-      layerName,
-      team1Faction,
-      team1SubFaction,
-      team2Faction,
-      team2SubFaction,
+    const layersData = fs.readFileSync(
+      `C:/Users/Admin/Desktop/RNSquadJS/src/core/maps/${mapFileName}.json`,
+      'utf8',
     );
+    const layersArray = JSON.parse(layersData);
+    const messageToLower = message.toLowerCase().trim();
+    let foundMap = false;
 
-    if (!isValidMapAndTeams || message.length === 0) {
+    layersArray.forEach((e: string) => {
+      if (e.toLocaleLowerCase() === messageToLower) {
+        foundMap = true;
+        return;
+      }
+    });
+
+    if (!foundMap || message.length === 0) {
       adminWarn(
         execute,
         steamID,
-        'Неправильно указано название карты, список карт можно найти в дискорд канале discord.gg/rn-server плагины!',
+        'Неправильно указано название карты, список карт можно найти в дискорде в канале плагины!',
       );
       return;
     }
@@ -219,7 +108,7 @@ export const voteMap: TPluginProps = (state, options) => {
           );
 
           reset();
-          adminSetNextLayer(execute, message);
+          adminSetNextLayer(execute, messageToLower);
           vote = true;
           return;
         }
