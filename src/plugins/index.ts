@@ -5,13 +5,13 @@ import { bonuses } from './bonuses';
 import { broadcast } from './broadcast';
 import { chatCommands } from './chat-commands';
 import { fobExplosionDamage } from './fobexplosiondamage';
-import { mySquadStats } from './my-squad-stats';
 import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
 import { skipmap } from './skipmap';
 import { squadLeaderRole } from './squad-leader-role';
 import { voteMap } from './votemap';
+import { voteMapMods } from './votemapmods';
 import { warnPlayers } from './warn-players';
 const plugins = [
   skipmap,
@@ -27,7 +27,7 @@ const plugins = [
   bonuses,
   rnsLogs,
   broadcast,
-  mySquadStats,
+  voteMapMods,
 ];
 
 export const initPlugins = async (id: number) => {

@@ -1,0 +1,4416 @@
+{
+  "AlBasrah_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "AlBasrah_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "AlBasrah_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "AlBasrah_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "AlBasrah_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "AlBasrah_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Anvil_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Anvil_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Anvil_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Anvil_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Anvil_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Belaya_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_AAS_v3": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Belaya_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "BlackCoast_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "BlackCoast_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "BlackCoast_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
+    "Team 2": {
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "BlackCoast_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "BlackCoast_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "BlackCoast_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Fallujah_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Fallujah_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Fallujah_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Fallujah_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Fallujah_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Fallujah_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Fallujah_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "GooseBay_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "GooseBay_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "GooseBay_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "GooseBay_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Gorodok_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_Destruction_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Gorodok_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Gorodok_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Harju_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Harju_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
+    "Team 2": {
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Harju_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Harju_Invasion_v3": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Harju_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Harju_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Kamdesh_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kamdesh_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Kamdesh_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kamdesh_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kamdesh_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kohat_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kohat_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kohat_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Kohat_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Kohat_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_Insurgency_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Lashkar_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Lashkar_TC_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_AAS_v3": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Manicouagan_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Mutaha_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Narva_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_AAS_v3": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_Destruction_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Narva_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Sanxian_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_AAS_v3": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
+    "Team 2": {
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLANMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Sanxian_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized", "AirAssault"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLANMC": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ],
+        "PLAAGF": ["Armored", "Mechanized"]
+      }
+    }
+  },
+  "Skorpo_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Skorpo_Invasion_v2": {
+    "Team 1": {
+      "REDFOR": {
+        "RGF": ["AmphibiousAssault"],
+        "VDV": ["AmphibiousAssault"]
+      },
+      "BLUEFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Skorpo_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ]
+      }
+    }
+  },
+  "Tallil_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Tallil_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "ADF": ["Mechanized"],
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": ["Armored", "LightInfantry", "Mechanized", "Support"],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Tallil_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Tallil_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Tallil_TC_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "ADF": ["AirAssault", "Mechanized"],
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "INDEPENDENT": {
+        "INS": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "MEA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      }
+    }
+  },
+  "Yehorivka_AAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_AAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_Destruction_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_Invasion_v1": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_Invasion_v2": {
+    "Team 1": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    },
+    "Team 2": {
+      "BLUEFOR": {
+        "BAF": ["Armored", "Mechanized", "Support"],
+        "CAF": ["Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["Mechanized"]
+      },
+      "PAC": {
+        "PLA": ["Armored", "LightInfantry", "Motorized", "Support"]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_RAAS_v1": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  },
+  "Yehorivka_RAAS_v2": {
+    "Team 1 / Team 2": {
+      "BLUEFOR": {
+        "BAF": ["AirAssault", "Armored", "Mechanized", "Support"],
+        "CAF": ["AirAssault", "Armored", "Mechanized", "Motorized", "Support"],
+        "USA": ["AirAssault", "LightInfantry", "Motorized"],
+        "USMC": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "ADF": ["AirAssault", "Mechanized"]
+      },
+      "PAC": {
+        "PLA": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Motorized",
+          "Support"
+        ]
+      },
+      "REDFOR": {
+        "RGF": ["Armored", "LightInfantry", "Motorized", "Support"],
+        "VDV": ["AirAssault", "Armored", "Mechanized", "Support"]
+      },
+      "INDEPENDENT": {
+        "IMF": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support"
+        ],
+        "TLF": ["AirAssault", "Armored", "Mechanized", "Motorized"]
+      }
+    }
+  }
+}
