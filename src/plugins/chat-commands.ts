@@ -3,6 +3,7 @@ import { EVENTS } from '../constants';
 import { adminBroadcast, adminForceTeamChange, adminWarn } from '../core';
 import { getUserDataWithSteamID } from '../rnsdb';
 import { TPluginProps } from '../types';
+import { getAdmins, getPlayers } from './helpers';
 
 export const chatCommands: TPluginProps = (state, options) => {
   const { listener, execute } = state;
@@ -25,6 +26,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     statsTimeOutMessage,
     statsPlayerNotFoundMessage,
     bonusWarnMessage,
+    swapOnlyForVip,
   } = options;
   type SwapHistoryItem = {
     steamID: string;
@@ -95,7 +97,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     if (message.length === 0) {
       user = await getUserDataWithSteamID(steamID);
     } else {
-      const { players } = state;
+      const players = getPlayers(state);
       const getPlayer = players?.find((p) =>
         p.name.trim().toLowerCase().includes(message.trim().toLowerCase()),
       );
@@ -133,9 +135,15 @@ export const chatCommands: TPluginProps = (state, options) => {
 
   const swap = async (data: TChatMessage) => {
     if (!swapEnable) return;
-    const deletionTime = parseInt(swapTimeout);
     const { steamID } = data;
+    const admins = getAdmins(state, 'reserved');
 
+    if (swapOnlyForVip && !admins?.includes(steamID)) {
+      adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
+      return;
+    }
+
+    const deletionTime = parseInt(swapTimeout);
     const existingEntry = swapHistory.find(
       (entry) => entry.steamID === steamID,
     );

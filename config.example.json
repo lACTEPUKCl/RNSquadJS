@@ -5,7 +5,6 @@
     "port": 21114,
     "logFilePath": "C:/squad_server/SquadGame/Saved/Logs/SquadGame.log",
     "adminsFilePath": "C:/squad_server/SquadGame/ServerConfig/Admins.cfg",
-    "db": "mongodb://name:pass@ip:27017/",
     "mapsName": "vanilla.json",
     "db": "mongodb://name:password@ip:port/",
     "mapsRegExp": "(?<layerName>[a-zA-Z]+)_(?<layerMode>.*) (?<team1>.*) (?<team2>.*)",
@@ -14,11 +13,6 @@
         "name": "bonuses",
         "enabled": false,
         "options": { "classicBonus": 1, "seedBonus": 2 }
-      },
-      {
-        "name": "mySquadStats",
-        "enabled": true,
-        "options": { "accessToken": "" }
       },
       {
         "name": "skipmap",
@@ -142,6 +136,18 @@
         "name": "autorestartServers",
         "enabled": false,
         "options": {}
+      },
+      {
+        "name": "autoUpdateMods",
+        "enabled": true,
+        "options": {
+          "modID": "",
+          "steamAPIkey": "",
+          "text": "Уважаемые игроки, сервер будет перезагружен после завершения текущей карты для установки обновления.",
+          "serviceName": "",
+          "updateFilePath": "",
+          "intervalBroadcast": 300000
+        }
       },
       {
         "name": "rnsStats",

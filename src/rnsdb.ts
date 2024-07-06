@@ -27,8 +27,9 @@ interface Main {
 
 interface Info {
   _id: string;
-  rnsHistoryLayers: string[];
-  timeStampToRestart: number;
+  rnsHistoryLayers?: string[];
+  timeStampToRestart?: number;
+  lastUpdate?: string;
 }
 
 let db: Db;
@@ -83,6 +84,31 @@ async function pingDatabase(dbLink: string) {
     isConnected = false;
     setReconnectTimer(dbLink);
   }
+}
+
+export async function writeLastModUpdateDate(modID: string, date: Date) {
+  try {
+    const id = {
+      _id: modID,
+    };
+
+    const data = {
+      $set: {
+        lastUpdate: date.toString(),
+      },
+    };
+
+    await collectionServerInfo.updateOne(id, data);
+  } catch (error) {}
+}
+
+export async function getModLastUpdateDate(modID: string) {
+  try {
+    const modInfo = await collectionServerInfo.findOne({
+      _id: modID,
+    });
+    return modInfo?.lastUpdate;
+  } catch (error) {}
 }
 
 async function setReconnectTimer(dbLink: string) {
