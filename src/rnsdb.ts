@@ -99,9 +99,7 @@ export async function writeLastModUpdateDate(modID: string, date: Date) {
     };
 
     await collectionServerInfo.updateOne(id, data);
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 }
 
 export async function getModLastUpdateDate(modID: string) {

@@ -3,7 +3,7 @@ import { EVENTS } from '../constants';
 import { adminBroadcast, adminForceTeamChange, adminWarn } from '../core';
 import { getUserDataWithSteamID } from '../rnsdb';
 import { TPluginProps } from '../types';
-import { getAdmins } from './helpers';
+import { getAdmins, getPlayers } from './helpers';
 
 export const chatCommands: TPluginProps = (state, options) => {
   const { listener, execute } = state;
@@ -97,7 +97,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     if (message.length === 0) {
       user = await getUserDataWithSteamID(steamID);
     } else {
-      const { players } = state;
+      const players = getPlayers(state);
       const getPlayer = players?.find((p) =>
         p.name.trim().toLowerCase().includes(message.trim().toLowerCase()),
       );
@@ -137,7 +137,6 @@ export const chatCommands: TPluginProps = (state, options) => {
     if (!swapEnable) return;
     const { steamID } = data;
     const admins = getAdmins(state, 'reserved');
-    console.log(admins);
 
     if (swapOnlyForVip && !admins?.includes(steamID)) {
       adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
