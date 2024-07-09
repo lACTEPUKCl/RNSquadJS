@@ -39,4 +39,5 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          addLatest: true
           labels: ${{ steps.meta.outputs.labels }}
