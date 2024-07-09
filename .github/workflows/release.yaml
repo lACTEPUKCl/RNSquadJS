@@ -36,7 +36,7 @@ jobs:
         env:
           ACTIONS_RUNTIME_TOKEN: ""
         with:
-          file: Containerfile
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
