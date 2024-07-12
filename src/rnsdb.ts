@@ -50,8 +50,6 @@ export async function connectToDatabase(dbURL: string): Promise<void> {
 
   try {
     await client.connect();
-    console.log('Connected to MongoDB');
-
     db = client.db(dbName);
     collectionMain = db.collection(dbCollectionMain);
     collectionTemp = db.collection(dbCollectionTemp);
@@ -107,10 +105,7 @@ export async function createUserIfNullableOrUpdateName(
   steamID: string,
   name: string,
 ): Promise<void> {
-  console.log(steamID, name);
-  console.log('Connected', isConnected);
   if (!db || !isConnected) return;
-  console.log('Connected', isConnected);
 
   try {
     const resultMain = await collectionMain.findOne({
