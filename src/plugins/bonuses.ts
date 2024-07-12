@@ -14,6 +14,7 @@ export const bonuses: TPluginProps = (state, options) => {
 
   const playerConnected = async (data: TPlayerConnected) => {
     const user = getPlayerByEOSID(state, data.eosID);
+    console.log(user);
     if (!user) return;
     const { steamID, name } = user;
     await createUserIfNullableOrUpdateName(steamID, name);

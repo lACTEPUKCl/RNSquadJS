@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { Collection, Db, MongoClient } from 'mongodb';
 
 interface Main {
@@ -63,24 +62,8 @@ export async function connectToDatabase(dbURL: string): Promise<void> {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
-
-    setInterval(pingDatabase, 60000);
   } catch (err) {
     console.error('Error connecting to MongoDB:', err);
-    isConnected = false;
-    setReconnectTimer(dbLink);
-  }
-}
-
-async function pingDatabase(dbLink: string) {
-  try {
-    const pingResult = await db.command({ ping: 1 });
-    if (pingResult.ok === 1) {
-      console.log('Database pinged successfully');
-    }
-  } catch (error) {
-    const getTime = () => format(new Date(), 'd LLL HH:mm:ss');
-    console.error(`[${getTime()}]Error pinging database`);
     isConnected = false;
     setReconnectTimer(dbLink);
   }
@@ -124,7 +107,11 @@ export async function createUserIfNullableOrUpdateName(
   steamID: string,
   name: string,
 ): Promise<void> {
+  console.log(steamID, name);
+  console.log('Connected', isConnected);
   if (!db || !isConnected) return;
+  console.log('Connected', isConnected);
+
   try {
     const resultMain = await collectionMain.findOne({
       _id: steamID,
