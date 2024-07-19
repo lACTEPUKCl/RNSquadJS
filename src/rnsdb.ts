@@ -18,7 +18,9 @@ interface Main {
     winrate: number;
     won: number;
     lose: number;
-    history: object;
+    cmdwon: number;
+    cmdlose: number;
+    cmdwinrate: number;
   };
   weapons: object;
   date?: number;
@@ -128,13 +130,15 @@ export async function createUserIfNullableOrUpdateName(
       exp: 0,
       possess: {},
       roles: {},
-      squad: { timeplayed: 0, leader: 0, cmd: 0 },
+      squad: { timeplayed: 0, leader: 0, cmd: 0, seed: 0 },
       matches: {
         matches: 0,
         winrate: 0,
         won: 0,
         lose: 0,
-        history: { matches: [] },
+        cmdwon: 0,
+        cmdlose: 0,
+        cmdwinrate: 0,
       },
       weapons: {},
     };
@@ -374,6 +378,7 @@ export async function updateUser(
 
 export async function updateGames(steamID: string, field: string) {
   if (!isConnected) return;
+
   const matchesFilter = `matches.${field}`;
   const doc = {
     $inc: {
@@ -385,48 +390,76 @@ export async function updateGames(steamID: string, field: string) {
     _id: steamID,
   };
 
-  await collectionMain.updateOne(user, doc);
-  await collectionTemp.updateOne(user, doc);
+  try {
+    await collectionMain.updateOne(user, doc);
+    await collectionTemp.updateOne(user, doc);
 
-  if (field === 'won' || field === 'lose') {
-    const resultMain = await collectionMain.findOne({
-      _id: steamID,
-    });
+    if (['won', 'lose', 'cmdwon', 'cmdlose'].includes(field)) {
+      await updateWinrate(user, field);
+    }
+  } catch (error) {
+    console.error(
+      `Ошибка при обновлении игр для пользователя ${steamID}:`,
+      error,
+    );
+  }
+}
 
-    const resultTemp = await collectionTemp.findOne({
-      _id: steamID,
-    });
+async function updateWinrate(user: { _id: string }, field: string) {
+  try {
+    const isCmd = field.includes('cmd');
+    const fieldPrefix = isCmd ? 'cmd' : '';
+
+    const resultMain = await collectionMain.findOne(user);
+    const resultTemp = await collectionTemp.findOne(user);
 
     const matchesMain =
-      (resultMain?.matches.won || 0) + (resultMain?.matches.lose || 0);
+      (resultMain?.matches[`${fieldPrefix}won`] || 0) +
+      (resultMain?.matches[`${fieldPrefix}lose`] || 0);
 
     const matchesTemp =
-      (resultTemp?.matches.won || 0) + (resultTemp?.matches.lose || 0);
+      (resultTemp?.matches[`${fieldPrefix}won`] || 0) +
+      (resultTemp?.matches[`${fieldPrefix}lose`] || 0);
 
     if (resultMain) {
-      const doc = {
+      const docMain = {
         $set: {
           'matches.matches': matchesMain,
-          'matches.winrate': Number(
-            ((resultMain.matches.won / matchesMain) * 100).toFixed(3),
+          'matches.winrate': calculateWinrate(
+            resultMain.matches,
+            fieldPrefix,
+            matchesMain,
           ),
         },
       };
-      await collectionMain.updateOne(user, doc);
+      await collectionMain.updateOne(user, docMain);
     }
 
     if (resultTemp) {
-      const doc = {
+      const docTemp = {
         $set: {
           'matches.matches': matchesTemp,
-          'matches.winrate': Number(
-            ((resultTemp.matches.won / matchesTemp) * 100).toFixed(3),
+          'matches.winrate': calculateWinrate(
+            resultTemp.matches,
+            fieldPrefix,
+            matchesTemp,
           ),
         },
       };
-      await collectionTemp.updateOne(user, doc);
+      await collectionTemp.updateOne(user, docTemp);
     }
+  } catch (error) {
+    console.error(
+      `Ошибка при обновлении коэффициента побед для пользователя ${user._id}:`,
+      error,
+    );
   }
+}
+
+function calculateWinrate(matches: any, prefix: string, totalMatches: number) {
+  return totalMatches > 0
+    ? Number(((matches[`${prefix}won`] / totalMatches) * 100).toFixed(3))
+    : 0;
 }
 
 export async function serverHistoryLayers(
