@@ -10,7 +10,7 @@ import {
   updateTimes,
   updateUser,
 } from '../rnsdb';
-import { TPluginProps } from '../types';
+import { TPlayer, TPluginProps } from '../types';
 import {
   getPlayerByEOSID,
   getPlayerByName,
@@ -19,7 +19,7 @@ import {
 } from './helpers';
 
 export const rnsStats: TPluginProps = (state) => {
-  const { listener, execute } = state;
+  const { listener, execute, logger } = state;
   let playersCurrenTime: Array<{
     steamID: string;
     timer: NodeJS.Timeout;
@@ -33,64 +33,100 @@ export const rnsStats: TPluginProps = (state) => {
 
   const onRoundEnded = async () => {
     if (state.skipmap) return;
+
     const { players } = state;
     if (!players) return;
-    for (const player of players) {
+
+    const updatePlayerGames = async (player: TPlayer) => {
       const { teamID, steamID, possess } = player;
+
       const user = await getUserDataWithSteamID(steamID);
-      if (user)
+      const userData = getPlayerBySteamID(state, steamID);
+
+      if (user) {
         adminWarn(
           execute,
           steamID,
-          `Игрок: ${user.name}\nУбийств: ${user.kills}\nСмертей: ${user.death}\nПомощь: ${user.revives}\nТимкилы: ${user.teamkills}\nK/D: ${user.kd}
-        `,
+          `Игрок: ${user.name}\nУбийств: ${user.kills}\nСмертей: ${user.death}\nПомощь: ${user.revives}\nТимкилы: ${user.teamkills}\nK/D: ${user.kd}`,
         );
-      if (possess?.toLowerCase().includes('developeradmincam')) return;
-      if (!winner) return;
-      if (teamID === winner) {
-        await updateGames(steamID, 'won');
-      } else {
-        await updateGames(steamID, 'lose');
       }
+
+      if (possess?.toLowerCase().includes('developeradmincam')) return;
+
+      if (!winner) return;
+
+      const gameResult = teamID === winner ? 'won' : 'lose';
+      await updateGames(steamID, gameResult);
+
+      if (userData && userData.isLeader && userData.squadID) {
+        const squad = getSquadByID(state, userData.squadID);
+        if (
+          squad &&
+          (squad.squadName === 'CMD Squad' ||
+            squad.squadName === 'Command Squad')
+        ) {
+          const cmdGameResult = teamID === winner ? 'cmdwon' : 'cmdlose';
+          await updateGames(steamID, cmdGameResult);
+        }
+      }
+    };
+
+    try {
+      await Promise.all(players.map(updatePlayerGames));
+      winner = '';
+      await creatingTimeStamp();
+    } catch (error) {
+      logger.error(`Произошла ошибка при обновлении данных игрока: ${error}`);
     }
-    winner = '';
-    await creatingTimeStamp();
+  };
+
+  const updatePlayerData = async (steamID: string) => {
+    try {
+      const user = getPlayerBySteamID(state, steamID);
+
+      if (user) {
+        if (user.possess) {
+          await updatePossess(steamID, user.possess);
+        }
+
+        if (user.role) {
+          await updateRoles(steamID, user.role);
+        }
+
+        if (user.isLeader && user.squadID) {
+          await updateTimes(steamID, 'leader', user.name);
+          const squad = getSquadByID(state, user.squadID);
+          if (
+            squad &&
+            (squad.squadName === 'CMD Squad' ||
+              squad.squadName === 'Command Squad')
+          ) {
+            await updateTimes(steamID, 'cmd', user.name);
+          }
+        }
+
+        await updateTimes(steamID, 'timeplayed', user.name);
+      }
+    } catch (error) {
+      logger.error(
+        `Ошибка при обновлении данных для игрока с SteamID ${steamID}:,
+        ${error}`,
+      );
+    }
   };
 
   const updatedPlayers = () => {
     const { players } = state;
     if (!players) return;
+
     players.forEach((e) => {
       const { steamID } = e;
       if (!steamID) return;
-      if (playersCurrenTime.find((e) => e.steamID === steamID)) return;
+      if (playersCurrenTime.find((p) => p.steamID === steamID)) return;
+
       playersCurrenTime.push({
         steamID,
-        timer: setInterval(async () => {
-          const user = getPlayerBySteamID(state, steamID);
-
-          if (user && user.possess) {
-            await updatePossess(steamID, user.possess);
-          }
-
-          if (user && user.role) {
-            await updateRoles(steamID, user.role);
-          }
-
-          if (user && user.isLeader && user.squadID) {
-            await updateTimes(steamID, 'leader', user.name);
-            const squad = getSquadByID(state, user.squadID);
-            if (
-              (squad && squad.squadName === 'CMD Squad') ||
-              (squad && squad.squadName === 'Command Squad')
-            ) {
-              await updateTimes(steamID, 'cmd', user.name);
-            }
-          }
-          if (user) {
-            await updateTimes(steamID, 'timeplayed', user.name);
-          }
-        }, 60000),
+        timer: setInterval(() => updatePlayerData(steamID), 60000),
       });
     });
 
@@ -99,36 +135,57 @@ export const rnsStats: TPluginProps = (state) => {
 
       if (!currentUser) {
         clearInterval(e.timer);
-
         return false;
       }
 
-      return e;
+      return true;
     });
   };
 
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
-    if (currentMap?.layer?.toLowerCase().includes('seed')) return;
+
+    if (!currentMap?.layer) return;
+
+    if (currentMap.layer.toLowerCase().includes('seed')) return;
+
     const { attackerSteamID, victimName, attackerEOSID } = data;
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const victim = getPlayerByName(state, victimName);
 
     if (!victim) return;
-    if (attacker?.teamID === victim?.teamID && attacker.name !== victim.name) {
-      return await updateUser(attackerSteamID, 'teamkills');
+
+    try {
+      if (
+        attacker?.teamID === victim?.teamID &&
+        attacker.name !== victim.name
+      ) {
+        await updateUser(attackerSteamID, 'teamkills');
+      } else {
+        await updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
+        await updateUser(victim.steamID, 'death');
+      }
+    } catch (error) {
+      logger.error(`Ошибка при обновлении данных игрока: ${error}`);
     }
-    await updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
-    await updateUser(victim.steamID, 'death');
   };
 
   const onRevived = async (data: TPlayerRevived) => {
-    const { currentMap } = state;
-    if (currentMap?.layer?.toLowerCase().includes('seed')) return;
+    try {
+      const { currentMap } = state;
 
-    const { reviverSteamID } = data;
+      if (!currentMap?.layer) return;
 
-    await updateUser(reviverSteamID, 'revives');
+      if (currentMap.layer.toLowerCase().includes('seed')) return;
+
+      const { reviverSteamID } = data;
+
+      await updateUser(reviverSteamID, 'revives');
+    } catch (error) {
+      logger.error(
+        `Ошибка при обновлении данных пользователя на возрождение: ${error}`,
+      );
+    }
   };
 
   listener.on(EVENTS.UPDATED_PLAYERS, updatedPlayers);

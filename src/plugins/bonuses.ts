@@ -1,8 +1,12 @@
 import { TPlayerConnected } from 'squad-logs';
 import { EVENTS } from '../constants';
-import { createUserIfNullableOrUpdateName, updateUserBonuses } from '../rnsdb';
+import {
+  createUserIfNullableOrUpdateName,
+  updateTimes,
+  updateUserBonuses,
+} from '../rnsdb';
 import { TPluginProps } from '../types';
-import { getPlayerByEOSID } from './helpers';
+import { getPlayerByEOSID, getPlayerBySteamID } from './helpers';
 
 export const bonuses: TPluginProps = (state, options) => {
   const { listener } = state;
@@ -26,6 +30,8 @@ export const bonuses: TPluginProps = (state, options) => {
     players.forEach((e) => {
       const { steamID } = e;
       if (!steamID) return;
+      const user = getPlayerBySteamID(state, steamID);
+      if (!user) return;
       if (
         playersBonusesCurrentTime.find(
           (e: { steamID: string }) => e.steamID === steamID,
@@ -37,6 +43,7 @@ export const bonuses: TPluginProps = (state, options) => {
         timer: setInterval(async () => {
           if (currentMap?.layer?.toLowerCase().includes('seed')) {
             await updateUserBonuses(steamID, seedBonus);
+            await updateTimes(steamID, 'seed', user.name);
           } else {
             await updateUserBonuses(steamID, classicBonus);
           }
