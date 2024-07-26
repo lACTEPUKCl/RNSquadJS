@@ -422,28 +422,38 @@ async function updateWinrate(user: { _id: string }, field: string) {
       (resultTemp?.matches[`${fieldPrefix}lose`] || 0);
 
     if (resultMain) {
+      const winrateMain =
+        matchesMain > 0
+          ? Number(
+              (
+                (resultMain.matches[`${fieldPrefix}won`] / matchesMain) *
+                100
+              ).toFixed(3),
+            )
+          : 0;
       const docMain = {
         $set: {
-          'matches.matches': matchesMain,
-          'matches.winrate': calculateWinrate(
-            resultMain.matches,
-            fieldPrefix,
-            matchesMain,
-          ),
+          [`matches.${fieldPrefix}matches`]: matchesMain,
+          [`matches.${fieldPrefix}winrate`]: winrateMain,
         },
       };
       await collectionMain.updateOne(user, docMain);
     }
 
     if (resultTemp) {
+      const winrateTemp =
+        matchesTemp > 0
+          ? Number(
+              (
+                (resultTemp.matches[`${fieldPrefix}won`] / matchesTemp) *
+                100
+              ).toFixed(3),
+            )
+          : 0;
       const docTemp = {
         $set: {
-          'matches.matches': matchesTemp,
-          'matches.winrate': calculateWinrate(
-            resultTemp.matches,
-            fieldPrefix,
-            matchesTemp,
-          ),
+          [`matches.${fieldPrefix}matches`]: matchesTemp,
+          [`matches.${fieldPrefix}winrate`]: winrateTemp,
         },
       };
       await collectionTemp.updateOne(user, docTemp);
@@ -454,12 +464,6 @@ async function updateWinrate(user: { _id: string }, field: string) {
       error,
     );
   }
-}
-
-function calculateWinrate(matches: any, prefix: string, totalMatches: number) {
-  return totalMatches > 0
-    ? Number(((matches[`${prefix}won`] / totalMatches) * 100).toFixed(3))
-    : 0;
 }
 
 export async function serverHistoryLayers(
