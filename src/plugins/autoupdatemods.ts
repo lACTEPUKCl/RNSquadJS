@@ -8,14 +8,7 @@ import { getPlayers } from './helpers';
 
 export const autoUpdateMods: TPluginProps = async (state, options) => {
   const { listener, execute, logger, id } = state;
-  const {
-    modID,
-    steamAPIkey,
-    text,
-    serviceName,
-    updateFilePath,
-    intervalBroadcast,
-  } = options;
+  const { modID, steamAPIkey, text, dockerName, intervalBroadcast } = options;
 
   let newUpdate = false;
   let currentVersion: Date | null = null;
@@ -101,7 +94,7 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     try {
       spawn(
         '/usr/bin/docker',
-        ['compose', '--env-file', './custom/.env', 'down', `mod-${id}`],
+        ['compose', '--env-file', './custom/.env', 'down', dockerName],
         {
           cwd: '/root/servers',
         },
@@ -115,7 +108,7 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     try {
       spawn(
         '/usr/bin/docker',
-        ['compose', '--env-file', './custom/.env', 'up', `mod-${id}`],
+        ['compose', '--env-file', './custom/.env', 'up', dockerName],
         {
           cwd: '/root/servers',
         },
