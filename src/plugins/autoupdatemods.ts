@@ -1,24 +1,14 @@
 import axios from 'axios';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { spawn } from 'child_process';
 import { EVENTS } from '../constants';
 import { adminBroadcast } from '../core';
 import { getModLastUpdateDate, writeLastModUpdateDate } from '../rnsdb';
 import { TPluginProps } from '../types';
 import { getPlayers } from './helpers';
 
-const execPromise = promisify(exec);
-
 export const autoUpdateMods: TPluginProps = async (state, options) => {
-  const { listener, execute, logger } = state;
-  const {
-    modID,
-    steamAPIkey,
-    text,
-    serviceName,
-    updateFilePath,
-    intervalBroadcast,
-  } = options;
+  const { listener, execute, logger, id } = state;
+  const { modID, steamAPIkey, text, dockerName, intervalBroadcast } = options;
 
   let newUpdate = false;
   let currentVersion: Date | null = null;
@@ -100,36 +90,39 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     }
   }
 
-  async function stopService(serviceName: string) {
+  async function stopService() {
     try {
-      await execPromise(`sudo systemctl stop ${serviceName}.service`);
+      spawn(
+        '/usr/bin/docker',
+        ['compose', '--env-file', './custom/.env', 'down', dockerName],
+        {
+          cwd: '/root/servers',
+        },
+      );
     } catch (error) {
       logger.error(`Ошибка при остановке сервиса: ${error}`);
     }
   }
 
-  async function startService(serviceName: string) {
+  async function startService() {
     try {
-      await execPromise(`sudo systemctl start ${serviceName}.service`);
+      spawn(
+        '/usr/bin/docker',
+        ['compose', '--env-file', './custom/.env', 'up', dockerName],
+        {
+          cwd: '/root/servers',
+        },
+      );
     } catch (error) {
       logger.error(`Ошибка при запуске сервиса: ${error}`);
-    }
-  }
-
-  async function updateMod(updateFilePath: string) {
-    try {
-      await execPromise(updateFilePath);
-    } catch (error) {
-      logger.error(`Ошибка при обновлении мода: ${error}`);
     }
   }
 
   async function performUpdate() {
     logger.log('Обновление мода...');
     try {
-      await stopService(serviceName);
-      await updateMod(updateFilePath);
-      await startService(serviceName);
+      await stopService();
+      await startService();
       if (currentVersion) {
         await saveLastUpdate(currentVersion);
       }
