@@ -5,15 +5,24 @@ import { TPluginProps } from '../types';
 
 export const skipmap: TPluginProps = (state, options) => {
   const { listener, execute } = state;
-  const { voteTick, voteDuration, voteRepeatDelay, onlyForVip, needVotes } =
-    options;
+  const {
+    voteTick,
+    voteDuration,
+    voteRepeatDelay,
+    onlyForVip,
+    needVotes,
+    voteTimeout,
+  } = options;
   let voteReadyToStart = true;
+  let voteTimeOutToStart = true;
   let voteStarting = false;
   let voteStartingRepeat = true;
   let secondsToEnd = voteDuration / 1000;
+  let skipMapTimeout = voteTimeout / 1000 / 60;
   let timer: NodeJS.Timeout;
   let timerDelayStarting: NodeJS.Timeout;
   let timerDelayNextStart: NodeJS.Timeout;
+  let timerVoteTimeOutToStart: NodeJS.Timeout;
   let historyPlayers: string[] = [];
   let votes: { [key in string]: string[] } = {
     '+': [],
@@ -44,6 +53,16 @@ export const skipmap: TPluginProps = (state, options) => {
         execute,
         steamID,
         'Голосование за завершение матча будет доступно через 1 минуту после начала матча!',
+      );
+
+      return;
+    }
+
+    if (voteTimeOutToStart) {
+      adminWarn(
+        execute,
+        steamID,
+        `Голосование за завершение матча доступно только в первые ${skipMapTimeout} минуты после начала матча!`,
       );
 
       return;
@@ -138,10 +157,14 @@ export const skipmap: TPluginProps = (state, options) => {
     historyPlayers = [];
     voteReadyToStart = false;
     voteStartingRepeat = true;
+    voteTimeOutToStart = false;
     state.skipmap = false;
     timerDelayStarting = setTimeout(() => {
       voteReadyToStart = true;
     }, 60000);
+    timerVoteTimeOutToStart = setTimeout(() => {
+      voteTimeOutToStart = true;
+    }, voteTimeout);
   };
 
   listener.on(EVENTS.CHAT_COMMAND_SKIPMAP, chatCommand);
@@ -150,6 +173,7 @@ export const skipmap: TPluginProps = (state, options) => {
 
   const reset = () => {
     clearTimeout(timerDelayStarting);
+    clearTimeout(timerVoteTimeOutToStart);
     clearInterval(timer);
     secondsToEnd = voteDuration / 1000;
     voteStarting = false;
