@@ -92,8 +92,17 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function stopService() {
     try {
+      logger.log('Попытка остановить сервис:', dockerName);
       const child = spawn('/usr/bin/docker', ['compose', 'down', dockerName], {
         cwd: '/root/servers',
+      });
+
+      child.stdout.on('data', (data) => {
+        logger.log(`stdout: ${data}`);
+      });
+
+      child.stderr.on('data', (data) => {
+        logger.error(`stderr: ${data}`);
       });
 
       child.on('exit', async (code) => {
@@ -117,13 +126,23 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function startService() {
     try {
+      logger.log('Попытка запустить сервис:', dockerName);
       const child = spawn('/usr/bin/docker', ['compose', 'up', dockerName], {
         cwd: '/root/servers',
+      });
+
+      child.stdout.on('data', (data) => {
+        logger.log(`stdout: ${data}`);
+      });
+
+      child.stderr.on('data', (data) => {
+        logger.error(`stderr: ${data}`);
       });
 
       child.on('exit', (code) => {
         if (code === 0) {
           logger.log(`Сервис ${dockerName} успешно запущен.`);
+          logger.log('Мод обновлен...');
         } else {
           logger.error(
             `Ошибка при запуске сервиса ${dockerName}, код выхода: ${code}`,
@@ -148,7 +167,6 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
       }
       clearInterval(updateMessage);
       newUpdate = false;
-      logger.log('Мод обновлен...');
     } catch (error) {
       logger.error(`Ошибка при обновлении мода:' ${error}`);
     }
