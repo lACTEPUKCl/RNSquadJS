@@ -7,7 +7,7 @@ import { TPluginProps } from '../types';
 import { getPlayers } from './helpers';
 
 export const autoUpdateMods: TPluginProps = async (state, options) => {
-  const { listener, execute, logger, id } = state;
+  const { listener, execute, logger } = state;
   const { modID, steamAPIkey, text, dockerName, intervalBroadcast } = options;
 
   let newUpdate = false;
@@ -92,13 +92,9 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function stopService() {
     try {
-      spawn(
-        '/usr/bin/docker',
-        ['compose', '--env-file', './custom/.env', 'down', dockerName],
-        {
-          cwd: '/root/servers',
-        },
-      );
+      spawn('/usr/bin/docker', ['compose', 'down', dockerName], {
+        cwd: '/root/servers',
+      });
     } catch (error) {
       logger.error(`Ошибка при остановке сервиса: ${error}`);
     }
@@ -106,13 +102,9 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function startService() {
     try {
-      spawn(
-        '/usr/bin/docker',
-        ['compose', '--env-file', './custom/.env', 'up', dockerName],
-        {
-          cwd: '/root/servers',
-        },
-      );
+      spawn('/usr/bin/docker', ['compose', 'up', dockerName], {
+        cwd: '/root/servers',
+      });
     } catch (error) {
       logger.error(`Ошибка при запуске сервиса: ${error}`);
     }
