@@ -97,14 +97,6 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
         cwd: '/root/servers',
       });
 
-      child.stdout.on('data', (data) => {
-        logger.log(`stdout: ${data}`);
-      });
-
-      child.stderr.on('data', (data) => {
-        logger.error(`stderr: ${data}`);
-      });
-
       child.on('exit', async (code) => {
         if (code === 0) {
           logger.log(`Сервис ${dockerName} успешно остановлен.`);
@@ -127,17 +119,13 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
   async function startService() {
     try {
       logger.log('Попытка запустить сервис:', dockerName);
-      const child = spawn('/usr/bin/docker', ['compose', 'up', dockerName], {
-        cwd: '/root/servers',
-      });
-
-      child.stdout.on('data', (data) => {
-        logger.log(`stdout: ${data}`);
-      });
-
-      child.stderr.on('data', (data) => {
-        logger.error(`stderr: ${data}`);
-      });
+      const child = spawn(
+        '/usr/bin/docker',
+        ['compose', 'up', '-d', dockerName],
+        {
+          cwd: '/root/servers',
+        },
+      );
 
       child.on('exit', (code) => {
         if (code === 0) {
