@@ -92,8 +92,23 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function stopService() {
     try {
-      spawn('/usr/bin/docker', ['compose', 'down', dockerName], {
+      const child = spawn('/usr/bin/docker', ['compose', 'down', dockerName], {
         cwd: '/root/servers',
+      });
+
+      child.on('exit', async (code) => {
+        if (code === 0) {
+          logger.log(`Сервис ${dockerName} успешно остановлен.`);
+          await startService();
+        } else {
+          logger.error(
+            `Ошибка при остановке сервиса ${dockerName}, код выхода: ${code}`,
+          );
+        }
+      });
+
+      child.on('error', (error) => {
+        logger.error(`Ошибка при остановке сервиса ${dockerName}: ${error}`);
       });
     } catch (error) {
       logger.error(`Ошибка при остановке сервиса: ${error}`);
@@ -102,8 +117,22 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   async function startService() {
     try {
-      spawn('/usr/bin/docker', ['compose', 'up', dockerName], {
+      const child = spawn('/usr/bin/docker', ['compose', 'up', dockerName], {
         cwd: '/root/servers',
+      });
+
+      child.on('exit', (code) => {
+        if (code === 0) {
+          logger.log(`Сервис ${dockerName} успешно запущен.`);
+        } else {
+          logger.error(
+            `Ошибка при запуске сервиса ${dockerName}, код выхода: ${code}`,
+          );
+        }
+      });
+
+      child.on('error', (error) => {
+        logger.error(`Ошибка при запуске сервиса ${dockerName}: ${error}`);
       });
     } catch (error) {
       logger.error(`Ошибка при запуске сервиса: ${error}`);
@@ -114,7 +143,6 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     logger.log('Обновление мода...');
     try {
       await stopService();
-      await startService();
       if (currentVersion) {
         await saveLastUpdate(currentVersion);
       }
