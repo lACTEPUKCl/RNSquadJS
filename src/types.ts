@@ -93,6 +93,7 @@ export type TPluginOptions = {
   minPlayersForAfkKick: number;
   kickTimeout: number;
   warningInterval: number;
+  checkUpdateInterval: number;
   gracePeriod: number;
 };
 

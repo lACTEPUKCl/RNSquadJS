@@ -8,7 +8,15 @@ import { getPlayers } from './helpers';
 
 export const autoUpdateMods: TPluginProps = async (state, options) => {
   const { listener, execute, logger } = state;
-  const { modID, steamAPIkey, text, dockerName, intervalBroadcast } = options;
+  const {
+    modID,
+    steamAPIkey,
+    text,
+    dockerName,
+    intervalBroadcast,
+    textForceUpdate,
+    checkUpdateInterval,
+  } = options;
 
   let newUpdate = false;
   let currentVersion: Date | null = null;
@@ -16,9 +24,8 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
   let intervalMessage: NodeJS.Timeout;
 
   listener.on(EVENTS.ROUND_ENDED, endMatch);
-  listener.on(EVENTS.NEW_GAME, newGame);
 
-  async function newGame() {
+  setInterval(async () => {
     currentVersion = await getWorkshopItemDetails();
 
     if (currentVersion) {
@@ -27,22 +34,24 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
       if (!lastSavedUpdate || currentVersion > lastSavedUpdate) {
         const players = getPlayers(state);
 
-        if (players && players.length < 50) {
-          newUpdate = true;
-          scheduleUpdate();
-        }
-
         logger.log(
           'Доступно новое обновление:',
           currentVersion.toLocaleString(),
         );
+
+        if (players && players.length < 50) {
+          newUpdate = true;
+          scheduleUpdate();
+          return;
+        }
+
         newUpdate = true;
         updateMessage = setInterval(() => {
           adminBroadcast(execute, text);
         }, Number(intervalBroadcast));
       }
     }
-  }
+  }, checkUpdateInterval);
 
   async function endMatch() {
     if (newUpdate && currentVersion) {
@@ -162,7 +171,7 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
   function scheduleUpdate() {
     intervalMessage = setInterval(() => {
-      adminBroadcast(execute, text);
+      adminBroadcast(execute, textForceUpdate);
     }, 10000);
 
     setTimeout(async () => {
