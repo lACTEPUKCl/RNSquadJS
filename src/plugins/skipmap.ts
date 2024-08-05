@@ -14,7 +14,7 @@ export const skipmap: TPluginProps = (state, options) => {
     voteTimeout,
   } = options;
   let voteReadyToStart = true;
-  let voteTimeOutToStart = true;
+  let voteTimeOutToStart = false;
   let voteStarting = false;
   let voteStartingRepeat = true;
   let secondsToEnd = voteDuration / 1000;
