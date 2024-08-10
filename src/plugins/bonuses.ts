@@ -25,7 +25,7 @@ export const bonuses: TPluginProps = (state, options) => {
   };
 
   const updatedPlayers = () => {
-    const { players, currentMap } = state;
+    const { players, currentMap, id } = state;
     if (!players) return;
     players.forEach((e) => {
       const { steamID } = e;
@@ -42,10 +42,10 @@ export const bonuses: TPluginProps = (state, options) => {
         steamID,
         timer: setInterval(async () => {
           if (currentMap?.layer?.toLowerCase().includes('seed')) {
-            await updateUserBonuses(steamID, seedBonus);
+            await updateUserBonuses(steamID, seedBonus, id);
             await updateTimes(steamID, 'seed', user.name);
           } else {
-            await updateUserBonuses(steamID, classicBonus);
+            await updateUserBonuses(steamID, classicBonus, id);
           }
         }, 60000),
       });
