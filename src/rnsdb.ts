@@ -24,6 +24,7 @@ interface Main {
   };
   weapons: object;
   date?: number;
+  seedRole?: boolean;
 }
 
 interface Info {
@@ -141,6 +142,7 @@ export async function createUserIfNullableOrUpdateName(
         cmdwinrate: 0,
       },
       weapons: {},
+      seedRole: false,
     };
 
     if (!resultMain) {
@@ -183,6 +185,10 @@ async function updateUserName(steamID: string, name: string) {
 
 export async function updateUserBonuses(steamID: string, count: number) {
   if (!isConnected) return;
+  const resultMain = await collectionMain.findOne({
+    _id: steamID,
+  });
+  if (resultMain && resultMain.seedRole) count = 5;
   try {
     const doc = {
       $inc: {
