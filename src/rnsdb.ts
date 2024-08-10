@@ -24,6 +24,7 @@ interface Main {
   };
   weapons: object;
   date?: number;
+  seedRole?: boolean;
 }
 
 interface Info {
@@ -31,6 +32,7 @@ interface Info {
   rnsHistoryLayers?: string[];
   timeStampToRestart?: number;
   lastUpdate?: string;
+  seeding?: boolean;
 }
 
 let db: Db;
@@ -141,6 +143,7 @@ export async function createUserIfNullableOrUpdateName(
         cmdwinrate: 0,
       },
       weapons: {},
+      seedRole: false,
     };
 
     if (!resultMain) {
@@ -181,8 +184,20 @@ async function updateUserName(steamID: string, name: string) {
   }
 }
 
-export async function updateUserBonuses(steamID: string, count: number) {
+export async function updateUserBonuses(
+  steamID: string,
+  count: number,
+  id: number,
+) {
   if (!isConnected) return;
+  const userInfo = await collectionMain.findOne({
+    _id: steamID,
+  });
+  const serverInfo = await collectionServerInfo.findOne({ _id: id.toString() });
+
+  if (userInfo && userInfo.seedRole && serverInfo && serverInfo.seeding)
+    count = 5;
+
   try {
     const doc = {
       $inc: {
