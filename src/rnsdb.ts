@@ -32,6 +32,7 @@ interface Info {
   rnsHistoryLayers?: string[];
   timeStampToRestart?: number;
   lastUpdate?: string;
+  seeding?: boolean;
 }
 
 let db: Db;
@@ -183,12 +184,20 @@ async function updateUserName(steamID: string, name: string) {
   }
 }
 
-export async function updateUserBonuses(steamID: string, count: number) {
+export async function updateUserBonuses(
+  steamID: string,
+  count: number,
+  id: number,
+) {
   if (!isConnected) return;
-  const resultMain = await collectionMain.findOne({
+  const userInfo = await collectionMain.findOne({
     _id: steamID,
   });
-  if (resultMain && resultMain.seedRole) count = 5;
+  const serverInfo = await collectionServerInfo.findOne({ _id: id.toString() });
+
+  if (userInfo && userInfo.seedRole && serverInfo && serverInfo.seeding)
+    count = 5;
+
   try {
     const doc = {
       $inc: {
