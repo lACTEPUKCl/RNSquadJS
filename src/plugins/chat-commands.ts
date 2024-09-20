@@ -74,6 +74,26 @@ export const chatCommands: TPluginProps = (state, options) => {
     }, parseInt(stvolTimeout));
   };
 
+  const roll = (data: TChatMessage) => {
+    if (!stvolEnable) return;
+    const { name, steamID } = data;
+
+    if (players.find((player) => player === steamID)) {
+      sendWarningMessages(steamID, stvolTimeOutMessage);
+      return;
+    }
+
+    const range = Math.floor(Math.random() * 99 + 1);
+
+    adminBroadcast(execute, `${name} заролил ${range}`);
+
+    players.push(steamID);
+
+    setTimeout(() => {
+      players = players.filter((player) => player !== steamID);
+    }, parseInt(stvolTimeout));
+  };
+
   const fix = (data: TChatMessage) => {
     if (!fixEnable) return;
     adminForceTeamChange(execute, data.steamID);
@@ -187,6 +207,7 @@ export const chatCommands: TPluginProps = (state, options) => {
   listener.on(EVENTS.CHAT_COMMAND_REPORT, report);
   listener.on(EVENTS.CHAT_COMMAND_R, report);
   listener.on(EVENTS.CHAT_COMMAND_STVOL, stvol);
+  listener.on(EVENTS.CHAT_COMMAND_ROLL, roll);
   listener.on(EVENTS.CHAT_COMMAND_FIX, fix);
   listener.on(EVENTS.CHAT_COMMAND_BONUS, bonus);
   listener.on(EVENTS.CHAT_COMMAND_STATS, stats);

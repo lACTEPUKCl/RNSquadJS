@@ -112,16 +112,10 @@ export async function createUserIfNullableOrUpdateName(
   if (!db || !isConnected) return;
 
   try {
-    const resultMain = await collectionMain.findOne({
-      _id: steamID,
-    });
-
-    const resultTemp = await collectionTemp.findOne({
-      _id: steamID,
-    });
+    const resultMain = await collectionMain.findOne({ _id: steamID });
+    const resultTemp = await collectionTemp.findOne({ _id: steamID });
 
     const fields = {
-      _id: steamID,
       name: name.trim(),
       kills: 0,
       death: 0,
@@ -147,17 +141,23 @@ export async function createUserIfNullableOrUpdateName(
     };
 
     if (!resultMain) {
-      await collectionMain.insertOne(fields);
+      await collectionMain.updateOne(
+        { _id: steamID },
+        { $setOnInsert: fields },
+        { upsert: true },
+      );
     }
 
     if (!resultTemp) {
-      await collectionTemp.insertOne(fields);
+      await collectionTemp.updateOne(
+        { _id: steamID },
+        { $setOnInsert: fields },
+        { upsert: true },
+      );
     }
 
-    if (resultMain) {
-      if (name.trim() !== resultMain.name.trim()) {
-        await updateUserName(steamID, name.trim());
-      }
+    if (resultMain && name.trim() !== resultMain.name.trim()) {
+      await updateUserName(steamID, name.trim());
     }
   } catch (err) {
     throw err;
