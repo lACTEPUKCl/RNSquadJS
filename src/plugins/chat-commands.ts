@@ -15,10 +15,12 @@ export const chatCommands: TPluginProps = (state, options) => {
     discordEnable,
     statsEnable,
     bonusEnable,
+    rollEnable,
     swapEnable,
     swapTimeout,
     statsTimeout,
     stvolTimeout,
+    rollTimeout,
     adminsMessage,
     reportMessage,
     stvolTimeOutMessage,
@@ -75,7 +77,7 @@ export const chatCommands: TPluginProps = (state, options) => {
   };
 
   const roll = (data: TChatMessage) => {
-    if (!stvolEnable) return;
+    if (!rollEnable) return;
     const { name, steamID } = data;
 
     if (players.find((player) => player === steamID)) {
@@ -91,7 +93,7 @@ export const chatCommands: TPluginProps = (state, options) => {
 
     setTimeout(() => {
       players = players.filter((player) => player !== steamID);
-    }, parseInt(stvolTimeout));
+    }, parseInt(rollTimeout));
   };
 
   const fix = (data: TChatMessage) => {
