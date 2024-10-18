@@ -4,9 +4,10 @@ import { TPluginProps } from '../types';
 export const discord: TPluginProps = (state, options) => {
   const { logger } = state;
 
-  return new Promise(() => {
+  return new Promise((res, rej) => {
     if (typeof options !== 'object' || !options || !('token' in options)) {
       logger.error('[Discord] Token is missing in options.');
+      rej();
       return;
     }
 
@@ -49,14 +50,18 @@ export const discord: TPluginProps = (state, options) => {
           }
         },
       };
+
+      res();
     });
 
     client.on('error', (error) => {
       logger.error(`[Discord] Error: ${error.message}`);
+      rej();
     });
 
     client.login(token).catch((error) => {
       logger.error(`[Discord] Failed to login: ${error.message}`);
+      rej();
     });
   });
 };
