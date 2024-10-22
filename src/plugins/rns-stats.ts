@@ -144,7 +144,6 @@ export const rnsStats: TPluginProps = (state) => {
 
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
-    if (id.toString().includes('2')) console.log('died');
     if (!currentMap?.layer) return;
 
     if (currentMap.layer.toLowerCase().includes('seed')) return;
@@ -152,7 +151,7 @@ export const rnsStats: TPluginProps = (state) => {
     const { attackerSteamID, victimName, attackerEOSID } = data;
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const victim = getPlayerByName(state, victimName);
-    if (id.toString().includes('2')) console.log(attacker?.name, victim?.name);
+
     if (!victim) return;
 
     try {
