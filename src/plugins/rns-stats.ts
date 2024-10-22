@@ -19,7 +19,7 @@ import {
 } from './helpers';
 
 export const rnsStats: TPluginProps = (state) => {
-  const { listener, execute, logger } = state;
+  const { listener, execute, logger, id } = state;
   let playersCurrenTime: Array<{
     steamID: string;
     timer: NodeJS.Timeout;
@@ -144,7 +144,7 @@ export const rnsStats: TPluginProps = (state) => {
 
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
-    console.log('died');
+    if (id.toString().includes('2')) console.log('died');
     if (!currentMap?.layer) return;
 
     if (currentMap.layer.toLowerCase().includes('seed')) return;
@@ -152,7 +152,7 @@ export const rnsStats: TPluginProps = (state) => {
     const { attackerSteamID, victimName, attackerEOSID } = data;
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const victim = getPlayerByName(state, victimName);
-    console.log(attacker?.name, victim?.name);
+    if (id.toString().includes('2')) console.log(attacker?.name, victim?.name);
     if (!victim) return;
 
     try {
