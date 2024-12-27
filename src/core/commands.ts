@@ -40,6 +40,14 @@ export const adminKick = async (
   await execute(`AdminKick ${steamID} ${reason}`);
 };
 
+export const adminBan = async (
+  execute: TExecute,
+  steamID: string,
+  reason: string,
+) => {
+  await execute(`AdminBan ${steamID} "0" ${reason}`);
+};
+
 export const adminForceTeamChange = async (
   execute: TExecute,
   steamID: string,

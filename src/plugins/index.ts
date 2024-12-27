@@ -1,4 +1,5 @@
 import { getServersState } from '../serversState';
+import { explosiveDamaged } from './apply-explosive-damaged';
 import { autoKickUnassigned } from './auto-kick-unassigned';
 import { autorestartServers } from './autorestart-servers';
 import { autoUpdateMods } from './autoupdatemods';
@@ -30,6 +31,7 @@ const plugins = [
   broadcast,
   voteMapMods,
   autoUpdateMods,
+  explosiveDamaged,
 ];
 
 export const initPlugins = async (id: number) => {
