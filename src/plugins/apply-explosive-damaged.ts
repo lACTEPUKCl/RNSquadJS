@@ -17,7 +17,7 @@ export const explosiveDamaged: TPluginProps = (state) => {
     }
   > = {};
 
-  const maxCount = 0;
+  const maxCount = 10;
   const maxInterval = 10;
   const destructionDelay = 10000;
 
