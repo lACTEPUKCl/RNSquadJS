@@ -1,4 +1,5 @@
 export {
+  adminBan,
   adminBroadcast,
   adminChangeLayer,
   adminDisbandSquad,

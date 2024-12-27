@@ -3,6 +3,14 @@ import { TState } from '../types';
 export const getPlayerBySteamID = (state: TState, steamID: string) =>
   state.players?.find((player) => player.steamID === steamID) || null;
 
+export const getPlayerByController = (
+  state: TState,
+  playerController: string,
+) =>
+  state.players?.find(
+    (player) => player.playerController === playerController,
+  ) || null;
+
 export const getPlayerByEOSID = (state: TState, eosID: string) =>
   state.players?.find((player) => player.eosID === eosID) || null;
 
