@@ -25,7 +25,6 @@ export const explosiveDamaged: TPluginProps = (state) => {
     if (!data.playerController || !data.deployable || !data.locations) {
       return;
     }
-    console.log(state.players);
 
     const now = Date.now();
     const key = `${data.playerController}_${data.deployable}`;
