@@ -53,7 +53,6 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
 
         if (event === EVENTS.PLAYER_CONNECTED) {
           const player = data as TPlayerConnected;
-          console.log(player);
 
           if (state.players && player) {
             state.players = state.players.map((p) => {
