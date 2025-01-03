@@ -31,7 +31,7 @@ export const autorestartServers: TPluginProps = (state) => {
     const lastRestartTime = await getTimeStampForRestartServer(id);
     if (!lastRestartTime) return;
     if (new Date().getTime() - lastRestartTime > 86400000) {
-      if (data.length === 0) {
+      if (Array.isArray(data) && data.length === 0) {
         if (!isRestartTimeoutSet) setRestartTimeout();
       } else {
         if (isRestartTimeoutSet) {
