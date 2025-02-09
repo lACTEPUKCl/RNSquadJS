@@ -27,16 +27,16 @@ export const autorestartServers: TPluginProps = (state) => {
     isRestartTimeoutSet = false;
   };
 
-  const autorestart = async (data: string) => {
+  const autorestart = async () => {
     const lastRestartTime = await getTimeStampForRestartServer(id);
     if (!lastRestartTime) return;
+
     if (new Date().getTime() - lastRestartTime > 86400000) {
-      if (Array.isArray(data) && data.length === 0) {
+      const players = state.players;
+      if (!players || players.length === 0) {
         if (!isRestartTimeoutSet) setRestartTimeout();
       } else {
-        if (isRestartTimeoutSet) {
-          clearRestartTimeout();
-        }
+        if (isRestartTimeoutSet) clearRestartTimeout();
       }
     }
   };
