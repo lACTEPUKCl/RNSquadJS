@@ -5,6 +5,7 @@ import {
   getTimeStampForRestartServer,
 } from '../rnsdb';
 import { TPluginProps } from '../types';
+import { getPlayers } from './helpers';
 
 export const autorestartServers: TPluginProps = (state) => {
   const { listener, execute, logger, id } = state;
@@ -27,16 +28,16 @@ export const autorestartServers: TPluginProps = (state) => {
     isRestartTimeoutSet = false;
   };
 
-  const autorestart = async (data: string) => {
+  const autorestart = async () => {
     const lastRestartTime = await getTimeStampForRestartServer(id);
     if (!lastRestartTime) return;
+
     if (new Date().getTime() - lastRestartTime > 86400000) {
-      if (Array.isArray(data) && data.length === 0) {
+      const players = getPlayers(state);
+      if (!players || players.length === 0) {
         if (!isRestartTimeoutSet) setRestartTimeout();
       } else {
-        if (isRestartTimeoutSet) {
-          clearRestartTimeout();
-        }
+        if (isRestartTimeoutSet) clearRestartTimeout();
       }
     }
   };
