@@ -5,6 +5,7 @@ import {
   getTimeStampForRestartServer,
 } from '../rnsdb';
 import { TPluginProps } from '../types';
+import { getPlayers } from './helpers';
 
 export const autorestartServers: TPluginProps = (state) => {
   const { listener, execute, logger, id } = state;
@@ -32,7 +33,7 @@ export const autorestartServers: TPluginProps = (state) => {
     if (!lastRestartTime) return;
 
     if (new Date().getTime() - lastRestartTime > 86400000) {
-      const players = state.players;
+      const players = getPlayers(state);
       if (!players || players.length === 0) {
         if (!isRestartTimeoutSet) setRestartTimeout();
       } else {
