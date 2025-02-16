@@ -1,56 +1,420 @@
 import { EVENTS } from '../constants';
 import { adminSetNextLayer } from '../core';
-import { cleanHistoryLayers, getHistoryLayers } from '../rnsdb';
-import { TPluginProps } from '../types';
+import {
+  cleanHistoryLayers,
+  getHistoryLayers,
+  serverHistoryLayers,
+} from '../rnsdb';
+import { TPluginProps, TTeamFactions } from '../types';
 
-export const randomizerMaps: TPluginProps = (state) => {
-  const { listener, execute, logger } = state;
-  const layerNames = new Set(
-    Object.values(state.maps).map((map) => map.layerName),
-  );
+type TierKey = 'S' | 'A' | 'B' | 'C';
 
-  const historyLayersMax = layerNames.size;
-  let rnsHistoryLayers: string[] = [];
+const tieredMaps: Record<TierKey, { probability: number; maps: string[] }> = {
+  S: {
+    probability: 50,
+    maps: [
+      'Narva',
+      'Yehorivka',
+      'Gorodok',
+      'Manicouagan',
+      'Harju',
+      'Mutaha',
+      'Fallujah',
+    ],
+  },
+  A: {
+    probability: 30,
+    maps: ['AlBasrah', 'Belaya', 'Chora', 'GooseBay', 'Tallil', 'BlackCoast'],
+  },
+  B: {
+    probability: 15,
+    maps: ['Sumari', 'Kokan', 'Sanxian', 'Kohat', 'Kamdesh', 'Anvil'],
+  },
+  C: {
+    probability: 5,
+    maps: ['Lashkar', 'Mestia', 'Skorpo', 'FoolsRoad', 'Logar'],
+  },
+};
 
+const tieredFactions: Record<
+  TierKey,
+  { probability: number; factions: string[] }
+> = {
+  S: {
+    probability: 50,
+    factions: ['RGF', 'USA', 'USMC', 'WPMC', 'CAF'],
+  },
+  A: {
+    probability: 35,
+    factions: ['INS', 'BAF', 'IMF', 'PLA'],
+  },
+  B: {
+    probability: 15,
+    factions: ['TLF', 'PLAAGF', 'PLANMC', 'VDV', 'MEA'],
+  },
+  C: {
+    probability: 0,
+    factions: [],
+  },
+};
+
+const tieredSubfactions: Record<
+  TierKey,
+  { probability: number; subfactions: string[] }
+> = {
+  S: {
+    probability: 50,
+    subfactions: [
+      'CombinedArms',
+      'AirAssault',
+      'Armored',
+      'Mechanized',
+      'Support',
+      'LightInfantry',
+      'Motorized',
+    ],
+  },
+  A: {
+    probability: 30,
+    subfactions: ['AirAssault'],
+  },
+  B: {
+    probability: 20,
+    subfactions: ['Armored', 'Mechanized'],
+  },
+  C: {
+    probability: 0,
+    subfactions: [],
+  },
+};
+
+/**
+ * Универсальная функция для взвешенного выбора элемента.
+ * @param items Массив объектов с элементом и его весом.
+ * @returns Выбранный элемент или null, если массив пуст или суммарный вес равен нулю.
+ */
+function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
+  const totalWeight = items.reduce((sum, cur) => sum + cur.weight, 0);
+  if (totalWeight === 0) return null;
+  let rnd = Math.random() * totalWeight;
+  for (const { item, weight } of items) {
+    rnd -= weight;
+    if (rnd <= 0) return item;
+  }
+  return null;
+}
+
+/**
+ * Определяет уровень (tier) для заданной фракции.
+ * @param faction Название фракции.
+ * @returns Ключ уровня или null, если фракция не найдена.
+ */
+function getFactionTier(faction: string): TierKey | null {
+  const tiers = Object.entries(tieredFactions) as [
+    TierKey,
+    { probability: number; factions: string[] },
+  ][];
+  for (const [, tier] of tiers) {
+    if (tier.factions.includes(faction)) {
+      return tiers.find(([, t]) => t.factions.includes(faction))?.[0] || null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Возвращает случайный элемент массива.
+ */
+function randomArrayElement<T>(array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)];
+}
+
+/**
+ * Проверяет, находится ли кандидат среди последних excludeCount элементов истории.
+ */
+function isExcludedByHistory(
+  history: string[],
+  excludeCount: number,
+  candidate: string,
+): boolean {
+  return history.slice(-excludeCount).includes(candidate);
+}
+
+/**
+ * Основной плагин, осуществляющий выбор карты, фракций и типа войск.
+ * Предполагается, что объект maps имеет тип TMaps.
+ */
+export const randomizerMaps: TPluginProps = (state, options) => {
+  const { listener, logger, maps, execute } = state;
+  const { mode, symmetricUnitTypes, excludeCount } = options;
+  const excludeCountNumber = Number(excludeCount);
+  /**
+   * Выбирает случайную карту с учетом истории.
+   */
+  async function pickRandomMap(): Promise<string> {
+    const recentHistory = await getHistoryLayers(state.id);
+    const maxAttempts = 10;
+    let attempt = 0;
+    let chosenMap: string | null = null;
+
+    while (attempt < maxAttempts && !chosenMap) {
+      const layerObj = getRandomLayerTiered();
+      if (!layerObj) {
+        chosenMap = 'DefaultMap';
+        break;
+      }
+      const { level, layer } = layerObj;
+      if (isExcludedByHistory(recentHistory, excludeCountNumber, level)) {
+        attempt++;
+        continue;
+      }
+      // Обновляем историю выбора
+      await serverHistoryLayers(state.id, level);
+      recentHistory.push(level);
+      while (recentHistory.length > 5) {
+        recentHistory.shift();
+        await cleanHistoryLayers(state.id);
+      }
+      chosenMap = layer;
+    }
+
+    if (!chosenMap) {
+      logger.log(
+        'Превышено число попыток выбора карты, используется DefaultMap.',
+      );
+      chosenMap = 'DefaultMap';
+    }
+    return chosenMap;
+  }
+
+  /**
+   * Выбирает случайную карту из tieredMaps с учетом весов.
+   */
+  function getRandomLayerTiered(): { layer: string; level: string } | null {
+    const tiers = Object.entries(tieredMaps) as [
+      TierKey,
+      { probability: number; maps: string[] },
+    ][];
+    const totalProb = tiers.reduce(
+      (acc, [, tier]) => acc + tier.probability,
+      0,
+    );
+    const rnd = Math.random() * totalProb;
+    let cumulative = 0;
+    for (const [, tier] of tiers) {
+      cumulative += tier.probability;
+      if (rnd <= cumulative) {
+        const mapsInTier = tier.maps;
+        if (mapsInTier.length === 0) return null;
+        const shortMapName = randomArrayElement(mapsInTier);
+        const availableKeys = Object.keys(maps).filter((key) =>
+          key.startsWith(`${shortMapName}_${mode}`),
+        );
+        if (availableKeys.length === 0) return null;
+        const randomKey = randomArrayElement(availableKeys);
+        const layerData = maps[randomKey];
+        if (!layerData) return null;
+        let layerName: string;
+        if (typeof layerData.layerName === 'string' && layerData.layerName) {
+          layerName = layerData.layerName;
+        } else if (
+          layerData.layerName &&
+          typeof layerData.layerName === 'object'
+        ) {
+          const keys = Object.keys(layerData.layerName);
+          layerName = keys.length ? keys[0] : randomKey;
+        } else {
+          layerName = randomKey;
+        }
+        return { level: shortMapName, layer: layerName };
+      }
+    }
+    return null;
+  }
+
+  // 2) Выбор фракций для команд
+
+  /**
+   * Извлекает список доступных фракций из объекта команды.
+   */
+  function getAvailableFactions(teamObj: TTeamFactions): string[] {
+    return Object.values(teamObj).flatMap((alliance) => Object.keys(alliance));
+  }
+
+  /**
+   * Выбирает случайную фракцию с учетом весов.
+   */
+  function pickRandomFaction(available: string[]): string | null {
+    const weightedFactions = available
+      .map((faction) => {
+        const tier = getFactionTier(faction);
+        const weight = tier ? tieredFactions[tier].probability : 0;
+        return { item: faction, weight };
+      })
+      .filter((obj) => obj.weight > 0);
+    return weightedRandom(weightedFactions);
+  }
+
+  /**
+   * Определяет, к какому альянсу принадлежит фракция.
+   */
+  function getAllianceForFactionFromMap(
+    teamObj: TTeamFactions,
+    faction: string,
+  ): string | null {
+    for (const [alliance, factions] of Object.entries(teamObj)) {
+      if (factions.hasOwnProperty(faction)) return alliance;
+    }
+    logger.log(`Фракция "${faction}" не найдена ни в одном альянсе.`);
+    return null;
+  }
+
+  /**
+   * Выбирает две разные фракции из комбинированного формата.
+   */
+  function pickTwoDistinctFactions(
+    teamObj: TTeamFactions,
+  ): { team1: string; team2: string } | null {
+    const availableFactions = getAvailableFactions(teamObj);
+    if (availableFactions.length === 0) return null;
+    const faction1 = pickRandomFaction(availableFactions);
+    if (!faction1) return null;
+    const alliance1 = getAllianceForFactionFromMap(teamObj, faction1);
+    if (!alliance1) return null;
+    const availableFactions2 = availableFactions.filter((f) => {
+      const alliance = getAllianceForFactionFromMap(teamObj, f);
+      return alliance && alliance !== alliance1;
+    });
+    if (availableFactions2.length === 0) return null;
+    const faction2 = pickRandomFaction(availableFactions2);
+    if (!faction2) return null;
+    return { team1: faction1, team2: faction2 };
+  }
+
+  /**
+   * Выбирает фракции для команд в зависимости от формата карты.
+   */
+  function pickFactionsForTeams(
+    layerKey: string,
+  ): { team1: string; team2: string } | null {
+    const layerData = maps[layerKey];
+    if (!layerData) return null;
+    const { ['Team1 / Team2']: combined, Team1, Team2 } = layerData;
+    if (combined) {
+      return pickTwoDistinctFactions(combined);
+    } else if (Team1 && Team2) {
+      const faction1 = pickRandomFaction(getAvailableFactions(Team1));
+      const faction2 = pickRandomFaction(getAvailableFactions(Team2));
+      if (!faction1 || !faction2) return null;
+      return { team1: faction1, team2: faction2 };
+    } else {
+      logger.log(
+        `Ни формат "Team1 / Team2", ни отдельные Team1 и Team2 не найдены в карте ${layerKey}`,
+      );
+      return null;
+    }
+  }
+
+  // 3) Выбор типа войск (подфракции) для выбранных фракций
+
+  /**
+   * Выбирает типы войск для двух фракций, с учетом симметричного выбора при необходимости.
+   */
+  function pickSymmetricUnitTypes(
+    teamObj: TTeamFactions,
+    faction1: string,
+    faction2: string,
+  ): { type1: string; type2: string } | null {
+    const alliance1 = getAllianceForFactionFromMap(teamObj, faction1);
+    const alliance2 = getAllianceForFactionFromMap(teamObj, faction2);
+    if (!alliance1 || !alliance2) return null;
+    const availableTypes1: string[] = teamObj[alliance1][faction1];
+    const availableTypes2: string[] = teamObj[alliance2][faction2];
+    if (!availableTypes1?.length || !availableTypes2?.length) return null;
+
+    if (symmetricUnitTypes) {
+      const intersection = availableTypes1.filter((type) =>
+        availableTypes2.includes(type),
+      );
+      if (intersection.length > 0) {
+        const chosenType = pickWeightedUnitType(intersection);
+        if (chosenType) {
+          return { type1: chosenType, type2: chosenType };
+        } else {
+          const fallbackType = randomArrayElement(intersection);
+          return { type1: fallbackType, type2: fallbackType };
+        }
+      }
+    }
+    const type1 = pickWeightedUnitType(availableTypes1);
+    const type2 = pickWeightedUnitType(availableTypes2);
+    if (!type1 || !type2) return null;
+    return { type1, type2 };
+  }
+
+  /**
+   * Выбирает тип войск с учетом весов для подфракций.
+   */
+  function pickWeightedUnitType(available: string[]): string | null {
+    const weightedTypes = available
+      .map((type) => {
+        let typeWeight = 0;
+        for (const [, tier] of Object.entries(tieredSubfactions) as [
+          TierKey,
+          { probability: number; subfactions: string[] },
+        ][]) {
+          if (tier.subfactions.includes(type)) {
+            typeWeight = tier.probability;
+            break;
+          }
+        }
+        return { item: type, weight: typeWeight };
+      })
+      .filter((obj) => obj.weight > 0);
+    return weightedRandom(weightedTypes);
+  }
+
+  /**
+   * Основная функция для старта новой игры.
+   */
   const newGame = async () => {
-    const { id } = state;
-    rnsHistoryLayers = await getHistoryLayers(id);
-    const map = await recursiveGenerate();
-
-    if (map) {
-      logger.log(`Set next Layer ${map}`);
-      console.log(rnsHistoryLayers);
-      await adminSetNextLayer(execute, map);
+    try {
+      const chosenLayer = await pickRandomMap();
+      const factions = pickFactionsForTeams(chosenLayer);
+      if (!factions) {
+        logger.log('Не удалось выбрать фракции для команд.');
+        return;
+      }
+      const layerData = maps[chosenLayer];
+      if (!layerData) {
+        logger.log(`Данные для слоя ${chosenLayer} не найдены.`);
+        return;
+      }
+      if (!layerData['Team1 / Team2']) {
+        logger.log(
+          `Карта ${chosenLayer} не поддерживает формат "Team1 / Team2".`,
+        );
+        return;
+      }
+      const teamObj: TTeamFactions = layerData['Team1 / Team2'];
+      const unitTypes = pickSymmetricUnitTypes(
+        teamObj,
+        factions.team1,
+        factions.team2,
+      );
+      if (!unitTypes) {
+        logger.log('Не удалось выбрать типы войск для фракций.');
+        return;
+      }
+      const finalString = `${chosenLayer} ${factions.team1}+${unitTypes.type1} ${factions.team2}+${unitTypes.type2}`;
+      logger.log(`Следующая карта: ${finalString}`);
+      adminSetNextLayer(execute, finalString);
+    } catch (error) {
+      logger.log(
+        `Ошибка в newGame: ${error instanceof Error ? error.message : error}`,
+      );
     }
   };
 
   listener.on(EVENTS.NEW_GAME, newGame);
-
-  const recursiveGenerate = async (): Promise<string> => {
-    const { id } = state;
-    if (rnsHistoryLayers.length >= historyLayersMax) {
-      await cleanHistoryLayers(id, rnsHistoryLayers[historyLayersMax - 1]);
-    }
-
-    if (rnsHistoryLayers.length >= historyLayersMax) {
-      rnsHistoryLayers = rnsHistoryLayers.slice(-1);
-      return recursiveGenerate();
-    }
-
-    const layer = getRandomLayer();
-    // if (!rnsHistoryLayers.find((e) => e === layer.layer)) {
-    //   await serverHistoryLayers(id, layer.layer);
-    //   return layer.map;
-    // }
-
-    return recursiveGenerate();
-  };
-
-  const getRandomLayer = () => {
-    const layersLength = Object.keys(state.maps).length;
-    const random = Math.floor(Math.random() * layersLength);
-    const map = Object.keys(state.maps)[random];
-    const layer = state.maps[map].layerName;
-    return { layer, map };
-  };
 };

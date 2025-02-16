@@ -5,7 +5,7 @@ import { TPluginProps } from '../types';
 import { getPlayerByController } from './helpers';
 
 export const explosiveDamaged: TPluginProps = (state) => {
-  const { listener, execute, logger } = state;
+  const { listener, execute } = state;
 
   const grenadeTracker: Record<
     string,

@@ -18,84 +18,73 @@ export const skipmap: TPluginProps = (state, options) => {
   let voteStarting = false;
   let voteStartingRepeat = true;
   let secondsToEnd = voteDuration / 1000;
-  let skipMapTimeout = voteTimeout / 1000 / 60;
+  const skipMapTimeout = voteTimeout / 1000 / 60;
   let timer: NodeJS.Timeout;
   let timerDelayStarting: NodeJS.Timeout;
   let timerDelayNextStart: NodeJS.Timeout;
   let timerVoteTimeOutToStart: NodeJS.Timeout;
   let historyPlayers: string[] = [];
-  let votes: { [key in string]: string[] } = {
-    '+': [],
-    '-': [],
+  let votes: { [key: string]: string[] } = { '+': [], '-': [] };
+  let voteReadyAt = Date.now();
+  let skipmapRepeatAt = 0;
+
+  const getSkipmapVoteErrorMessage = (steamID: string): string | null => {
+    const { admins } = state;
+    if (state.votingActive || voteStarting) {
+      return 'В данный момент голосование уже идет!';
+    }
+    if (!voteStartingRepeat) {
+      const diffMs = skipmapRepeatAt - Date.now();
+      if (diffMs > 0) {
+        const diffMin = Math.ceil(diffMs / 1000 / 60);
+        return `До повторного голосования осталось ${diffMin} минут(ы)!`;
+      }
+      return 'Должно пройти 15 минут после последнего использования skipmap!';
+    }
+    if (!voteReadyToStart) {
+      const now = Date.now();
+      const diff = voteReadyAt - now;
+      if (diff > 0) {
+        const secondsLeft = Math.ceil(diff / 1000);
+        return `Голосование за завершение матча будет доступно через ${secondsLeft} секунд!`;
+      }
+      return 'Голосование за завершение матча ещё не готово!';
+    }
+    if (voteTimeOutToStart) {
+      return `Голосование за завершение матча доступно только в первые ${skipMapTimeout} минуты после начала матча!`;
+    }
+    if (onlyForVip && !admins?.[steamID]) {
+      return 'Команда доступна только Vip пользователям';
+    }
+    if (historyPlayers.includes(steamID)) {
+      return 'Вы уже запускали голосование, для каждого игрока доступно только одно голосование за игру!';
+    }
+    return null;
   };
 
   const chatCommand = (data: TChatMessage) => {
     const { steamID } = data;
-    const { admins } = state;
-    if (state.votingActive || voteStarting) {
-      adminWarn(execute, steamID, 'В данный момент голосование уже идет!');
-
-      return;
-    }
-
-    if (!voteStartingRepeat) {
-      adminWarn(
-        execute,
-        steamID,
-        'Должно пройти 15 минут после последнего использования skipmap!',
-      );
-
-      return;
-    }
-
-    if (!voteReadyToStart) {
-      adminWarn(
-        execute,
-        steamID,
-        'Голосование за завершение матча будет доступно через 1 минуту после начала матча!',
-      );
-
-      return;
-    }
-
-    if (voteTimeOutToStart) {
-      adminWarn(
-        execute,
-        steamID,
-        `Голосование за завершение матча доступно только в первые ${skipMapTimeout} минуты после начала матча!`,
-      );
-
-      return;
-    }
-
-    if (onlyForVip && !admins?.[steamID]) {
-      adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
-      return;
-    }
-
-    if (historyPlayers.find((i) => i === steamID)) {
-      adminWarn(
-        execute,
-        steamID,
-        'Вы уже запускали голосование, для каждого игрока доступно только одно голосование за игру!',
-      );
+    const errorMsg = getSkipmapVoteErrorMessage(steamID);
+    if (errorMsg) {
+      adminWarn(execute, steamID, errorMsg);
       return;
     }
 
     adminBroadcast(
       execute,
-      'Голосование за пропуск текущей карты!\nИспользуйте +(За) -(Против) для голосования',
+      'Голосование за пропуск текущей карты!\nИспользуйте +(За) или -(Против) для голосования',
     );
 
     historyPlayers.push(steamID);
     state.votingActive = true;
     voteStarting = true;
     voteStartingRepeat = false;
+
     timer = setInterval(() => {
-      secondsToEnd = secondsToEnd - voteTick / 1000;
+      secondsToEnd -= voteTick / 1000;
       const positive = votes['+'].length;
       const negative = votes['-'].length;
-      const currentVotes = positive - negative <= 0 ? 0 : positive - negative;
+      const currentVotes = Math.max(positive - negative, 0);
 
       if (secondsToEnd <= 0) {
         if (currentVotes >= needVotes) {
@@ -107,10 +96,10 @@ export const skipmap: TPluginProps = (state, options) => {
           state.skipmap = true;
           reset();
           adminEndMatch(execute);
-
           return;
         }
 
+        skipmapRepeatAt = Date.now() + voteRepeatDelay;
         timerDelayNextStart = setTimeout(() => {
           voteStartingRepeat = true;
         }, voteRepeatDelay);
@@ -123,14 +112,16 @@ export const skipmap: TPluginProps = (state, options) => {
           execute,
           `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
         );
-
         reset();
       } else {
         adminBroadcast(
           execute,
           `Голосование за пропуск текущей карты!\nЗа: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
         );
-        adminBroadcast(execute, 'Используйте +(За) -(Против) для голосования');
+        adminBroadcast(
+          execute,
+          'Используйте +(За) или -(Против) для голосования',
+        );
       }
     }, voteTick);
   };
@@ -138,15 +129,13 @@ export const skipmap: TPluginProps = (state, options) => {
   const chatMessage = (data: TChatMessage) => {
     if (!voteStarting) return;
     const { steamID } = data;
-    const message = data.message.trim();
+    const msg = data.message.trim();
 
-    if (message === '+' || message === '-') {
+    if (msg === '+' || msg === '-') {
       for (const key in votes) {
         votes[key] = votes[key].filter((p) => p !== steamID);
       }
-
-      votes[message].push(steamID);
-
+      votes[msg].push(steamID);
       adminWarn(execute, steamID, 'Твой голос принят!');
     }
   };
@@ -159,9 +148,12 @@ export const skipmap: TPluginProps = (state, options) => {
     voteStartingRepeat = true;
     voteTimeOutToStart = false;
     state.skipmap = false;
+    secondsToEnd = voteDuration / 1000;
+    voteReadyAt = Date.now() + 60000;
     timerDelayStarting = setTimeout(() => {
       voteReadyToStart = true;
     }, 60000);
+
     timerVoteTimeOutToStart = setTimeout(() => {
       voteTimeOutToStart = true;
     }, voteTimeout);
@@ -178,9 +170,6 @@ export const skipmap: TPluginProps = (state, options) => {
     secondsToEnd = voteDuration / 1000;
     voteStarting = false;
     state.votingActive = false;
-    votes = {
-      '+': [],
-      '-': [],
-    };
+    votes = { '+': [], '-': [] };
   };
 };

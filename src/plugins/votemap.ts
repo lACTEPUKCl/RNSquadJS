@@ -1,7 +1,108 @@
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
-import { TMapTeams, TPluginProps } from '../types';
+import { TMaps, TPluginProps, TTeamFactions } from '../types';
+
+type TeamKey = 'Team1' | 'Team2' | 'Team1 / Team2';
+
+const findFactionAlliance = (
+  faction: string,
+  teamData: TTeamFactions,
+  subFaction: string,
+): string | undefined => {
+  for (const alliance in teamData) {
+    if (
+      teamData[alliance][faction] &&
+      teamData[alliance][faction].includes(subFaction)
+    ) {
+      return alliance;
+    }
+  }
+  return undefined;
+};
+
+const validateFactionSubFaction = (
+  mapData: TMaps,
+  mapName: string,
+  teamName: TeamKey,
+  faction: string,
+  subFaction: string,
+  tempAlliance: { current?: string },
+): boolean => {
+  const mapEntry = mapData[mapName];
+  if (!mapEntry) return false;
+
+  if (mapEntry['Team1 / Team2']) {
+    teamName = 'Team1 / Team2';
+  }
+
+  const teamData: TTeamFactions | undefined = mapEntry[teamName];
+  if (!teamData) return false;
+
+  const alliance = findFactionAlliance(faction, teamData, subFaction);
+  if (tempAlliance.current === alliance || !alliance) {
+    tempAlliance.current = undefined;
+    return false;
+  }
+  tempAlliance.current = alliance;
+  return true;
+};
+
+const validateSelectedMapAndTeams = (
+  mapData: TMaps,
+  mapName: string,
+  team1Faction: string,
+  team1SubFaction: string,
+  team2Faction: string,
+  team2SubFaction: string,
+): boolean => {
+  const tempAlliance: { current?: string } = {};
+  const team1Valid = validateFactionSubFaction(
+    mapData,
+    mapName,
+    'Team1',
+    team1Faction,
+    team1SubFaction,
+    tempAlliance,
+  );
+  const team2Valid = validateFactionSubFaction(
+    mapData,
+    mapName,
+    'Team2',
+    team2Faction,
+    team2SubFaction,
+    tempAlliance,
+  );
+  return team1Valid && team2Valid;
+};
+
+const parseVoteMessage = (message: string) => {
+  const parts = message.split(/\s+/);
+  if (parts.length < 3) return { isValid: false };
+
+  const [layerName, team1Part, team2Part] = parts;
+  const [team1Faction, team1SubFaction] = team1Part.split('+');
+  const [team2Faction, team2SubFaction] = team2Part.split('+');
+
+  if (
+    !layerName ||
+    !team1Faction ||
+    !team1SubFaction ||
+    !team2Faction ||
+    !team2SubFaction
+  ) {
+    return { isValid: false };
+  }
+  return {
+    isValid: true,
+    mapName: layerName,
+    layerName,
+    team1Faction,
+    team1SubFaction,
+    team2Faction,
+    team2SubFaction,
+  };
+};
 
 export const voteMap: TPluginProps = (state, options) => {
   const { listener, execute, maps } = state;
@@ -11,118 +112,88 @@ export const voteMap: TPluginProps = (state, options) => {
   let secondsToEnd = voteDuration / 1000;
   let timer: NodeJS.Timeout;
   let timerDelayStarting: NodeJS.Timeout;
-  let timerDelayNextStart: NodeJS.Timeout;
-  let tempAlliance: string | undefined;
-  let vote = false;
+  const timerDelayNextStart: NodeJS.Timeout = setTimeout(() => {}, 0);
+  let voteCompleted = false;
   let historyPlayers: string[] = [];
-  let votes: { [key in string]: string[] } = {
-    '+': [],
-    '-': [],
-  };
+  let votes: { [key: string]: string[] } = { '+': [], '-': [] };
 
-  const findFactionAlliance = (
-    faction: string,
-    teamData: any,
-    subFaction: string,
-  ): string | undefined => {
-    for (const alliance in teamData) {
-      if (teamData[alliance][faction]) {
-        if (teamData[alliance][faction].includes(subFaction)) {
-          return alliance;
-        }
-        return;
+  const updateVoteStatus = (message: string) => {
+    secondsToEnd -= voteTick / 1000;
+    const positive = votes['+'].length;
+    const negative = votes['-'].length;
+    const currentVotes = Math.max(positive - negative, 0);
+
+    if (secondsToEnd <= 0) {
+      if (currentVotes >= needVotes) {
+        adminBroadcast(
+          execute,
+          `Голосование завершено!\nСледующая карта ${message}!`,
+        );
+        adminBroadcast(
+          execute,
+          `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
+        );
+        resetVote();
+        adminSetNextLayer(execute, message);
+        voteCompleted = true;
+      } else {
+        adminBroadcast(
+          execute,
+          'Голосование завершено!\nНе набрано необходимое количество голосов',
+        );
+        adminBroadcast(
+          execute,
+          `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
+        );
+        resetVote();
       }
+    } else {
+      adminBroadcast(
+        execute,
+        `Голосование за следующую карту ${message}!\nЗа: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
+      );
+      adminBroadcast(
+        execute,
+        'Используйте +(За) или -(Против) для голосования',
+      );
     }
-    return undefined;
   };
 
-  const validateFactionSubFaction = (
-    mapData: TMapTeams,
-    mapName: string,
-    teamName: string,
-    faction: string,
-    subFaction: string,
-  ): boolean => {
-    if (Object.keys(mapData[mapName])[0].includes('Team 1 / Team 2')) {
-      teamName = 'Team 1 / Team 2';
-    }
-
-    const teamData = mapData[mapName]?.[teamName];
-    const alliance = findFactionAlliance(faction, teamData, subFaction);
-
-    if (tempAlliance === alliance) {
-      tempAlliance = '';
-      return false;
-    }
-    if (!alliance) {
-      tempAlliance = '';
-      return false;
-    }
-    tempAlliance = alliance;
-
-    return true;
+  const resetVote = () => {
+    clearTimeout(timerDelayNextStart);
+    clearTimeout(timerDelayStarting);
+    clearInterval(timer);
+    secondsToEnd = voteDuration / 1000;
+    voteStarting = false;
+    state.votingActive = false;
+    votes = { '+': [], '-': [] };
   };
 
-  const validateSelectedMapAndTeams = (
-    mapData: TMapTeams,
-    mapName: string,
-    team1Faction: string,
-    team1SubFaction: string,
-    team2Faction: string,
-    team2SubFaction: string,
-  ): boolean => {
-    const team1Valid = validateFactionSubFaction(
-      mapData,
-      mapName,
-      'Team 1',
-      team1Faction,
-      team1SubFaction,
-    );
-
-    const team2Valid = validateFactionSubFaction(
-      mapData,
-      mapName,
-      'Team 2',
-      team2Faction,
-      team2SubFaction,
-    );
-
-    if (team1Valid && team2Valid) {
-      return true;
-    }
-
-    return false;
-  };
-
-  const chatCommand = (data: TChatMessage) => {
+  const handleChatCommand = (data: TChatMessage) => {
     const { steamID, message } = data;
     const { admins } = state;
+
     if (state.votingActive || voteStarting) {
       adminWarn(execute, steamID, 'В данный момент голосование уже идет!');
-
       return;
     }
-    if (vote) {
+    if (voteCompleted) {
       adminWarn(execute, steamID, 'Голосование уже прошло!');
       return;
     }
-
     if (!voteReadyToStart) {
       adminWarn(
         execute,
         steamID,
         'Голосование будет доступно через 1 минуту после старта карты!',
       );
-
       return;
     }
-
     if (onlyForVip && !admins?.[steamID]) {
       adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
       return;
     }
-
-    if (historyPlayers.find((i) => i === steamID)) {
+    if (historyPlayers.includes(steamID)) {
       adminWarn(
         execute,
         steamID,
@@ -131,36 +202,12 @@ export const voteMap: TPluginProps = (state, options) => {
       return;
     }
 
-    const parseMessage = (message: string) => {
-      const [layerName, team1, team2] = message.split(/\s+/);
-
-      if (!layerName || !team1 || !team2) {
-        return { isValid: false };
-      }
-
-      const [mapName] = layerName.split('_');
-
-      const [team1Faction, team1SubFaction] = team1.split('+');
-      const [team2Faction, team2SubFaction] = team2.split('+');
-
-      return {
-        isValid: true,
-        mapName,
-        layerName,
-        team1Faction,
-        team1SubFaction,
-        team2Faction,
-        team2SubFaction,
-      };
-    };
-
-    const parsedMessage = parseMessage(message);
-
-    if (!parsedMessage.isValid) {
+    const parsed = parseVoteMessage(message);
+    if (!parsed.isValid) {
       adminWarn(
         execute,
         steamID,
-        'Неправильный формат сообщения (Нужно указать название карты фракции и тип воиск!)',
+        'Неправильный формат сообщения (Нужно указать название карты, фракции и тип войск)!',
       );
       return;
     }
@@ -171,8 +218,7 @@ export const voteMap: TPluginProps = (state, options) => {
       team1SubFaction,
       team2Faction,
       team2SubFaction,
-    } = parsedMessage;
-
+    } = parsed;
     if (!layerName) return;
 
     const isValidMapAndTeams = validateSelectedMapAndTeams(
@@ -188,81 +234,41 @@ export const voteMap: TPluginProps = (state, options) => {
       adminWarn(
         execute,
         steamID,
-        'Неправильно указано название карты, список карт можно найти в дискорд канале discord.gg/rn-server плагины!',
+        'Неправильно указано название карты. Список карт можно найти в дискорд-канале discord.gg/rn-server!',
       );
       return;
     }
 
     adminBroadcast(
       execute,
-      `Голосование за следующую карту ${message}!\nИспользуйте +(За) -(Против) для голосования`,
+      `Голосование за следующую карту ${message}!\nИспользуйте +(За) или -(Против) для голосования`,
     );
 
     voteStarting = true;
     state.votingActive = true;
     historyPlayers.push(steamID);
+
     timer = setInterval(() => {
-      secondsToEnd = secondsToEnd - voteTick / 1000;
-      const positive = votes['+'].length;
-      const negative = votes['-'].length;
-      const currentVotes = positive - negative <= 0 ? 0 : positive - negative;
-
-      if (secondsToEnd <= 0) {
-        if (currentVotes >= needVotes) {
-          adminBroadcast(
-            execute,
-            `Голосование завершено!\nСледующая карта ${message}!`,
-          );
-          adminBroadcast(
-            execute,
-            `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
-          );
-
-          reset();
-          adminSetNextLayer(execute, message);
-          vote = true;
-          return;
-        }
-
-        adminBroadcast(
-          execute,
-          'Голосование завершено!\nНе набрано необходимое количество голосов',
-        );
-        adminBroadcast(
-          execute,
-          `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
-        );
-
-        reset();
-      } else {
-        adminBroadcast(
-          execute,
-          `Голосование за следующую карту ${message}!\nЗа: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
-        );
-        adminBroadcast(execute, 'Используйте +(За) -(Против) для голосования');
-      }
+      updateVoteStatus(message);
     }, voteTick);
   };
 
-  const chatMessage = (data: TChatMessage) => {
+  const handleChatMessage = (data: TChatMessage) => {
     if (!voteStarting) return;
-    const { steamID } = data;
-    const message = data.message.trim();
-
-    if (message === '+' || message === '-') {
+    const { steamID, message } = data;
+    const trimmed = message.trim();
+    if (trimmed === '+' || trimmed === '-') {
       for (const key in votes) {
         votes[key] = votes[key].filter((p) => p !== steamID);
       }
-
-      votes[message].push(steamID);
-
+      votes[trimmed].push(steamID);
       adminWarn(execute, steamID, 'Твой голос принят!');
     }
   };
 
-  const newGame = () => {
-    reset();
-    vote = false;
+  const handleNewGame = () => {
+    resetVote();
+    voteCompleted = false;
     voteReadyToStart = false;
     historyPlayers = [];
     timerDelayStarting = setTimeout(() => {
@@ -270,20 +276,7 @@ export const voteMap: TPluginProps = (state, options) => {
     }, 60000);
   };
 
-  listener.on(EVENTS.CHAT_COMMAND_VOTEMAP, chatCommand);
-  listener.on(EVENTS.CHAT_MESSAGE, chatMessage);
-  listener.on(EVENTS.NEW_GAME, newGame);
-
-  const reset = () => {
-    clearTimeout(timerDelayNextStart);
-    clearTimeout(timerDelayStarting);
-    clearInterval(timer);
-    secondsToEnd = voteDuration / 1000;
-    voteStarting = false;
-    state.votingActive = false;
-    votes = {
-      '+': [],
-      '-': [],
-    };
-  };
+  listener.on(EVENTS.CHAT_COMMAND_VOTEMAP, handleChatCommand);
+  listener.on(EVENTS.CHAT_MESSAGE, handleChatMessage);
+  listener.on(EVENTS.NEW_GAME, handleNewGame);
 };
