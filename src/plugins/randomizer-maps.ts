@@ -88,11 +88,6 @@ const tieredSubfactions: Record<
   },
 };
 
-/**
- * Универсальная функция для взвешенного выбора элемента.
- * @param items Массив объектов с элементом и его весом.
- * @returns Выбранный элемент или null, если массив пуст или суммарный вес равен нулю.
- */
 function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
   const totalWeight = items.reduce((sum, cur) => sum + cur.weight, 0);
   if (totalWeight === 0) return null;
@@ -104,11 +99,6 @@ function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
   return null;
 }
 
-/**
- * Определяет уровень (tier) для заданной фракции.
- * @param faction Название фракции.
- * @returns Ключ уровня или null, если фракция не найдена.
- */
 function getFactionTier(faction: string): TierKey | null {
   const tiers = Object.entries(tieredFactions) as [
     TierKey,
@@ -122,16 +112,10 @@ function getFactionTier(faction: string): TierKey | null {
   return null;
 }
 
-/**
- * Возвращает случайный элемент массива.
- */
 function randomArrayElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-/**
- * Проверяет, находится ли кандидат среди последних excludeCount элементов истории.
- */
 function isExcludedByHistory(
   history: string[],
   excludeCount: number,
@@ -140,17 +124,11 @@ function isExcludedByHistory(
   return history.slice(-excludeCount).includes(candidate);
 }
 
-/**
- * Основной плагин, осуществляющий выбор карты, фракций и типа войск.
- * Предполагается, что объект maps имеет тип TMaps.
- */
 export const randomizerMaps: TPluginProps = (state, options) => {
   const { listener, logger, maps, execute } = state;
   const { mode, symmetricUnitTypes, excludeCount } = options;
   const excludeCountNumber = Number(excludeCount);
-  /**
-   * Выбирает случайную карту с учетом истории.
-   */
+
   async function pickRandomMap(): Promise<string> {
     const recentHistory = await getHistoryLayers(state.id);
     const maxAttempts = 10;
@@ -160,7 +138,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     while (attempt < maxAttempts && !chosenMap) {
       const layerObj = getRandomLayerTiered();
       if (!layerObj) {
-        chosenMap = 'DefaultMap';
+        chosenMap = 'Narva_AAS_v1';
         break;
       }
       const { level, layer } = layerObj;
@@ -168,7 +146,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         attempt++;
         continue;
       }
-      // Обновляем историю выбора
+
       await serverHistoryLayers(state.id, level);
       recentHistory.push(level);
       while (recentHistory.length > 5) {
@@ -180,16 +158,13 @@ export const randomizerMaps: TPluginProps = (state, options) => {
 
     if (!chosenMap) {
       logger.log(
-        'Превышено число попыток выбора карты, используется DefaultMap.',
+        'Превышено число попыток выбора карты, используется Narva_AAS_v1.',
       );
-      chosenMap = 'DefaultMap';
+      chosenMap = 'Narva_AAS_v1';
     }
     return chosenMap;
   }
 
-  /**
-   * Выбирает случайную карту из tieredMaps с учетом весов.
-   */
   function getRandomLayerTiered(): { layer: string; level: string } | null {
     const tiers = Object.entries(tieredMaps) as [
       TierKey,
@@ -232,18 +207,10 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return null;
   }
 
-  // 2) Выбор фракций для команд
-
-  /**
-   * Извлекает список доступных фракций из объекта команды.
-   */
   function getAvailableFactions(teamObj: TTeamFactions): string[] {
     return Object.values(teamObj).flatMap((alliance) => Object.keys(alliance));
   }
 
-  /**
-   * Выбирает случайную фракцию с учетом весов.
-   */
   function pickRandomFaction(available: string[]): string | null {
     const weightedFactions = available
       .map((faction) => {
@@ -255,9 +222,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return weightedRandom(weightedFactions);
   }
 
-  /**
-   * Определяет, к какому альянсу принадлежит фракция.
-   */
   function getAllianceForFactionFromMap(
     teamObj: TTeamFactions,
     faction: string,
@@ -269,9 +233,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return null;
   }
 
-  /**
-   * Выбирает две разные фракции из комбинированного формата.
-   */
   function pickTwoDistinctFactions(
     teamObj: TTeamFactions,
   ): { team1: string; team2: string } | null {
@@ -291,9 +252,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return { team1: faction1, team2: faction2 };
   }
 
-  /**
-   * Выбирает фракции для команд в зависимости от формата карты.
-   */
   function pickFactionsForTeams(
     layerKey: string,
   ): { team1: string; team2: string } | null {
@@ -315,11 +273,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     }
   }
 
-  // 3) Выбор типа войск (подфракции) для выбранных фракций
-
-  /**
-   * Выбирает типы войск для двух фракций, с учетом симметричного выбора при необходимости.
-   */
   function pickSymmetricUnitTypes(
     teamObj: TTeamFactions,
     faction1: string,
@@ -352,9 +305,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return { type1, type2 };
   }
 
-  /**
-   * Выбирает тип войск с учетом весов для подфракций.
-   */
   function pickWeightedUnitType(available: string[]): string | null {
     const weightedTypes = available
       .map((type) => {
@@ -374,9 +324,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return weightedRandom(weightedTypes);
   }
 
-  /**
-   * Основная функция для старта новой игры.
-   */
   const newGame = async () => {
     try {
       const chosenLayer = await pickRandomMap();
