@@ -1,51 +1,63 @@
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
-import {
-  TFactionUnitTypes,
-  TLogger,
-  TMapTeams,
-  TTeamFactions,
-} from '../../types';
+import { TLogger, TMaps } from '../../types';
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
-export const initMaps = async (mapsName: string, logger: TLogger) => {
+export const initMaps = async (
+  mapsName: string,
+  logger: TLogger,
+): Promise<TMaps> => {
   logger.log('Loading maps');
 
   const filePath = path.resolve(__dirname, mapsName);
 
   if (!fs.existsSync(filePath)) {
-    logger.error(`Maps ${mapsName} not found`);
+    logger.error(`Maps file "${mapsName}" not found`);
     process.exit(1);
   }
 
-  return new Promise<TMapTeams>((res) => {
-    const data: TMapTeams = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-    if (!data || Object.keys(data).length === 0) {
-      logger.error(`Maps ${mapsName} empty or invalid`);
+  let rawData: string;
+  try {
+    rawData = fs.readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    logger.error(`Error reading file "${mapsName}": ${err}`);
+    process.exit(1);
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(rawData);
+  } catch (err) {
+    logger.error(`Error parsing JSON in "${mapsName}": ${err}`);
+    process.exit(1);
+  }
+
+  if (!data || typeof data !== 'object') {
+    logger.error(`Maps file "${mapsName}" is empty or invalid`);
+    process.exit(1);
+  }
+
+  const maps = data as TMaps;
+
+  for (const mapName in maps) {
+    const mapData = maps[mapName];
+    if (
+      !(
+        (mapData['Team1 / Team2'] &&
+          typeof mapData['Team1 / Team2'] === 'object') ||
+        (mapData.Team1 &&
+          typeof mapData.Team1 === 'object' &&
+          mapData.Team2 &&
+          typeof mapData.Team2 === 'object')
+      )
+    ) {
+      logger.error(`Map "${mapName}" has an invalid team structure`);
       process.exit(1);
     }
+  }
 
-    const maps: TMapTeams = {};
-
-    for (const mapName in data) {
-      const teams = data[mapName];
-      const teamsInfo: TTeamFactions = {};
-      for (const teamName in teams) {
-        const factions = teams[teamName];
-        const factionsInfo: TFactionUnitTypes = {};
-        for (const factionName in factions) {
-          const unitTypes = factions[factionName];
-          factionsInfo[factionName] = unitTypes;
-        }
-        teamsInfo[teamName] = factionsInfo;
-      }
-      maps[mapName] = teamsInfo;
-    }
-
-    logger.log('Loaded maps');
-
-    res(maps);
-  });
+  logger.log('Loaded maps');
+  return maps;
 };

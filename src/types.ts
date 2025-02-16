@@ -29,7 +29,7 @@ export type TServersState = {
     execute: TExecute;
     coreListener: EventEmitter;
     listener: EventEmitter;
-    maps: TMapTeams;
+    maps: TMaps;
     plugins: TPlugin[];
     // boolean for check current voting in plugins
     // votemap or skipmap
@@ -51,8 +51,16 @@ export type TServersState = {
   };
 };
 
+export type TMap = {
+  layerName?: string;
+  'Team1 / Team2'?: TTeamFactions;
+  // Либо раздельный:
+  Team1?: TTeamFactions;
+  Team2?: TTeamFactions;
+};
+
 export type TMaps = {
-  [key in string]: { layerName: string; layerMode: string };
+  [mapName: string]: TMap;
 };
 
 export type TFactionUnitTypes = {
@@ -60,11 +68,7 @@ export type TFactionUnitTypes = {
 };
 
 export type TTeamFactions = {
-  [team: string]: TFactionUnitTypes;
-};
-
-export type TMapTeams = {
-  [map: string]: TTeamFactions;
+  [alliance: string]: TFactionUnitTypes;
 };
 
 export type TAdmin = {

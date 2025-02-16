@@ -507,20 +507,12 @@ export async function getHistoryLayers(serverID: number) {
   return result?.rnsHistoryLayers || [];
 }
 
-export async function cleanHistoryLayers(
-  serverID: number,
-  rnsHistoryLayers: string,
-) {
+export async function cleanHistoryLayers(serverID: number) {
   if (!isConnected) return;
-  const result = await collectionServerInfo.findOne({
-    _id: serverID.toString(),
-  });
-  if (!result) return;
-  const data = {
-    $set: { rnsHistoryLayers: [rnsHistoryLayers] },
-  };
-
-  await collectionServerInfo.updateOne(result, data);
+  await collectionServerInfo.updateOne(
+    { _id: serverID.toString() },
+    { $pop: { rnsHistoryLayers: -1 } },
+  );
 }
 
 export async function getTimeStampForRestartServer(serverID: number) {
