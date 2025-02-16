@@ -182,8 +182,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         const mapsInTier = tier.maps;
         if (mapsInTier.length === 0) return null;
         const shortMapName = randomArrayElement(mapsInTier);
+        const modes = mode.split(',').map((m) => m.trim());
         const availableKeys = Object.keys(maps).filter((key) =>
-          key.startsWith(`${shortMapName}_${mode}`),
+          modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
         );
         if (availableKeys.length === 0) return null;
         const randomKey = randomArrayElement(availableKeys);
