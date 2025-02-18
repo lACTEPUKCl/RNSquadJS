@@ -53,7 +53,6 @@ export const knifeBroadcast: TPluginProps = (state) => {
         .replace('{attacker}', attacker.name)
         .replace('{victim}', victimName);
       adminBroadcast(execute, message);
-      logger.log(`Broadcast message sent: ${message}`);
     }
   };
 
