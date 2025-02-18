@@ -1,9 +1,15 @@
 import { EVENTS } from '../constants';
 import { adminSetNextLayer } from '../core';
 import {
+  cleanHistoryFactions,
   cleanHistoryLayers,
+  cleanHistoryUnitTypes,
+  getHistoryFactions,
   getHistoryLayers,
+  getHistoryUnitTypes,
+  serverHistoryFactions,
   serverHistoryLayers,
+  serverHistoryUnitTypes,
 } from '../rnsdb';
 import { TPluginProps, TTeamFactions } from '../types';
 
@@ -66,7 +72,6 @@ const tieredSubfactions: Record<
     probability: 50,
     subfactions: [
       'CombinedArms',
-      'AirAssault',
       'Armored',
       'Mechanized',
       'Support',
@@ -76,11 +81,11 @@ const tieredSubfactions: Record<
   },
   A: {
     probability: 30,
-    subfactions: ['AirAssault'],
+    subfactions: [],
   },
   B: {
     probability: 20,
-    subfactions: ['Armored', 'Mechanized'],
+    subfactions: ['Armored', 'Mechanized', 'AirAssault'],
   },
   C: {
     probability: 0,
@@ -126,8 +131,16 @@ function isExcludedByHistory(
 
 export const randomizerMaps: TPluginProps = (state, options) => {
   const { listener, logger, maps, execute } = state;
-  const { mode, symmetricUnitTypes, excludeCount } = options;
-  const excludeCountNumber = Number(excludeCount);
+  const {
+    mode,
+    symmetricUnitTypes,
+    excludeCountLayers,
+    excludeCountFactions,
+    excludeCountUnitTypes,
+  } = options;
+  const excludeCountLayersNumber = Number(excludeCountLayers);
+  const excludeCountFactionsNumber = Number(excludeCountFactions);
+  const excludeCountUnitTypesNumber = Number(excludeCountUnitTypes);
 
   async function pickRandomMap(): Promise<string> {
     const recentHistory = await getHistoryLayers(state.id);
@@ -142,14 +155,14 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         break;
       }
       const { level, layer } = layerObj;
-      if (isExcludedByHistory(recentHistory, excludeCountNumber, level)) {
+      if (isExcludedByHistory(recentHistory, excludeCountLayersNumber, level)) {
         attempt++;
         continue;
       }
 
       await serverHistoryLayers(state.id, level);
       recentHistory.push(level);
-      while (recentHistory.length > 5) {
+      while (recentHistory.length > excludeCountLayersNumber) {
         recentHistory.shift();
         await cleanHistoryLayers(state.id);
       }
@@ -328,11 +341,44 @@ export const randomizerMaps: TPluginProps = (state, options) => {
   const newGame = async () => {
     try {
       const chosenLayer = await pickRandomMap();
-      const factions = pickFactionsForTeams(chosenLayer);
+      const factionHistory = await getHistoryFactions(state.id);
+      const maxFactionAttempts = 10;
+      let factions: { team1: string; team2: string } | null = null;
+      let factionAttempt = 0;
+      while (factionAttempt < maxFactionAttempts && !factions) {
+        const candidateFactions = pickFactionsForTeams(chosenLayer);
+        if (!candidateFactions) break;
+
+        if (
+          isExcludedByHistory(
+            factionHistory,
+            excludeCountLayersNumber,
+            candidateFactions.team1,
+          ) ||
+          isExcludedByHistory(
+            factionHistory,
+            excludeCountLayersNumber,
+            candidateFactions.team2,
+          )
+        ) {
+          factionAttempt++;
+          continue;
+        }
+
+        factions = candidateFactions;
+        await serverHistoryFactions(state.id, factions.team1);
+        await serverHistoryFactions(state.id, factions.team2);
+        factionHistory.push(factions.team1, factions.team2);
+        while (factionHistory.length > excludeCountFactionsNumber) {
+          factionHistory.shift();
+          await cleanHistoryFactions(state.id);
+        }
+      }
       if (!factions) {
-        logger.log('Не удалось выбрать фракции для команд.');
+        logger.log('Не удалось выбрать фракции для команд с учётом истории.');
         return;
       }
+
       const layerData = maps[chosenLayer];
       if (!layerData) {
         logger.log(`Данные для слоя ${chosenLayer} не найдены.`);
@@ -345,15 +391,51 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         return;
       }
       const teamObj: TTeamFactions = layerData['Team1 / Team2'];
-      const unitTypes = pickSymmetricUnitTypes(
-        teamObj,
-        factions.team1,
-        factions.team2,
-      );
+      const unitTypeHistory = await getHistoryUnitTypes(state.id);
+      const maxUnitTypeAttempts = 10;
+      let unitTypes: { type1: string; type2: string } | null = null;
+      let unitTypeAttempt = 0;
+      while (unitTypeAttempt < maxUnitTypeAttempts && !unitTypes) {
+        const candidateUnitTypes = pickSymmetricUnitTypes(
+          teamObj,
+          factions.team1,
+          factions.team2,
+        );
+        if (!candidateUnitTypes) break;
+        if (
+          isExcludedByHistory(
+            unitTypeHistory,
+            excludeCountUnitTypesNumber,
+            candidateUnitTypes.type1,
+          ) ||
+          isExcludedByHistory(
+            unitTypeHistory,
+            excludeCountUnitTypesNumber,
+            candidateUnitTypes.type2,
+          )
+        ) {
+          unitTypeAttempt++;
+          continue;
+        }
+        unitTypes = candidateUnitTypes;
+        await serverHistoryUnitTypes(state.id, candidateUnitTypes.type1);
+        await serverHistoryUnitTypes(state.id, candidateUnitTypes.type2);
+        unitTypeHistory.push(
+          candidateUnitTypes.type1,
+          candidateUnitTypes.type2,
+        );
+        while (unitTypeHistory.length > excludeCountUnitTypesNumber) {
+          unitTypeHistory.shift();
+          await cleanHistoryUnitTypes(state.id);
+        }
+      }
       if (!unitTypes) {
-        logger.log('Не удалось выбрать типы войск для фракций.');
+        logger.log(
+          'Не удалось выбрать типы войск для фракций с учётом истории.',
+        );
         return;
       }
+
       const finalString = `${chosenLayer} ${factions.team1}+${unitTypes.type1} ${factions.team2}+${unitTypes.type2}`;
       logger.log(`Следующая карта: ${finalString}`);
       adminSetNextLayer(execute, finalString);

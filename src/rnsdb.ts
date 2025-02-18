@@ -30,6 +30,8 @@ interface Main {
 interface Info {
   _id: string;
   rnsHistoryLayers?: string[];
+  rnsHistoryFactions?: string[];
+  rnsHistoryUnitTypes?: string[];
   timeStampToRestart?: number;
   lastUpdate?: string;
   seeding?: boolean;
@@ -512,6 +514,71 @@ export async function cleanHistoryLayers(serverID: number) {
   await collectionServerInfo.updateOne(
     { _id: serverID.toString() },
     { $pop: { rnsHistoryLayers: -1 } },
+  );
+}
+
+export async function serverHistoryFactions(serverID: number, faction: string) {
+  if (!faction || !isConnected) return;
+  const server = await collectionServerInfo.findOne({
+    _id: serverID.toString(),
+  });
+  if (!server) return;
+
+  const data = {
+    $push: {
+      rnsHistoryFactions: faction,
+    },
+  };
+  await collectionServerInfo.updateOne({ _id: serverID.toString() }, data);
+}
+
+export async function getHistoryFactions(serverID: number): Promise<string[]> {
+  if (!isConnected) return [];
+  const result = await collectionServerInfo.findOne({
+    _id: serverID.toString(),
+  });
+  return result?.rnsHistoryFactions || [];
+}
+
+export async function cleanHistoryFactions(serverID: number) {
+  if (!isConnected) return;
+  await collectionServerInfo.updateOne(
+    { _id: serverID.toString() },
+    { $pop: { rnsHistoryFactions: -1 } },
+  );
+}
+
+export async function serverHistoryUnitTypes(
+  serverID: number,
+  unitType: string,
+) {
+  if (!unitType || !isConnected) return;
+  const server = await collectionServerInfo.findOne({
+    _id: serverID.toString(),
+  });
+  if (!server) return;
+
+  const data = {
+    $push: {
+      rnsHistoryUnitTypes: unitType,
+    },
+  };
+  await collectionServerInfo.updateOne({ _id: serverID.toString() }, data);
+}
+
+export async function getHistoryUnitTypes(serverID: number): Promise<string[]> {
+  if (!isConnected) return [];
+  const result = await collectionServerInfo.findOne({
+    _id: serverID.toString(),
+  });
+  return result?.rnsHistoryUnitTypes || [];
+}
+
+export async function cleanHistoryUnitTypes(serverID: number): Promise<void> {
+  if (!isConnected) return;
+  await collectionServerInfo.updateOne(
+    { _id: serverID.toString() },
+    { $pop: { rnsHistoryUnitTypes: -1 } },
   );
 }
 
