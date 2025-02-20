@@ -130,7 +130,7 @@ function isExcludedByHistory(
 }
 
 export const randomizerMaps: TPluginProps = (state, options) => {
-  const { listener, logger, maps, execute, nextMap } = state;
+  const { listener, logger, maps, execute } = state;
   const {
     mode,
     symmetricUnitTypes,
