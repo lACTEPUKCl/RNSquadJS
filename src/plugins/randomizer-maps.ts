@@ -130,7 +130,7 @@ function isExcludedByHistory(
 }
 
 export const randomizerMaps: TPluginProps = (state, options) => {
-  const { listener, logger, maps, execute } = state;
+  const { listener, logger, maps, execute, nextMap } = state;
   const {
     mode,
     symmetricUnitTypes,
@@ -342,13 +342,12 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     try {
       const chosenLayer = await pickRandomMap();
       const factionHistory = await getHistoryFactions(state.id);
-      const maxFactionAttempts = 10;
       let factions: { team1: string; team2: string } | null = null;
-      let factionAttempt = 0;
-      while (factionAttempt < maxFactionAttempts && !factions) {
+      while (true) {
         const candidateFactions = pickFactionsForTeams(chosenLayer);
-        if (!candidateFactions) break;
-
+        if (!candidateFactions) {
+          continue;
+        }
         if (
           isExcludedByHistory(
             factionHistory,
@@ -361,10 +360,8 @@ export const randomizerMaps: TPluginProps = (state, options) => {
             candidateFactions.team2,
           )
         ) {
-          factionAttempt++;
           continue;
         }
-
         factions = candidateFactions;
         await serverHistoryFactions(state.id, factions.team1);
         await serverHistoryFactions(state.id, factions.team2);
@@ -373,10 +370,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           factionHistory.shift();
           await cleanHistoryFactions(state.id);
         }
-      }
-      if (!factions) {
-        logger.log('Не удалось выбрать фракции для команд с учётом истории.');
-        return;
+        break;
       }
 
       const layerData = maps[chosenLayer];
@@ -392,16 +386,16 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       }
       const teamObj: TTeamFactions = layerData['Team1 / Team2'];
       const unitTypeHistory = await getHistoryUnitTypes(state.id);
-      const maxUnitTypeAttempts = 10;
       let unitTypes: { type1: string; type2: string } | null = null;
-      let unitTypeAttempt = 0;
-      while (unitTypeAttempt < maxUnitTypeAttempts && !unitTypes) {
+      while (true) {
         const candidateUnitTypes = pickSymmetricUnitTypes(
           teamObj,
           factions.team1,
           factions.team2,
         );
-        if (!candidateUnitTypes) break;
+        if (!candidateUnitTypes) {
+          continue;
+        }
         if (
           isExcludedByHistory(
             unitTypeHistory,
@@ -414,7 +408,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
             candidateUnitTypes.type2,
           )
         ) {
-          unitTypeAttempt++;
           continue;
         }
         unitTypes = candidateUnitTypes;
@@ -428,12 +421,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           unitTypeHistory.shift();
           await cleanHistoryUnitTypes(state.id);
         }
-      }
-      if (!unitTypes) {
-        logger.log(
-          'Не удалось выбрать типы войск для фракций с учётом истории.',
-        );
-        return;
+        break;
       }
 
       const finalString = `${chosenLayer} ${factions.team1}+${unitTypes.type1} ${factions.team2}+${unitTypes.type2}`;
