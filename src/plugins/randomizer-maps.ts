@@ -109,9 +109,9 @@ function getFactionTier(faction: string): TierKey | null {
     TierKey,
     { probability: number; factions: string[] },
   ][];
-  for (const [, tier] of tiers) {
+  for (const [tierKey, tier] of tiers) {
     if (tier.factions.includes(faction)) {
-      return tiers.find(([, t]) => t.factions.includes(faction))?.[0] || null;
+      return tierKey;
     }
   }
   return null;
@@ -149,6 +149,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     let chosenMap: string | null = null;
 
     while (attempt < maxAttempts && !chosenMap) {
+      attempt++;
       const layerObj = getRandomLayerTiered();
       if (!layerObj) {
         chosenMap = 'Narva_AAS_v1';
@@ -156,7 +157,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       }
       const { level, layer } = layerObj;
       if (isExcludedByHistory(recentHistory, excludeCountLayersNumber, level)) {
-        attempt++;
         continue;
       }
 
@@ -170,9 +170,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     }
 
     if (!chosenMap) {
-      logger.log(
-        'Превышено число попыток выбора карты, используется Narva_AAS_v1.',
-      );
       chosenMap = 'Narva_AAS_v1';
     }
     return chosenMap;
@@ -343,7 +340,13 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       const chosenLayer = await pickRandomMap();
       const factionHistory = await getHistoryFactions(state.id);
       let factions: { team1: string; team2: string } | null = null;
+      let factionAttempt = 0;
+      const maxFactionAttempts = 100;
       while (true) {
+        factionAttempt++;
+        if (factionAttempt > maxFactionAttempts) {
+          return;
+        }
         const candidateFactions = pickFactionsForTeams(chosenLayer);
         if (!candidateFactions) {
           continue;
@@ -351,12 +354,12 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         if (
           isExcludedByHistory(
             factionHistory,
-            excludeCountLayersNumber,
+            excludeCountFactionsNumber,
             candidateFactions.team1,
           ) ||
           isExcludedByHistory(
             factionHistory,
-            excludeCountLayersNumber,
+            excludeCountFactionsNumber,
             candidateFactions.team2,
           )
         ) {
@@ -387,15 +390,31 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       const teamObj: TTeamFactions = layerData['Team1 / Team2'];
       const unitTypeHistory = await getHistoryUnitTypes(state.id);
       let unitTypes: { type1: string; type2: string } | null = null;
+      let unitAttempt = 0;
+      const maxUnitAttempts = 100;
+      let forcedCandidate: { type1: string; type2: string } | null = null;
+
       while (true) {
+        unitAttempt++;
+
         const candidateUnitTypes = pickSymmetricUnitTypes(
           teamObj,
           factions.team1,
           factions.team2,
         );
+
         if (!candidateUnitTypes) {
+          if (unitAttempt >= maxUnitAttempts) {
+            if (!forcedCandidate) {
+              return;
+            } else {
+              unitTypes = forcedCandidate;
+              break;
+            }
+          }
           continue;
         }
+
         if (
           isExcludedByHistory(
             unitTypeHistory,
@@ -408,8 +427,15 @@ export const randomizerMaps: TPluginProps = (state, options) => {
             candidateUnitTypes.type2,
           )
         ) {
+          forcedCandidate = candidateUnitTypes;
+
+          if (unitAttempt >= maxUnitAttempts) {
+            unitTypes = forcedCandidate;
+            break;
+          }
           continue;
         }
+
         unitTypes = candidateUnitTypes;
         await serverHistoryUnitTypes(state.id, candidateUnitTypes.type1);
         await serverHistoryUnitTypes(state.id, candidateUnitTypes.type2);
@@ -417,6 +443,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           candidateUnitTypes.type1,
           candidateUnitTypes.type2,
         );
+
         while (unitTypeHistory.length > excludeCountUnitTypesNumber) {
           unitTypeHistory.shift();
           await cleanHistoryUnitTypes(state.id);
