@@ -34,7 +34,7 @@ export const knifeBroadcast: TPluginProps = (state) => {
     '{attacker} безжалостно почикал {victim} ножом!',
     '{attacker} мгновенно отправил {victim} в мир иной ножевым ударом!',
     '{attacker} показал истинное мастерство ножевого боя, зарезав {victim}!',
-    '{attacker} зарезал {victim}, свежий кабаньчик!',
+    '{attacker} зарезал {victim}, свежий кабанчик!',
   ];
 
   const onPlayerWounded = ({
