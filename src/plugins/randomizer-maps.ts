@@ -150,13 +150,23 @@ export const randomizerMaps: TPluginProps = (state, options) => {
 
     while (attempt < maxAttempts && !chosenMap) {
       attempt++;
+      logger.log(`DEBUG: [pickRandomMap] Попытка ${attempt} выбора карты.`);
       const layerObj = getRandomLayerTiered();
       if (!layerObj) {
+        logger.log(
+          `DEBUG: [pickRandomMap] Не удалось получить данные из getRandomLayerTiered, устанавливаем карту по умолчанию.`,
+        );
         chosenMap = 'Narva_AAS_v1';
         break;
       }
       const { level, layer } = layerObj;
+      logger.log(
+        `DEBUG: [pickRandomMap] Попытка ${attempt}: выбран уровень "${level}", карта "${layer}".`,
+      );
       if (isExcludedByHistory(recentHistory, excludeCountLayersNumber, level)) {
+        logger.log(
+          `DEBUG: [pickRandomMap] Карта "${level}" исключена по истории (последние ${excludeCountLayersNumber}).`,
+        );
         continue;
       }
 
@@ -170,8 +180,12 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     }
 
     if (!chosenMap) {
+      logger.log(
+        `DEBUG: [pickRandomMap] Не удалось выбрать карту после ${maxAttempts} попыток, устанавливаем карту по умолчанию.`,
+      );
       chosenMap = 'Narva_AAS_v1';
     }
+    logger.log(`DEBUG: [pickRandomMap] Итоговая выбранная карта: ${chosenMap}`);
     return chosenMap;
   }
 
@@ -186,9 +200,14 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     );
     const rnd = Math.random() * totalProb;
     let cumulative = 0;
-    for (const [, tier] of tiers) {
+    for (const [tierKey, tier] of tiers) {
       cumulative += tier.probability;
       if (rnd <= cumulative) {
+        logger.log(
+          `DEBUG: [getRandomLayerTiered] Выбрана категория ${tierKey} (rnd=${rnd.toFixed(
+            2,
+          )}, cumulative=${cumulative}).`,
+        );
         const mapsInTier = tier.maps;
         if (mapsInTier.length === 0) return null;
         const shortMapName = randomArrayElement(mapsInTier);
@@ -196,7 +215,14 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         const availableKeys = Object.keys(maps).filter((key) =>
           modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
         );
-        if (availableKeys.length === 0) return null;
+        if (availableKeys.length === 0) {
+          logger.log(
+            `DEBUG: [getRandomLayerTiered] Для карты "${shortMapName}" не найдено доступных ключей с режимами [${modes.join(
+              ', ',
+            )}].`,
+          );
+          return null;
+        }
         const randomKey = randomArrayElement(availableKeys);
         const layerData = maps[randomKey];
         if (!layerData) return null;
@@ -230,7 +256,13 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         return { item: faction, weight };
       })
       .filter((obj) => obj.weight > 0);
-    return weightedRandom(weightedFactions);
+    const chosen = weightedRandom(weightedFactions);
+    logger.log(
+      `DEBUG: [pickRandomFaction] Из доступных фракций [${available.join(
+        ', ',
+      )}] выбрана: ${chosen}`,
+    );
+    return chosen;
   }
 
   function getAllianceForFactionFromMap(
@@ -240,7 +272,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     for (const [alliance, factions] of Object.entries(teamObj)) {
       if (factions.hasOwnProperty(faction)) return alliance;
     }
-    logger.log(`Фракция "${faction}" не найдена ни в одном альянсе.`);
+    logger.log(
+      `DEBUG: [getAllianceForFactionFromMap] Фракция "${faction}" не найдена ни в одном альянсе.`,
+    );
     return null;
   }
 
@@ -260,6 +294,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     if (availableFactions2.length === 0) return null;
     const faction2 = pickRandomFaction(availableFactions2);
     if (!faction2) return null;
+    logger.log(
+      `DEBUG: [pickTwoDistinctFactions] Выбраны фракции: ${faction1} (альянс: ${alliance1}) и ${faction2}.`,
+    );
     return { team1: faction1, team2: faction2 };
   }
 
@@ -278,7 +315,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       return { team1: faction1, team2: faction2 };
     } else {
       logger.log(
-        `Ни формат "Team1 / Team2", ни отдельные Team1 и Team2 не найдены в карте ${layerKey}`,
+        `DEBUG: [pickFactionsForTeams] Ни формат "Team1 / Team2", ни отдельные Team1 и Team2 не найдены в карте ${layerKey}`,
       );
       return null;
     }
@@ -303,15 +340,24 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       if (intersection.length > 0) {
         const chosenType = pickWeightedUnitType(intersection);
         if (chosenType) {
+          logger.log(
+            `DEBUG: [pickSymmetricUnitTypes] Найден пересекающийся тип: ${chosenType}`,
+          );
           return { type1: chosenType, type2: chosenType };
         } else {
           const fallbackType = randomArrayElement(intersection);
+          logger.log(
+            `DEBUG: [pickSymmetricUnitTypes] Фоллбек на пересекающийся тип: ${fallbackType}`,
+          );
           return { type1: fallbackType, type2: fallbackType };
         }
       }
     }
     const type1 = pickWeightedUnitType(availableTypes1);
     const type2 = pickWeightedUnitType(availableTypes2);
+    logger.log(
+      `DEBUG: [pickSymmetricUnitTypes] Выбраны типы: ${type1} и ${type2}`,
+    );
     if (!type1 || !type2) return null;
     return { type1, type2 };
   }
@@ -332,23 +378,40 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         return { item: type, weight: typeWeight };
       })
       .filter((obj) => obj.weight > 0);
-    return weightedRandom(weightedTypes);
+    const chosen = weightedRandom(weightedTypes);
+    logger.log(
+      `DEBUG: [pickWeightedUnitType] Из [${available.join(
+        ', ',
+      )}] выбран тип: ${chosen}`,
+    );
+    return chosen;
   }
 
   const newGame = async () => {
     try {
+      logger.log('DEBUG: [newGame] Начало генерации новой игры.');
       const chosenLayer = await pickRandomMap();
+      logger.log(`DEBUG: [newGame] Выбран слой: ${chosenLayer}`);
       const factionHistory = await getHistoryFactions(state.id);
       let factions: { team1: string; team2: string } | null = null;
       let factionAttempt = 0;
       const maxFactionAttempts = 100;
       while (true) {
         factionAttempt++;
+        logger.log(
+          `DEBUG: [newGame] Попытка выбора фракций №${factionAttempt}`,
+        );
         if (factionAttempt > maxFactionAttempts) {
+          logger.log(
+            `DEBUG: [newGame] Превышено максимальное число попыток выбора фракций.`,
+          );
           return;
         }
         const candidateFactions = pickFactionsForTeams(chosenLayer);
         if (!candidateFactions) {
+          logger.log(
+            `DEBUG: [newGame] Кандидат по фракциям не получен, пробуем снова.`,
+          );
           continue;
         }
         if (
@@ -363,6 +426,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
             candidateFactions.team2,
           )
         ) {
+          logger.log(
+            `DEBUG: [newGame] Кандидатские фракции ${candidateFactions.team1} и ${candidateFactions.team2} исключены по истории (последние ${excludeCountFactionsNumber}).`,
+          );
           continue;
         }
         factions = candidateFactions;
@@ -373,17 +439,22 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           factionHistory.shift();
           await cleanHistoryFactions(state.id);
         }
+        logger.log(
+          `DEBUG: [newGame] Выбраны фракции: ${factions.team1} и ${factions.team2}`,
+        );
         break;
       }
 
       const layerData = maps[chosenLayer];
       if (!layerData) {
-        logger.log(`Данные для слоя ${chosenLayer} не найдены.`);
+        logger.log(
+          `DEBUG: [newGame] Данные для слоя ${chosenLayer} не найдены.`,
+        );
         return;
       }
       if (!layerData['Team1 / Team2']) {
         logger.log(
-          `Карта ${chosenLayer} не поддерживает формат "Team1 / Team2".`,
+          `DEBUG: [newGame] Карта ${chosenLayer} не поддерживает формат "Team1 / Team2".`,
         );
         return;
       }
@@ -396,6 +467,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
 
       while (true) {
         unitAttempt++;
+        logger.log(
+          `DEBUG: [newGame] Попытка выбора типов юнитов №${unitAttempt}`,
+        );
 
         const candidateUnitTypes = pickSymmetricUnitTypes(
           teamObj,
@@ -404,8 +478,14 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         );
 
         if (!candidateUnitTypes) {
+          logger.log(
+            `DEBUG: [newGame] Не удалось выбрать кандидатские типы юнитов, повтор.`,
+          );
           if (unitAttempt >= maxUnitAttempts) {
             if (!forcedCandidate) {
+              logger.log(
+                `DEBUG: [newGame] Превышено число попыток выбора типов юнитов без форсированного кандидата.`,
+              );
               return;
             } else {
               unitTypes = forcedCandidate;
@@ -414,7 +494,9 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           }
           continue;
         }
-
+        logger.log(
+          `DEBUG: [newGame] Кандидатские типы юнитов: ${candidateUnitTypes.type1} и ${candidateUnitTypes.type2}`,
+        );
         if (
           isExcludedByHistory(
             unitTypeHistory,
@@ -427,9 +509,15 @@ export const randomizerMaps: TPluginProps = (state, options) => {
             candidateUnitTypes.type2,
           )
         ) {
+          logger.log(
+            `DEBUG: [newGame] Типы юнитов ${candidateUnitTypes.type1} и ${candidateUnitTypes.type2} исключены по истории (последние ${excludeCountUnitTypesNumber}).`,
+          );
           forcedCandidate = candidateUnitTypes;
 
           if (unitAttempt >= maxUnitAttempts) {
+            logger.log(
+              `DEBUG: [newGame] Превышено число попыток выбора типов юнитов, используем форсированный кандидат.`,
+            );
             unitTypes = forcedCandidate;
             break;
           }
@@ -448,15 +536,20 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           unitTypeHistory.shift();
           await cleanHistoryUnitTypes(state.id);
         }
+        logger.log(
+          `DEBUG: [newGame] Выбраны типы юнитов: ${candidateUnitTypes.type1} и ${candidateUnitTypes.type2}`,
+        );
         break;
       }
 
       const finalString = `${chosenLayer} ${factions.team1}+${unitTypes.type1} ${factions.team2}+${unitTypes.type2}`;
-      logger.log(`Следующая карта: ${finalString}`);
+      logger.log(`DEBUG: [newGame] Следующая карта: ${finalString}`);
       adminSetNextLayer(execute, finalString);
     } catch (error) {
       logger.log(
-        `Ошибка в newGame: ${error instanceof Error ? error.message : error}`,
+        `DEBUG: [newGame] Ошибка: ${
+          error instanceof Error ? error.message : error
+        }`,
       );
     }
   };
