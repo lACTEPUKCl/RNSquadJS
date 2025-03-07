@@ -549,11 +549,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
 
       const finalString = `${chosenLayer} ${factions.team1}+${unitTypes.type1} ${factions.team2}+${unitTypes.type2}`;
       logger.log(`DEBUG: [newGame] Следующая карта: ${finalString}`);
-      if (symmetricUnitTypesBoolean && unitTypes.type1 !== unitTypes.type2) {
-        throw new Error(
-          `Symmetric unit types enabled, but team1 unit type (${unitTypes.type1}) is not equal to team2 unit type (${unitTypes.type2}).`,
-        );
-      }
       adminSetNextLayer(execute, finalString);
     } catch (error) {
       logger.log(
