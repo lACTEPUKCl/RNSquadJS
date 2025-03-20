@@ -1,4 +1,5 @@
 import { getServersState } from '../serversState';
+import { adminCamBlocker } from './admin-cam-blocker';
 import { explosiveDamaged } from './apply-explosive-damaged';
 import { autoKickUnassigned } from './auto-kick-unassigned';
 import { autorestartServers } from './autorestart-servers';
@@ -34,6 +35,7 @@ const plugins = [
   autoUpdateMods,
   explosiveDamaged,
   knifeBroadcast,
+  adminCamBlocker,
 ];
 
 export const initPlugins = async (id: number) => {
