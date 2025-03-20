@@ -58,3 +58,10 @@ export const adminForceTeamChange = async (
 export const adminKillServer = async (execute: TExecute) => {
   await execute(`AdminKillServer`);
 };
+
+export const adminRemovePlayerFromSquad = async (
+  execute: TExecute,
+  steamID: string,
+) => {
+  await execute(`AdminRemovePlayerFromSquad ${steamID}`);
+};
