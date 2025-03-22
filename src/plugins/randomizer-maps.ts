@@ -353,7 +353,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         type2 = pickWeightedUnitType(availableTypes2, []);
       }
       logger.log(
-        `DEBUG: [pickSymmetricUnitTypes] Итоговый выбор (асимметричный): type1=${type1}, type2=${type2}.`,
+        `DEBUG: [pickSymmetricUnitTypes] Итоговый выбор: type1=${type1}, type2=${type2}.`,
       );
       if (!type1 || !type2) return null;
       return { type1, type2 };
@@ -642,6 +642,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       );
     }
   };
-  newGame();
+
   listener.on(EVENTS.NEW_GAME, newGame);
 };
