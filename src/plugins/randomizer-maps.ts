@@ -659,6 +659,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       );
     }
   };
-  newGame();
+
   listener.on(EVENTS.NEW_GAME, newGame);
 };
