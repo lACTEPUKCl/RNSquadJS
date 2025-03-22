@@ -70,14 +70,7 @@ const tieredSubfactions: Record<
 > = {
   S: {
     probability: 50,
-    subfactions: [
-      'CombinedArms',
-      'Armored',
-      'Mechanized',
-      'Support',
-      'LightInfantry',
-      'Motorized',
-    ],
+    subfactions: ['CombinedArms', 'Support', 'LightInfantry', 'Motorized'],
   },
   A: {
     probability: 30,
@@ -85,39 +78,13 @@ const tieredSubfactions: Record<
   },
   B: {
     probability: 20,
-    subfactions: ['Armored', 'Mechanized', 'AirAssault'],
+    subfactions: ['Armored', 'Mechanized', 'AirAssault', 'AmphibiousAssault'],
   },
   C: {
     probability: 0,
     subfactions: [],
   },
 };
-
-function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
-  const totalWeight = items.reduce((sum, cur) => sum + cur.weight, 0);
-  if (totalWeight === 0) return null;
-  let rnd = Math.random() * totalWeight;
-  for (const { item, weight } of items) {
-    rnd -= weight;
-    if (rnd <= 0) return item;
-  }
-  return null;
-}
-
-function getFactionTier(faction: string): TierKey | null {
-  const tiers = Object.entries(tieredFactions) as [
-    TierKey,
-    { probability: number; factions: string[] },
-  ][];
-  for (const [tierKey, tier] of tiers) {
-    if (tier.factions.includes(faction)) return tierKey;
-  }
-  return null;
-}
-
-function randomArrayElement<T>(array: T[]): T {
-  return array[Math.floor(Math.random() * array.length)];
-}
 
 export const randomizerMaps: TPluginProps = (state, options) => {
   const { id, listener, logger, maps, execute } = state;
@@ -133,118 +100,30 @@ export const randomizerMaps: TPluginProps = (state, options) => {
   const excludeCountUnitTypesNumber = Number(excludeCountUnitTypes);
   const symmetricUnitTypesBoolean = Boolean(symmetricUnitTypes) === true;
 
-  async function pickRandomMap(): Promise<string> {
-    const recentHistory = await getHistoryLayers(id);
-    const modes = mode.split(',').map((m) => m.trim());
-    let candidates: {
-      level: string;
-      layer: string;
-      tierProbability: number;
-    }[] = [];
+  function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
+    const totalWeight = items.reduce((sum, cur) => sum + cur.weight, 0);
+    if (totalWeight === 0) return null;
+    let rnd = Math.random() * totalWeight;
+    for (const { item, weight } of items) {
+      rnd -= weight;
+      if (rnd <= 0) return item;
+    }
+    return null;
+  }
 
-    for (const [tierKey, tier] of Object.entries(tieredMaps) as [
+  function getFactionTier(faction: string): TierKey | null {
+    const tiers = Object.entries(tieredFactions) as [
       TierKey,
-      { probability: number; maps: string[] },
-    ][]) {
-      for (const shortMapName of tier.maps) {
-        if (recentHistory.includes(shortMapName)) continue;
-        const availableKeys = Object.keys(maps).filter((key) =>
-          modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
-        );
-        if (availableKeys.length === 0) {
-          logger.log(
-            `DEBUG: [pickRandomMap] Для карты "${shortMapName}" не найдены ключи с режимами [${modes.join(
-              ', ',
-            )}].`,
-          );
-          continue;
-        }
-        const randomKey = randomArrayElement(availableKeys);
-        const layerData = maps[randomKey];
-        if (!layerData) continue;
-        let layerName: string;
-        if (typeof layerData.layerName === 'string' && layerData.layerName) {
-          layerName = layerData.layerName;
-        } else if (
-          layerData.layerName &&
-          typeof layerData.layerName === 'object'
-        ) {
-          const keys = Object.keys(layerData.layerName);
-          layerName = keys.length ? keys[0] : randomKey;
-        } else {
-          layerName = randomKey;
-        }
-        candidates.push({
-          level: shortMapName,
-          layer: layerName,
-          tierProbability: tier.probability,
-        });
-      }
+      { probability: number; factions: string[] },
+    ][];
+    for (const [tierKey, tier] of tiers) {
+      if (tier.factions.includes(faction)) return tierKey;
     }
+    return null;
+  }
 
-    if (candidates.length === 0) {
-      logger.log(
-        `DEBUG: [pickRandomMap] Нет доступных карт после фильтрации по истории, пробуем игнорировать историю.`,
-      );
-      for (const [tierKey, tier] of Object.entries(tieredMaps) as [
-        TierKey,
-        { probability: number; maps: string[] },
-      ][]) {
-        for (const shortMapName of tier.maps) {
-          const availableKeys = Object.keys(maps).filter((key) =>
-            modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
-          );
-          if (availableKeys.length === 0) continue;
-          const randomKey = randomArrayElement(availableKeys);
-          const layerData = maps[randomKey];
-          if (!layerData) continue;
-          let layerName: string;
-          if (typeof layerData.layerName === 'string' && layerData.layerName) {
-            layerName = layerData.layerName;
-          } else if (
-            layerData.layerName &&
-            typeof layerData.layerName === 'object'
-          ) {
-            const keys = Object.keys(layerData.layerName);
-            layerName = keys.length ? keys[0] : randomKey;
-          } else {
-            layerName = randomKey;
-          }
-          candidates.push({
-            level: shortMapName,
-            layer: layerName,
-            tierProbability: tier.probability,
-          });
-        }
-      }
-      if (candidates.length === 0) {
-        logger.log(
-          `DEBUG: [pickRandomMap] Нет доступных карт даже без фильтрации, устанавливаем карту по умолчанию.`,
-        );
-        return 'Narva_AAS_v1';
-      }
-    }
-
-    const chosenCandidate = weightedRandom(
-      candidates.map((c) => ({ item: c, weight: c.tierProbability })),
-    );
-    if (!chosenCandidate) {
-      logger.log(
-        `DEBUG: [pickRandomMap] Выбор карты завершился неудачей, устанавливаем карту по умолчанию.`,
-      );
-      return 'Narva_AAS_v1';
-    }
-
-    await serverHistoryLayers(id, chosenCandidate.level);
-    recentHistory.push(chosenCandidate.level);
-    while (recentHistory.length > excludeCountLayersNumber) {
-      recentHistory.shift();
-      await cleanHistoryLayers(id);
-    }
-    logger.log(
-      `DEBUG: [pickRandomMap] Выбрана карта: ${chosenCandidate.layer} (уровень: ${chosenCandidate.level})`,
-    );
-    return chosenCandidate.layer;
+  function randomArrayElement<T>(array: T[]): T {
+    return array[Math.floor(Math.random() * array.length)];
   }
 
   function getAvailableFactions(teamObj: TTeamFactions): string[] {
@@ -396,7 +275,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           ', ',
         )}]`,
       );
-      return null;
+      return filtered.join(', ');
     }
     const chosen = weightedRandom(weightedTypes);
     logger.log(
@@ -474,11 +353,201 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         type2 = pickWeightedUnitType(availableTypes2, []);
       }
       logger.log(
-        `DEBUG: [pickSymmetricUnitTypes] Итоговый выбор (асимметричный): type1=${type1}, type2=${type2}.`,
+        `DEBUG: [pickSymmetricUnitTypes] Итоговый выбор: type1=${type1}, type2=${type2}.`,
       );
       if (!type1 || !type2) return null;
       return { type1, type2 };
     }
+  }
+
+  // Новая функция для выбора типов юнитов, когда данные заданы раздельно (Team1 и Team2)
+  function pickUnitTypesForSeparateTeams(
+    team1Data: TTeamFactions,
+    team2Data: TTeamFactions,
+    faction1: string,
+    faction2: string,
+    unitTypeHistory: string[],
+    symmetricUnitTypes: boolean,
+  ): { type1: string; type2: string } | null {
+    const alliance1 = getAllianceForFactionFromMap(team1Data, faction1);
+    const alliance2 = getAllianceForFactionFromMap(team2Data, faction2);
+    if (!alliance1 || !alliance2) return null;
+    const availableTypes1: string[] = team1Data[alliance1][faction1];
+    const availableTypes2: string[] = team2Data[alliance2][faction2];
+    if (!availableTypes1?.length || !availableTypes2?.length) return null;
+
+    if (symmetricUnitTypes) {
+      let intersection = availableTypes1.filter(
+        (type) =>
+          availableTypes2.includes(type) && !unitTypeHistory.includes(type),
+      );
+      if (intersection.length > 0) {
+        const chosenType = pickWeightedUnitType(intersection, unitTypeHistory);
+        if (chosenType) {
+          logger.log(
+            `DEBUG: [pickUnitTypesForSeparateTeams] (с историей) Выбран единый тип: ${chosenType} из пересечения: [${intersection.join(
+              ', ',
+            )}]`,
+          );
+          return { type1: chosenType, type2: chosenType };
+        }
+      }
+      intersection = availableTypes1.filter((type) =>
+        availableTypes2.includes(type),
+      );
+      if (intersection.length > 0) {
+        const chosenType = pickWeightedUnitType(intersection, []);
+        if (chosenType) {
+          logger.log(
+            `DEBUG: [pickUnitTypesForSeparateTeams] (без истории) Выбран единый тип: ${chosenType} из пересечения: [${intersection.join(
+              ', ',
+            )}]`,
+          );
+          return { type1: chosenType, type2: chosenType };
+        }
+      }
+      // Если симметричный выбор не сработал — переходим к независимому выбору.
+    }
+
+    let type1 = pickWeightedUnitType(
+      availableTypes1.filter((t) => !unitTypeHistory.includes(t)),
+      unitTypeHistory,
+    );
+    let type2 = pickWeightedUnitType(
+      availableTypes2.filter((t) => !unitTypeHistory.includes(t)),
+      unitTypeHistory,
+    );
+    if (!type1) {
+      logger.log(
+        `DEBUG: [pickUnitTypesForSeparateTeams] Не удалось выбрать тип для ${faction1} с учетом истории, игнорируем историю.`,
+      );
+      type1 = pickWeightedUnitType(availableTypes1, []);
+    }
+    if (!type2) {
+      logger.log(
+        `DEBUG: [pickUnitTypesForSeparateTeams] Не удалось выбрать тип для ${faction2} с учетом истории, игнорируем историю.`,
+      );
+      type2 = pickWeightedUnitType(availableTypes2, []);
+    }
+    if (!type1 || !type2) return null;
+    logger.log(
+      `DEBUG: [pickUnitTypesForSeparateTeams] Итоговый выбор (асимметричный): type1=${type1}, type2=${type2}.`,
+    );
+    return { type1, type2 };
+  }
+
+  async function pickRandomMap(): Promise<string> {
+    const recentHistory = await getHistoryLayers(id);
+    const modes = mode.split(',').map((m) => m.trim());
+    let candidates: {
+      level: string;
+      layer: string;
+      tierProbability: number;
+    }[] = [];
+
+    for (const [tierKey, tier] of Object.entries(tieredMaps) as [
+      TierKey,
+      { probability: number; maps: string[] },
+    ][]) {
+      for (const shortMapName of tier.maps) {
+        if (recentHistory.includes(shortMapName)) continue;
+        const availableKeys = Object.keys(maps).filter((key) =>
+          modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
+        );
+        if (availableKeys.length === 0) {
+          logger.log(
+            `DEBUG: [pickRandomMap] Для карты "${shortMapName}" не найдены ключи с режимами [${modes.join(
+              ', ',
+            )}].`,
+          );
+          continue;
+        }
+        const randomKey = randomArrayElement(availableKeys);
+        const layerData = maps[randomKey];
+        if (!layerData) continue;
+        let layerName: string;
+        if (typeof layerData.layerName === 'string' && layerData.layerName) {
+          layerName = layerData.layerName;
+        } else if (
+          layerData.layerName &&
+          typeof layerData.layerName === 'object'
+        ) {
+          const keys = Object.keys(layerData.layerName);
+          layerName = keys.length ? keys[0] : randomKey;
+        } else {
+          layerName = randomKey;
+        }
+        candidates.push({
+          level: shortMapName,
+          layer: layerName,
+          tierProbability: tier.probability,
+        });
+      }
+    }
+
+    if (candidates.length === 0) {
+      logger.log(
+        `DEBUG: [pickRandomMap] Нет доступных карт после фильтрации по истории, пробуем игнорировать историю.`,
+      );
+      for (const [tierKey, tier] of Object.entries(tieredMaps) as [
+        TierKey,
+        { probability: number; maps: string[] },
+      ][]) {
+        for (const shortMapName of tier.maps) {
+          const availableKeys = Object.keys(maps).filter((key) =>
+            modes.some((m) => key.startsWith(`${shortMapName}_${m}`)),
+          );
+          if (availableKeys.length === 0) continue;
+          const randomKey = randomArrayElement(availableKeys);
+          const layerData = maps[randomKey];
+          if (!layerData) continue;
+          let layerName: string;
+          if (typeof layerData.layerName === 'string' && layerData.layerName) {
+            layerName = layerData.layerName;
+          } else if (
+            layerData.layerName &&
+            typeof layerData.layerName === 'object'
+          ) {
+            const keys = Object.keys(layerData.layerName);
+            layerName = keys.length ? keys[0] : randomKey;
+          } else {
+            layerName = randomKey;
+          }
+          candidates.push({
+            level: shortMapName,
+            layer: layerName,
+            tierProbability: tier.probability,
+          });
+        }
+      }
+      if (candidates.length === 0) {
+        logger.log(
+          `DEBUG: [pickRandomMap] Нет доступных карт даже без фильтрации, устанавливаем карту по умолчанию.`,
+        );
+        return 'Narva_AAS_v1';
+      }
+    }
+
+    const chosenCandidate = weightedRandom(
+      candidates.map((c) => ({ item: c, weight: c.tierProbability })),
+    );
+    if (!chosenCandidate) {
+      logger.log(
+        `DEBUG: [pickRandomMap] Выбор карты завершился неудачей, устанавливаем карту по умолчанию.`,
+      );
+      return 'Narva_AAS_v1';
+    }
+
+    await serverHistoryLayers(id, chosenCandidate.level);
+    recentHistory.push(chosenCandidate.level);
+    while (recentHistory.length > excludeCountLayersNumber) {
+      recentHistory.shift();
+      await cleanHistoryLayers(id);
+    }
+    logger.log(
+      `DEBUG: [pickRandomMap] Выбрана карта: ${chosenCandidate.layer} (уровень: ${chosenCandidate.level})`,
+    );
+    return chosenCandidate.layer;
   }
 
   const newGame = async () => {
@@ -514,28 +583,43 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         );
         return;
       }
-      if (!layerData['Team1 / Team2']) {
+
+      let unitTypes: { type1: string; type2: string } | null = null;
+      // Если задан комбинированный формат, используем pickSymmetricUnitTypes
+      if (layerData['Team1 / Team2']) {
+        const teamObj: TTeamFactions = layerData['Team1 / Team2'];
+        unitTypes = pickSymmetricUnitTypes(
+          teamObj,
+          factions.team1,
+          factions.team2,
+          await getHistoryUnitTypes(id),
+          symmetricUnitTypesBoolean,
+        );
+      }
+      // Если заданы отдельно Team1 и Team2, используем новую функцию
+      else if (layerData.Team1 && layerData.Team2) {
+        unitTypes = pickUnitTypesForSeparateTeams(
+          layerData.Team1,
+          layerData.Team2,
+          factions.team1,
+          factions.team2,
+          await getHistoryUnitTypes(id),
+          symmetricUnitTypesBoolean,
+        );
+      } else {
         logger.log(
-          `DEBUG: [newGame] Карта ${chosenLayer} не поддерживает формат "Team1 / Team2".`,
+          `DEBUG: [newGame] Карта ${chosenLayer} не поддерживает требуемый формат фракций.`,
         );
         return;
       }
-      const teamObj: TTeamFactions = layerData['Team1 / Team2'];
 
-      const unitTypeHistory = await getHistoryUnitTypes(id);
-      const unitTypes = pickSymmetricUnitTypes(
-        teamObj,
-        factions.team1,
-        factions.team2,
-        unitTypeHistory,
-        symmetricUnitTypesBoolean,
-      );
       if (!unitTypes) {
         logger.log(
           `DEBUG: [newGame] Не удалось выбрать типы юнитов с учётом истории.`,
         );
         return;
       }
+      const unitTypeHistory = await getHistoryUnitTypes(id);
       await serverHistoryUnitTypes(id, unitTypes.type1);
       await serverHistoryUnitTypes(id, unitTypes.type2);
       unitTypeHistory.push(unitTypes.type1, unitTypes.type2);
