@@ -198,45 +198,62 @@ export const randomizerMaps: TPluginProps = (state, options) => {
   ): { team1: string; team2: string } | null {
     const layerData = maps[layerKey];
     if (!layerData) return null;
-    const { ['Team1 / Team2']: combined, Team1, Team2 } = layerData;
-    if (combined) {
+
+    if (layerData['Team1 / Team2']) {
+      const combined = layerData['Team1 / Team2'];
+      if (!combined) return null;
+
       let factions = pickTwoDistinctFactions(combined, factionHistory);
       if (!factions) {
         logger.log(
-          `DEBUG: [pickFactionsForTeams] Не удалось выбрать фракции с учетом истории, пробуем игнорировать историю.`,
+          'DEBUG: [pickFactionsForTeams] Не удалось выбрать фракции с учетом истории, пробуем игнорировать историю.',
         );
         factions = pickTwoDistinctFactions(combined, []);
       }
       return factions;
-    } else if (Team1 && Team2) {
-      let availableTeam1 = getAvailableFactions(Team1).filter(
-        (f) => !factionHistory.includes(f),
-      );
-      let availableTeam2 = getAvailableFactions(Team2).filter(
+    } else if (layerData.Team1 && layerData.Team2) {
+      const team1Data = layerData.Team1;
+      const team2Data = layerData.Team2;
+
+      let availableTeam1 = getAvailableFactions(team1Data).filter(
         (f) => !factionHistory.includes(f),
       );
       let faction1 = pickRandomFaction(availableTeam1);
-      let faction2 = pickRandomFaction(availableTeam2);
+
       if (!faction1) {
         logger.log(
-          `DEBUG: [pickFactionsForTeams] Не удалось выбрать фракцию Team1 с учетом истории, пробуем игнорировать историю.`,
+          'DEBUG: [pickFactionsForTeams] Не удалось выбрать фракцию Team1 с учетом истории, пробуем игнорировать историю.',
         );
-        faction1 = pickRandomFaction(getAvailableFactions(Team1));
+        faction1 = pickRandomFaction(getAvailableFactions(team1Data));
       }
+      if (!faction1) return null;
+
+      const alliance1 = getAllianceForFactionFromMap(team1Data, faction1);
+
+      let availableTeam2 = getAvailableFactions(team2Data)
+        .filter((f) => !factionHistory.includes(f))
+        .filter((f) => {
+          const alliance2 = getAllianceForFactionFromMap(team2Data, f);
+          return alliance2 && alliance2 !== alliance1;
+        });
+
+      let faction2 = pickRandomFaction(availableTeam2);
       if (!faction2) {
         logger.log(
-          `DEBUG: [pickFactionsForTeams] Не удалось выбрать фракцию Team2 с учетом истории, пробуем игнорировать историю.`,
+          'DEBUG: [pickFactionsForTeams] Не удалось выбрать фракцию Team2 с учетом истории и альянса, пробуем игнорировать историю.',
         );
-        faction2 = pickRandomFaction(getAvailableFactions(Team2));
+        availableTeam2 = getAvailableFactions(team2Data).filter((f) => {
+          const alliance2 = getAllianceForFactionFromMap(team2Data, f);
+          return alliance2 && alliance2 !== alliance1;
+        });
+        faction2 = pickRandomFaction(availableTeam2);
       }
-      if (!faction1 || !faction2) return null;
+
+      if (!faction2) return null;
       return { team1: faction1, team2: faction2 };
-    } else {
-      logger.log(
-        `DEBUG: [pickFactionsForTeams] Ни формат "Team1 / Team2", ни отдельные Team1 и Team2 не найдены в карте ${layerKey}`,
-      );
-      return null;
     }
+
+    return null;
   }
 
   function pickWeightedUnitType(
@@ -431,7 +448,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     }
     if (!type1 || !type2) return null;
     logger.log(
-      `DEBUG: [pickUnitTypesForSeparateTeams] Итоговый выбор (асимметричный): type1=${type1}, type2=${type2}.`,
+      `DEBUG: [pickUnitTypesForSeparateTeams] Итоговый выбор: type1=${type1}, type2=${type2}.`,
     );
     return { type1, type2 };
   }
