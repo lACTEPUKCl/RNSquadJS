@@ -34,7 +34,9 @@ export const autorestartServers: TPluginProps = (state) => {
 
     if (new Date().getTime() - lastRestartTime > 86400000) {
       const players = getPlayers(state);
-      if (!players || players.length === 0) {
+
+      if (Array.isArray(players) && players.length === 0) {
+        console.log(players);
         logger.log(`Сервер пуст. Планируется рестарт`);
         if (!isRestartTimeoutSet) setRestartTimeout();
       } else {
