@@ -52,11 +52,11 @@ const tieredFactions: Record<
   },
   A: {
     probability: 35,
-    factions: ['INS', 'BAF', 'IMF', 'PLA'],
+    factions: ['INS', 'BAF', 'IMF'],
   },
   B: {
     probability: 15,
-    factions: ['TLF', 'PLAAGF', 'PLANMC', 'VDV', 'MEA'],
+    factions: ['TLF', 'PLAAGF', 'PLANMC', 'VDV', 'MEA', 'PLA'],
   },
   C: {
     probability: 0,
