@@ -37,32 +37,49 @@ interface LogData {
 }
 
 export const rnsLogs: TPluginProps = (state, options) => {
-  const { listener } = state;
+  const { logger, listener } = state;
   const { logPath } = options;
-  let logData: LogData[] = []; // Массив для хранения данных перед записью в файл
-  const writeInterval = 6000; // Интервал записи данных (1 минута)
-  const cleanLogsInterval = 24 * 60 * 60 * 1000; // Интервал очистки старых логов (сутки)
+  let logData: LogData[] = [];
+  const writeInterval = 6000;
+  const cleanLogsInterval = 24 * 60 * 60 * 1000;
   let matchIsEnded = false;
 
   async function cleanOldLogsFiles() {
-    const currentDate = new Date();
-    const expiryLogDate = new Date(
-      currentDate.getTime() - 2 * 24 * 60 * 60 * 1000,
-    ); // 2 дня
-
     try {
-      const files = await fs.readdir(logPath);
-      console.log(files);
-      for (const file of files) {
-        const filePath = path.join(logPath, file);
-        const stats = await fs.stat(filePath);
+      const currentDate = new Date();
+      const expiryLogDate = new Date(
+        currentDate.getTime() - 2 * 24 * 60 * 60 * 1000,
+      );
 
-        if (stats.mtime < expiryLogDate) {
-          await fs.unlink(filePath);
+      logger.log(
+        `[CleanLogs] Starting cleanup. Files older than: ${expiryLogDate}`,
+      );
+
+      const files = await fs.readdir(logPath);
+      logger.log(`[CleanLogs] Found ${files.length} files in directory`);
+
+      let deletedCount = 0;
+
+      for (const file of files) {
+        try {
+          const filePath = path.join(logPath, file);
+          const stats = await fs.stat(filePath);
+
+          if (stats.isFile() && stats.mtime < expiryLogDate) {
+            logger.log(
+              `[CleanLogs] Deleting old file: ${file} (last modified: ${stats.mtime})`,
+            );
+            await fs.unlink(filePath);
+            deletedCount++;
+          }
+        } catch (err) {
+          logger.error(`[CleanLogs] Error processing file ${file}`);
         }
       }
+
+      logger.log(`[CleanLogs] Cleanup complete. Deleted ${deletedCount} files`);
     } catch (err) {
-      console.error('Ошибка чтения директории:', err);
+      logger.error('[CleanLogs] Fatal error during cleanup');
     }
   }
 
@@ -85,9 +102,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
       logs = logs.concat(tempData);
 
       await fs.writeFile(logFilePath, JSON.stringify(logs, null, 2));
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
   }
 
   setInterval(() => {
@@ -112,7 +127,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
     try {
       await rename(currentFilePath, newFilePath);
     } catch (err) {
-      console.error('Ошибка при переименовании файла:', err);
+      logger.error('Ошибка при переименовании файла');
     }
   }
 
@@ -329,9 +344,9 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function onSquadCreated(data: TSquadCreated) {
     if (matchIsEnded) return;
-    const { time, squadName, eosID } = data;
+    const { squadName, eosID } = data;
     const player = getPlayerByEOSID(state, eosID);
-    const currentTime = new Date(time).toLocaleString('ru-RU', {
+    const currentTime = new Date().toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
     });
 
