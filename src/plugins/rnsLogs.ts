@@ -51,12 +51,12 @@ export const rnsLogs: TPluginProps = (state, options) => {
         currentDate.getTime() - 2 * 24 * 60 * 60 * 1000,
       );
 
-      console.log(
+      logger.log(
         `[CleanLogs] Starting cleanup. Files older than: ${expiryLogDate}`,
       );
 
       const files = await fs.readdir(logPath);
-      console.log(`[CleanLogs] Found ${files.length} files in directory`);
+      logger.log(`[CleanLogs] Found ${files.length} files in directory`);
 
       let deletedCount = 0;
 
@@ -73,15 +73,13 @@ export const rnsLogs: TPluginProps = (state, options) => {
             deletedCount++;
           }
         } catch (err) {
-          logger.error(`[CleanLogs] Error processing file ${file}:`);
+          logger.error(`[CleanLogs] Error processing file ${file}`);
         }
       }
 
-      console.log(
-        `[CleanLogs] Cleanup complete. Deleted ${deletedCount} files`,
-      );
+      logger.log(`[CleanLogs] Cleanup complete. Deleted ${deletedCount} files`);
     } catch (err) {
-      logger.error('[CleanLogs] Fatal error during cleanup:');
+      logger.error('[CleanLogs] Fatal error during cleanup');
     }
   }
 
@@ -104,9 +102,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
       logs = logs.concat(tempData);
 
       await fs.writeFile(logFilePath, JSON.stringify(logs, null, 2));
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
   }
 
   setInterval(() => {
@@ -131,7 +127,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
     try {
       await rename(currentFilePath, newFilePath);
     } catch (err) {
-      console.error('Ошибка при переименовании файла:', err);
+      logger.error('Ошибка при переименовании файла');
     }
   }
 
