@@ -56,11 +56,11 @@ const tieredFactions: Record<
   },
   B: {
     probability: 10,
-    factions: ['TLF', 'PLAAGF', 'PLANMC', 'VDV', 'MEA', 'PLA'],
+    factions: ['TLF', 'VDV', 'MEA', 'PLA'],
   },
   C: {
-    probability: 0,
-    factions: [],
+    probability: 5,
+    factions: ['PLAAGF', 'PLANMC'],
   },
 };
 
