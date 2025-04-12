@@ -144,7 +144,6 @@ export const rnsStats: TPluginProps = (state) => {
 
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
-    console.log(data, 'onDied');
 
     if (!currentMap?.layer) return;
 
@@ -161,13 +160,9 @@ export const rnsStats: TPluginProps = (state) => {
         attacker.name !== victim.name
       ) {
         await updateUser(attackerSteamID, 'teamkills');
-        console.log(attacker, 'teamkills attacker');
-        console.log(victim, 'teamkills victim');
       } else {
         await updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
         await updateUser(victim.steamID, 'death');
-        console.log(attacker, 'kill attacker');
-        console.log(victim, 'kill victim');
       }
     } catch (error) {
       logger.error(`Ошибка при обновлении данных игрока: ${error}`);
