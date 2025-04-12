@@ -144,6 +144,7 @@ export const rnsStats: TPluginProps = (state) => {
 
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
+
     if (!currentMap?.layer) return;
 
     if (currentMap.layer.toLowerCase().includes('seed')) return;
