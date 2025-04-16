@@ -48,7 +48,7 @@ const tieredFactions: Record<
 > = {
   S: {
     probability: 50,
-    factions: ['RGF', 'USA', 'USMC', 'WPMC', 'CAF'],
+    factions: ['RGF', 'USA', 'USMC', 'WPMC', 'CAF', 'ADF'],
   },
   A: {
     probability: 35,
