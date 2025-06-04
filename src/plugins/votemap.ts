@@ -76,8 +76,9 @@ const validateSelectedMapAndTeams = (
   return team1Valid && team2Valid;
 };
 
-const parseVoteMessage = (message: string, mapMode: string) => {
-  if (!message.includes(mapMode)) {
+const parseVoteMessage = (message: string, allowedModes: string[]) => {
+  const hasValidMode = allowedModes.some((mode) => message.includes(mode));
+  if (!hasValidMode) {
     return { isValid: false };
   }
 
@@ -111,6 +112,9 @@ const parseVoteMessage = (message: string, mapMode: string) => {
 export const voteMap: TPluginProps = (state, options) => {
   const { listener, execute, maps } = state;
   const { voteTick, voteDuration, onlyForVip, needVotes, mapMode } = options;
+  const allowedModes: string[] = Array.isArray(mapMode)
+    ? mapMode
+    : [String(mapMode)];
   let voteReadyToStart = true;
   let voteStarting = false;
   let secondsToEnd = voteDuration / 1000;
@@ -206,7 +210,7 @@ export const voteMap: TPluginProps = (state, options) => {
       return;
     }
 
-    const parsed = parseVoteMessage(message, mapMode);
+    const parsed = parseVoteMessage(message, allowedModes);
     if (!parsed.isValid) {
       adminWarn(
         execute,
