@@ -59,7 +59,7 @@ export const rnsStats: TPluginProps = (state) => {
       await updateGames(steamID, gameResult);
 
       if (userData && userData.isLeader && userData.squadID) {
-        const squad = getSquadByID(state, userData.squadID);
+        const squad = getSquadByID(state, userData.squadID, userData.teamID);
         if (
           squad &&
           (squad.squadName === 'CMD Squad' ||
@@ -95,7 +95,7 @@ export const rnsStats: TPluginProps = (state) => {
 
         if (user.isLeader && user.squadID) {
           await updateTimes(steamID, 'leader', user.name);
-          const squad = getSquadByID(state, user.squadID);
+          const squad = getSquadByID(state, user.squadID, user.teamID);
           if (
             squad &&
             (squad.squadName === 'CMD Squad' ||
