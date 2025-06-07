@@ -12,8 +12,8 @@ export const voteMapMods: TPluginProps = (state, options) => {
   let voteStarting = false;
   let secondsToEnd = voteDuration / 1000;
   let timer: NodeJS.Timeout;
-  let timerDelayStarting: NodeJS.Timeout;
-  let timerDelayNextStart: NodeJS.Timeout;
+  let timerDelayStarting: NodeJS.Timeout | undefined = undefined;
+  let timerDelayNextStart: NodeJS.Timeout | undefined = undefined;
   let vote = false;
   let historyPlayers: string[] = [];
   let votes: { [key in string]: string[] } = {
@@ -164,8 +164,8 @@ export const voteMapMods: TPluginProps = (state, options) => {
   listener.on(EVENTS.NEW_GAME, newGame);
 
   const reset = () => {
-    clearTimeout(timerDelayNextStart);
-    clearTimeout(timerDelayStarting);
+    if (timerDelayNextStart) clearTimeout(timerDelayNextStart);
+    if (timerDelayStarting) clearTimeout(timerDelayStarting);
     clearInterval(timer);
     secondsToEnd = voteDuration / 1000;
     voteStarting = false;
