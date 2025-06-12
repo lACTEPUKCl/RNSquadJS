@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
@@ -20,6 +21,11 @@ export const voteMapMods: TPluginProps = (state, options) => {
     '+': [],
     '-': [],
   };
+  const filePath = path.resolve(
+    __dirname,
+    '../core/maps',
+    `${mapFileName}.json`,
+  );
 
   const chatCommand = (data: TChatMessage) => {
     const { steamID, message } = data;
@@ -58,10 +64,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
       return;
     }
 
-    const layersData = fs.readFileSync(
-      `C:/Users/Admin/Desktop/RNSquadJS/src/core/maps/${mapFileName}.json`,
-      'utf8',
-    );
+    const layersData = fs.readFileSync(filePath, 'utf8');
     const layersArray = JSON.parse(layersData);
     const messageToLower = message.toLowerCase().trim();
     let foundMap = false;
