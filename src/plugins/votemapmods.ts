@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { TChatMessage } from 'squad-rcon';
+import url from 'url';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
 import { TPluginProps } from '../types';
@@ -21,6 +22,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
     '+': [],
     '-': [],
   };
+  const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
   const filePath = path.resolve(
     __dirname,
     '../core/maps',
