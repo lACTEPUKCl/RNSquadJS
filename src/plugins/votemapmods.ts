@@ -1,13 +1,10 @@
-import fs from 'fs';
-import path from 'path';
 import { TChatMessage } from 'squad-rcon';
-import url from 'url';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
 import { TPluginProps } from '../types';
 
 export const voteMapMods: TPluginProps = (state, options) => {
-  const { listener, execute } = state;
+  const { listener, execute, maps } = state;
   const { voteTick, voteDuration, onlyForVip, needVotes, mapFileName } =
     options;
   let voteReadyToStart = true;
@@ -22,12 +19,6 @@ export const voteMapMods: TPluginProps = (state, options) => {
     '+': [],
     '-': [],
   };
-  const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
-  const filePath = path.resolve(
-    __dirname,
-    '../core/maps',
-    `${mapFileName}.json`,
-  );
 
   const chatCommand = (data: TChatMessage) => {
     const { steamID, message } = data;
@@ -66,19 +57,13 @@ export const voteMapMods: TPluginProps = (state, options) => {
       return;
     }
 
-    const layersData = fs.readFileSync(filePath, 'utf8');
-    const layersArray = JSON.parse(layersData);
     const messageToLower = message.toLowerCase().trim();
-    let foundMap = false;
 
-    layersArray.forEach((e: string) => {
-      if (e.toLocaleLowerCase() === messageToLower) {
-        foundMap = true;
-        return;
-      }
-    });
+    const foundKey = Object.keys(maps).find(
+      (key) => key.toLowerCase() === messageToLower.toLowerCase(),
+    );
 
-    if (!foundMap || message.length === 0) {
+    if (!foundKey || message.length === 0) {
       adminWarn(
         execute,
         steamID,
@@ -113,7 +98,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
           );
 
           reset();
-          adminSetNextLayer(execute, messageToLower);
+          adminSetNextLayer(execute, foundKey);
           vote = true;
           return;
         }
