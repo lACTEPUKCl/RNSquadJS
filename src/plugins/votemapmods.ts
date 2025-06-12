@@ -1,6 +1,6 @@
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
-import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
+import { adminBroadcast, adminChangeLayer, adminWarn } from '../core';
 import { TPluginProps } from '../types';
 
 export const voteMapMods: TPluginProps = (state, options) => {
@@ -74,7 +74,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
 
     adminBroadcast(
       execute,
-      `Голосование за следующую карту ${message}!\nИспользуйте +(За) -(Против) для голосования`,
+      `Голосование за смену карты на ${message}!\nИспользуйте +(За) -(Против) для голосования`,
     );
 
     voteStarting = true;
@@ -98,7 +98,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
           );
 
           reset();
-          adminSetNextLayer(execute, foundKey);
+          adminChangeLayer(execute, foundKey);
           vote = true;
           return;
         }
@@ -116,7 +116,7 @@ export const voteMapMods: TPluginProps = (state, options) => {
       } else {
         adminBroadcast(
           execute,
-          `Голосование за следующую карту ${message}!\nЗа: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
+          `Голосование за смену карты на ${message}!\nЗа: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
         );
         adminBroadcast(execute, 'Используйте +(За) -(Против) для голосования');
       }
