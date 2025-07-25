@@ -6,12 +6,8 @@ import { TPlayer, TPluginProps } from '../types';
 import { getPlayerBySteamID } from './helpers';
 
 export const levelSync: TPluginProps = (state, options) => {
-  const { listener } = state;
+  const { listener, logger } = state;
   const { jsonDir, cfgPath } = options;
-
-  const calculateLevel = (xp: number): number => {
-    return Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
-  };
 
   const updatePlayerLevel = async (steamID: string, eosID: string) => {
     try {
@@ -20,7 +16,7 @@ export const levelSync: TPluginProps = (state, options) => {
       const json = JSON.parse(jsonRaw);
 
       const xp = json?.['save data']?.xp ?? 0;
-      const level = calculateLevel(xp);
+      const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
 
       let cfgContent = '';
       try {
@@ -29,17 +25,29 @@ export const levelSync: TPluginProps = (state, options) => {
         if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
       }
 
-      const newLine = `${eosID}: LVL ${level} /URLA:some_image_url, "#ffffff"`;
-      const regex = new RegExp(`^${eosID}:.*$`, 'm');
+      const lines = cfgContent.split('\n');
+      const eosRegex = new RegExp(`^${eosID}:`);
 
-      if (regex.test(cfgContent)) {
-        cfgContent = cfgContent.replace(regex, newLine);
-      } else {
-        cfgContent += (cfgContent.endsWith('\n') ? '' : '\n') + newLine + '\n';
+      let found = false;
+      const newLines = lines.map((line) => {
+        if (eosRegex.test(line)) {
+          found = true;
+          return line
+            .replace(/LVL \d+/i, `LVL ${level}`)
+            .replace(/XP: \d+/i, `XP: ${xp}`);
+        }
+        return line;
+      });
+
+      if (!found) {
+        const newLine = `${eosID}: LVL ${level} /URLA:some_image_url, "255,215,0,255" // XP: ${xp}`;
+        newLines.push(newLine);
       }
 
-      await fs.writeFile(cfgPath, cfgContent, 'utf-8');
-    } catch (err) {}
+      await fs.writeFile(cfgPath, newLines.join('\n'), 'utf-8');
+    } catch (err) {
+      logger.warn(`[levelSync] Не удалось обновить уровень для ${steamID}`);
+    }
   };
 
   const onPlayerConnected = async (data: TPlayerConnected) => {
