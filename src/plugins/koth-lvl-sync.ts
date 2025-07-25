@@ -9,10 +9,6 @@ export const levelSync: TPluginProps = (state, options) => {
   const { listener, logger } = state;
   const { jsonDir, cfgPath } = options;
 
-  const calculateLevel = (xp: number): number => {
-    return Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
-  };
-
   const updatePlayerLevel = async (steamID: string, eosID: string) => {
     try {
       const jsonPath = path.join(jsonDir, `${steamID}.json`);
