@@ -29,7 +29,7 @@ export const levelSync: TPluginProps = (state, options) => {
         if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
       }
 
-      const newLine = `${eosID}: LVL ${level} /URLA:some_image_url, "#ffffff"`;
+      const newLine = `${eosID}: LVL ${level} /URLA:some_image_url, "255,215,0,255"`;
       const regex = new RegExp(`^${eosID}:.*$`, 'm');
 
       if (regex.test(cfgContent)) {
