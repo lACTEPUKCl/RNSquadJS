@@ -40,7 +40,7 @@ export const levelSync: TPluginProps = (state, options) => {
       });
 
       if (!found) {
-        const newLine = `${eosID}: LVL ${level} /URLA:some_image_url, "255,215,0,255" // XP: ${xp}`;
+        const newLine = `${eosID}: LVL ${level} /a, "255,215,0,255" // XP: ${xp}`;
         newLines.push(newLine);
       }
 
