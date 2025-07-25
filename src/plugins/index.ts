@@ -9,6 +9,7 @@ import { broadcast } from './broadcast';
 import { chatCommands } from './chat-commands';
 import { fobExplosionDamage } from './fobexplosiondamage';
 import { knifeBroadcast } from './knife-broadcast';
+import { levelSync } from './koth-lvl-sync';
 import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
@@ -36,6 +37,7 @@ const plugins = [
   explosiveDamaged,
   knifeBroadcast,
   adminCamBlocker,
+  levelSync,
 ];
 
 export const initPlugins = async (id: number) => {
