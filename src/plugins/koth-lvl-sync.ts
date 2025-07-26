@@ -15,26 +15,26 @@ export const levelSync: TPluginProps = (state, options) => {
   ];
 
   const imageUrls = [
-    '/URLA:https://drive.google.com/file/d/1-PNg7rl9dveNmRxxQ3E2X0M1Z9h1XGiP/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1fifudTKPqIzcFMTSneV3zRkeLlQTqmtT/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1hD5FGoe6tqLfF5XDcwUB5mScuK9UP003/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/19KoEKGi1K2DSyBnHVEVop6uFJXbftkfU/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1T7rBnBAm0lyjCNV5HsW7K94BtQZJBI9T/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1xto62-isiyQMkt31Tc0UH5GhXZ03k-kP/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/18SeehfdIeyZtOvtfdSHtKEqIPhEEdWMy/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1rM-ui_f6nqShSEUEJ2pw3eTAV2u_4f-Z/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1ZRvu9fLefKwf_QTFKBlvu1WQ1mQyA5cc/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1J_Gz3cWTpXTpPCKeOK-C-lmXJzbyc8FO/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1MadDh8yzp_xBCG3k5HEIBPVBjMb1zaYP/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1Bifb4yV-K0mgZFYDw1x5OM9uK4WTo0Yy/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/15ZouoPjH0A5ctKWGaIqK0eUafoBz1nX4/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1xkz0m3_-wYsViKBtecgl32sQqj-rqmXz/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1x_QfwaK_2bEdfE7_cs_A4o26XqgTKfBI/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1i_iL3IGsfBOSZztzDaMioZktxk48stjf/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1x7J9-qw8iRibBoahSNkKu_wNNoqZVywX/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1L8mReZ7_a3Z6fBiNZBCKI7wTGYeXA8O9/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1CNfalg3LRXZSiG7kddB9V55nO-dge35m/view?usp=drive_link+',
-    '/URLA:https://drive.google.com/file/d/1RTDoUNwvOuJeWQBB45X-Y5hpkmO7Zria/view?usp=drive_link+',
+    '/URLA:https://i.imgur.com/1Vw9pJ7.png+',
+    '/URLA:https://i.imgur.com/IhDNQbB.png+',
+    '/URLA:https://i.imgur.com/h8bftCI.png+',
+    '/URLA:https://i.imgur.com/AIWfJ50.png+',
+    '/URLA:https://i.imgur.com/yO35ClD.png+',
+    '/URLA:https://i.imgur.com/5CoZyfC.png+',
+    '/URLA:https://i.imgur.com/xhttO3B.png+',
+    '/URLA:https://i.imgur.com/VR4vDRw.png+',
+    '/URLA:https://i.imgur.com/4vcy4xt.png+',
+    '/URLA:https://i.imgur.com/cLOLbHr.png+',
+    '/URLA:https://i.imgur.com/si3VZmO.png+',
+    '/URLA:https://i.imgur.com/6VAy5gl.png+',
+    '/URLA:https://i.imgur.com/9fsZULX.png+',
+    '/URLA:https://i.imgur.com/jURlxEr.png+',
+    '/URLA:https://i.imgur.com/lWXSm0G.png+',
+    '/URLA:https://i.imgur.com/TToa79e.png+',
+    '/URLA:https://i.imgur.com/7h5bdwp.png+',
+    '/URLA:https://i.imgur.com/r0paM17.png+',
+    '/URLA:https://i.imgur.com/X9a3K75.png+',
+    '/URLA:https://i.imgur.com/JPIbztU.png+',
   ];
 
   const getRankImageByTotalXP = (totalXP: number): string => {
@@ -106,7 +106,7 @@ export const levelSync: TPluginProps = (state, options) => {
       .map((l) => l.trim())
       .filter((l) => l !== '' && !l.startsWith(`${eosID}:`));
 
-    const newLine = `${eosID}: "LVL ${level}"/a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
+    const newLine = `${eosID}: LVL ${level} ${imageParam}, "255,215,0,255" // XP: ${xp}`;
     lines.push(newLine);
 
     try {
