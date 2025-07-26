@@ -61,7 +61,6 @@ export async function connectToDatabase(
   try {
     await client.connect();
     db = client.db(database || dbName);
-    console.log(db);
     collectionMain = db.collection(dbCollectionMain);
     collectionTemp = db.collection(dbCollectionTemp);
     collectionServerInfo = db.collection(dbCollectionServerInfo);
