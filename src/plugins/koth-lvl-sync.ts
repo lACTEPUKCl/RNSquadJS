@@ -54,12 +54,12 @@ export const levelSync: TPluginProps = (state, options) => {
       const jsonPath = path.join(jsonDir, `${steamID}.json`);
       const jsonRaw = await fs.readFile(jsonPath, 'utf-8');
       const json = JSON.parse(jsonRaw);
-
       const xp = json?.['save data']?.xp ?? 0;
       const totalXP = json?.['save data']?.['total xp'] ?? xp;
-
       const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
       const imageParam = getRankImageByTotalXP(totalXP);
+
+      const newLine = `${eosID}: "LVL ${level}"/a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
 
       let cfgContent = '';
       try {
@@ -68,49 +68,14 @@ export const levelSync: TPluginProps = (state, options) => {
         if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
       }
 
-      const lines = cfgContent.split('\n');
-      const eosRegex = new RegExp(`^${eosID}:`);
-      let found = false;
+      const lines = cfgContent
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '' && !line.startsWith(`${eosID}:`));
 
-      const newLines = lines.map((line) => {
-        if (!eosRegex.exec(line)) return line;
+      lines.push(newLine);
 
-        found = true;
-        let newLine = line;
-
-        const lvlReplaced = newLine.replace(/LVL\s*\d+/i, `LVL ${level}`);
-        newLine =
-          lvlReplaced === newLine
-            ? newLine.replace(`${eosID}:`, `${eosID}: LVL ${level}`)
-            : lvlReplaced;
-
-        const xpReplaced = newLine.replace(/XP:\s*\d+/i, `XP: ${xp}`);
-        newLine =
-          xpReplaced === newLine ? `${newLine} // XP: ${xp}` : xpReplaced;
-
-        const urlraRegex = /\/URLA:[^\s,"]+[\+]?/i;
-        const paramRegex = /\/a(?!\w)/i;
-
-        if (urlraRegex.exec(newLine)) {
-          newLine = newLine.replace(urlraRegex, imageParam);
-        } else if (paramRegex.exec(newLine)) {
-          newLine = newLine.replace(paramRegex, `/a ${imageParam}`);
-        } else {
-          newLine = newLine.replace(
-            /LVL\s*\d+/i,
-            `LVL ${level} /a ${imageParam}`,
-          );
-        }
-
-        return newLine;
-      });
-
-      if (!found) {
-        const newLine = `${eosID}: "LVL ${level}"/a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
-        newLines.push(newLine);
-      }
-
-      await fs.writeFile(cfgPath, newLines.join('\n') + '\n', 'utf-8');
+      await fs.writeFile(cfgPath, lines.join('\n') + '\n', 'utf-8');
     } catch (err) {
       logger.warn(`[levelSync] Не удалось обновить уровень для ${steamID}`);
     }
