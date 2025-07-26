@@ -60,8 +60,8 @@ export async function connectToDatabase(
   if (database) databaseName = database;
   try {
     await client.connect();
-    console.log(database);
     db = client.db(database || dbName);
+    console.log(db);
     collectionMain = db.collection(dbCollectionMain);
     collectionTemp = db.collection(dbCollectionTemp);
     collectionServerInfo = db.collection(dbCollectionServerInfo);
