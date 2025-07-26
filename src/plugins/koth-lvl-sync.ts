@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { TPlayerConnected } from 'squad-logs';
 import { EVENTS } from '../constants';
-import { TPlayer, TPluginProps } from '../types';
+import { TPluginProps } from '../types';
 import { getPlayerBySteamID } from './helpers';
 
 export const levelSync: TPluginProps = (state, options) => {
@@ -131,17 +131,15 @@ export const levelSync: TPluginProps = (state, options) => {
     const { players } = state;
     if (!players) return;
 
-    await Promise.all(
-      players.map(async (player: TPlayer) => {
-        const { steamID } = player;
-        if (!steamID) return;
+    for (const player of players) {
+      const { steamID } = player;
+      if (!steamID) continue;
 
-        const user = getPlayerBySteamID(state, steamID);
-        if (!user?.eosID) return;
+      const user = getPlayerBySteamID(state, steamID);
+      if (!user?.eosID) continue;
 
-        await updatePlayerLevel(steamID, user.eosID);
-      }),
-    );
+      await updatePlayerLevel(steamID, user.eosID);
+    }
   };
 
   listener.on(EVENTS.PLAYER_CONNECTED, onPlayerConnected);
