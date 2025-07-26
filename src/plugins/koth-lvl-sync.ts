@@ -9,6 +9,46 @@ export const levelSync: TPluginProps = (state, options) => {
   const { listener, logger } = state;
   const { jsonDir, cfgPath } = options;
 
+  const rankLevels = [
+    1, 10, 20, 30, 45, 65, 90, 120, 155, 195, 240, 290, 345, 375, 405, 430, 450,
+    470, 490, 500,
+  ];
+
+  const imageUrls = [
+    '/URLA:https://i.imgur.com/Bri5zX2.png+',
+    '/URLA:https://i.imgur.com/cc1ULj6.png+',
+    '/URLA:https://i.imgur.com/lY0jxMx.png+',
+    '/URLA:https://i.imgur.com/CpoHRB4.png+',
+    '/URLA:https://i.imgur.com/M9jVSQl.png+',
+    '/URLA:https://i.imgur.com/w74DlMw.png+',
+    '/URLA:https://i.imgur.com/UKeURAr.png+',
+    '/URLA:https://i.imgur.com/eGUZvsr.png+',
+    '/URLA:https://i.imgur.com/35scjC4.png+',
+    '/URLA:https://i.imgur.com/D2OquwG.png+',
+    '/URLA:https://i.imgur.com/epFdoUs.png+',
+    '/URLA:https://i.imgur.com/JcYW3PL.png+',
+    '/URLA:https://i.imgur.com/4XSrPYe.png+',
+    '/URLA:https://i.imgur.com/jrxBfyg.png+',
+    '/URLA:https://i.imgur.com/DjBIzpt.png+',
+    '/URLA:https://i.imgur.com/ZrRel2Y.png+',
+    '/URLA:https://i.imgur.com/nACqeiU.png+',
+    '/URLA:https://i.imgur.com/HMFiPng.png+',
+    '/URLA:https://i.imgur.com/8Fenp63.png+',
+    '/URLA:https://i.imgur.com/TkVqmrN.png+',
+  ];
+
+  const getRankImageByTotalXP = (totalXP: number): string => {
+    const levelFromTotalXP = Math.floor(
+      (Math.sqrt((4 * totalXP) / 75 + 1) + 1) / 2,
+    );
+    for (let i = rankLevels.length - 1; i >= 0; i--) {
+      if (levelFromTotalXP >= rankLevels[i]) {
+        return imageUrls[i];
+      }
+    }
+    return imageUrls[0];
+  };
+
   const updatePlayerLevel = async (steamID: string, eosID: string) => {
     try {
       const jsonPath = path.join(jsonDir, `${steamID}.json`);
@@ -16,7 +56,10 @@ export const levelSync: TPluginProps = (state, options) => {
       const json = JSON.parse(jsonRaw);
 
       const xp = json?.['save data']?.xp ?? 0;
+      const totalXP = json?.['save data']?.['total xp'] ?? xp;
+
       const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
+      const imageParam = getRankImageByTotalXP(totalXP);
 
       let cfgContent = '';
       try {
@@ -27,24 +70,47 @@ export const levelSync: TPluginProps = (state, options) => {
 
       const lines = cfgContent.split('\n');
       const eosRegex = new RegExp(`^${eosID}:`);
-
       let found = false;
+
       const newLines = lines.map((line) => {
-        if (eosRegex.test(line)) {
-          found = true;
-          return line
-            .replace(/LVL \d+/i, `LVL ${level}`)
-            .replace(/XP: \d+/i, `XP: ${xp}`);
+        if (!eosRegex.exec(line)) return line;
+
+        found = true;
+        let newLine = line;
+
+        const lvlReplaced = newLine.replace(/LVL\s*\d+/i, `LVL ${level}`);
+        newLine =
+          lvlReplaced === newLine
+            ? newLine.replace(`${eosID}:`, `${eosID}: LVL ${level}`)
+            : lvlReplaced;
+
+        const xpReplaced = newLine.replace(/XP:\s*\d+/i, `XP: ${xp}`);
+        newLine =
+          xpReplaced === newLine ? `${newLine} // XP: ${xp}` : xpReplaced;
+
+        const urlraRegex = /\/URLA:[^\s,"]+[\+]?/i;
+        const paramRegex = /\/a(?!\w)/i;
+
+        if (urlraRegex.exec(newLine)) {
+          newLine = newLine.replace(urlraRegex, imageParam);
+        } else if (paramRegex.exec(newLine)) {
+          newLine = newLine.replace(paramRegex, `/a ${imageParam}`);
+        } else {
+          newLine = newLine.replace(
+            /LVL\s*\d+/i,
+            `LVL ${level} /a ${imageParam}`,
+          );
         }
-        return line;
+
+        return newLine;
       });
 
       if (!found) {
-        const newLine = `${eosID}: LVL ${level} /a, "255,215,0,255" // XP: ${xp}`;
+        const newLine = `${eosID}: LVL ${level} /a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
         newLines.push(newLine);
       }
 
-      await fs.writeFile(cfgPath, newLines.join('\n'), 'utf-8');
+      await fs.writeFile(cfgPath, newLines.join('\n') + '\n', 'utf-8');
     } catch (err) {
       logger.warn(`[levelSync] Не удалось обновить уровень для ${steamID}`);
     }
