@@ -50,34 +50,64 @@ export const levelSync: TPluginProps = (state, options) => {
   };
 
   const updatePlayerLevel = async (steamID: string, eosID: string) => {
+    const jsonPath = path.join(jsonDir, `${steamID}.json`);
+    let xp = 0;
+    let totalXP = 0;
+
     try {
-      const jsonPath = path.join(jsonDir, `${steamID}.json`);
-      const jsonRaw = await fs.readFile(jsonPath, 'utf-8');
-      const json = JSON.parse(jsonRaw);
-      const xp = json?.['save data']?.xp ?? 0;
-      const totalXP = json?.['save data']?.['total xp'] ?? xp;
-      const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
-      const imageParam = getRankImageByTotalXP(totalXP);
-
-      const newLine = `${eosID}: "LVL ${level}"/a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
-
-      let cfgContent = '';
-      try {
-        cfgContent = await fs.readFile(cfgPath, 'utf-8');
-      } catch (e) {
-        if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
-      }
-
-      const lines = cfgContent
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line !== '' && !line.startsWith(`${eosID}:`));
-
-      lines.push(newLine);
-
-      await fs.writeFile(cfgPath, lines.join('\n') + '\n', 'utf-8');
+      const raw = await fs.readFile(jsonPath, 'utf-8');
+      const data = JSON.parse(raw);
+      xp = data['save data']?.xp ?? 0;
+      totalXP = data['save data']?.['total xp'] ?? xp;
     } catch (err) {
-      logger.warn(`[levelSync] Не удалось обновить уровень для ${steamID}`);
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        logger.log(
+          `[levelSync] Нет JSON для ${steamID} (${jsonPath}) — пропускаем`,
+        );
+      } else {
+        logger.error(
+          `[levelSync] Ошибка парсинга JSON для ${steamID} (${jsonPath}): ${
+            (err as Error).message
+          }`,
+        );
+      }
+      return;
+    }
+
+    const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
+    const imageParam = getRankImageByTotalXP(totalXP);
+
+    let cfgContent = '';
+    try {
+      cfgContent = await fs.readFile(cfgPath, 'utf-8');
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+        logger.error(
+          `[levelSync] Не удалось прочитать ${cfgPath}: ${
+            (err as Error).message
+          }`,
+        );
+        return;
+      }
+    }
+
+    const lines = cfgContent
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l !== '' && !l.startsWith(`${eosID}:`));
+
+    const newLine = `${eosID}: "LVL ${level}"/a ${imageParam}, "255,215,0,255" // XP: ${xp}`;
+    lines.push(newLine);
+
+    try {
+      await fs.writeFile(cfgPath, lines.join('\n') + '\n', 'utf-8');
+      logger.log(`[levelSync] Обновили ${steamID}: LVL ${level}, XP ${xp}`);
+    } catch (err) {
+      logger.error(
+        `[levelSync] Ошибка записи ${cfgPath} для ${steamID}: ${
+          (err as Error).message
+        }`,
+      );
     }
   };
 
