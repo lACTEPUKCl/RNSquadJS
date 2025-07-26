@@ -55,18 +55,26 @@ export const levelSync: TPluginProps = (state, options) => {
     let totalXP = 0;
 
     try {
-      const raw = await fs.readFile(jsonPath, 'utf-8');
+      logger.log(`[levelSync] Читаем JSON: ${jsonPath}`);
+      const buf: Buffer = await fs.readFile(jsonPath);
+      let raw: string;
+      if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+        raw = buf.toString('utf16le');
+      } else {
+        raw = buf.toString('utf8');
+      }
+      raw = raw.replace(/^[\uFEFF\x00-\x1F]+/, '');
       const data = JSON.parse(raw);
       xp = data['save data']?.xp ?? 0;
       totalXP = data['save data']?.['total xp'] ?? xp;
+      logger.log(`[levelSync] XP=${xp}, totalXP=${totalXP}`);
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        logger.log(
-          `[levelSync] Нет JSON для ${steamID} (${jsonPath}) — пропускаем`,
-        );
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') {
+        logger.log(`[levelSync] JSON не найден для ${steamID}, пропускаем`);
       } else {
         logger.error(
-          `[levelSync] Ошибка парсинга JSON для ${steamID} (${jsonPath}): ${
+          `[levelSync] Ошибка чтения/парсинга JSON для ${steamID}: ${
             (err as Error).message
           }`,
         );
@@ -76,16 +84,18 @@ export const levelSync: TPluginProps = (state, options) => {
 
     const level = Math.floor((Math.sqrt((4 * xp) / 75 + 1) + 1) / 2);
     const imageParam = getRankImageByTotalXP(totalXP);
-
+    logger.log(`[levelSync] Level=${level}, ImageParam=${imageParam}`);
     let cfgContent = '';
     try {
+      logger.log(`[levelSync] Читаем CFG: ${cfgPath}`);
       cfgContent = await fs.readFile(cfgPath, 'utf-8');
     } catch (err) {
-      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        logger.log(`[levelSync] CFG не найден, будет создан новый`);
+        cfgContent = '';
+      } else {
         logger.error(
-          `[levelSync] Не удалось прочитать ${cfgPath}: ${
-            (err as Error).message
-          }`,
+          `[levelSync] Ошибка чтения ${cfgPath}: ${(err as Error).message}`,
         );
         return;
       }
@@ -101,7 +111,7 @@ export const levelSync: TPluginProps = (state, options) => {
 
     try {
       await fs.writeFile(cfgPath, lines.join('\n') + '\n', 'utf-8');
-      logger.log(`[levelSync] Обновили ${steamID}: LVL ${level}, XP ${xp}`);
+      logger.log(`[levelSync] Обновили ${steamID}: ${newLine}`);
     } catch (err) {
       logger.error(
         `[levelSync] Ошибка записи ${cfgPath} для ${steamID}: ${
