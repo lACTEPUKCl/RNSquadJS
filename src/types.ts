@@ -10,6 +10,7 @@ export type TConfig = {
   password: string;
   port: number;
   db: string;
+  database: string;
   mapsName: string;
   plugins: TPlugin[];
   adminsFilePath: string;
@@ -132,6 +133,7 @@ export type TSquadJS = {
   plugins: TPlugin[];
   rcon: TRcon;
   logs: TLogs;
+  database: string;
 };
 
 export type TPlayerTeamChanged = {

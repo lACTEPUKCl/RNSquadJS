@@ -48,15 +48,19 @@ let collectionServerInfo: Collection<Info>;
 let isConnected = false;
 let reconnectTimer: NodeJS.Timeout | null = null;
 let dbLink: string;
+let databaseName: string;
 const cleaningTime = 604800000;
 
-export async function connectToDatabase(dbURL: string): Promise<void> {
+export async function connectToDatabase(
+  dbURL: string,
+  database: string,
+): Promise<void> {
   const client = new MongoClient(dbURL);
   dbLink = dbURL;
-
+  if (database) databaseName = database;
   try {
     await client.connect();
-    db = client.db(dbName);
+    db = client.db(database || dbName);
     collectionMain = db.collection(dbCollectionMain);
     collectionTemp = db.collection(dbCollectionTemp);
     collectionServerInfo = db.collection(dbCollectionServerInfo);
@@ -102,7 +106,7 @@ async function setReconnectTimer(dbLink: string) {
   if (!reconnectTimer) {
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      connectToDatabase(dbLink);
+      connectToDatabase(dbLink, databaseName);
     }, 30000);
   }
 }

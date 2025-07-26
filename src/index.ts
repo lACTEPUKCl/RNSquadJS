@@ -17,9 +17,10 @@ const initial = async () => {
           id: config.id,
           mapsName: config.mapsName,
           plugins: config.plugins,
+          database: config.database,
         });
 
-        await connectToDatabase(config.db);
+        await connectToDatabase(config.db, config.database);
       } catch (error) {
         const err = error as TError;
 
