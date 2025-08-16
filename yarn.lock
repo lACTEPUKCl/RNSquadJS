@@ -1694,10 +1694,10 @@ sparse-bitfield@^3.0.3:
   dependencies:
     memory-pager "^1.0.2"
 
-squad-logs@^1.0.28:
-  version "1.0.28"
-  resolved "https://registry.yarnpkg.com/squad-logs/-/squad-logs-1.0.28.tgz#0aff1e173cfc4f8da7fbcb9d1f27065593e6cf68"
-  integrity sha512-X7SEDOnOaPM8JPklAQZnVMO+LvHJpWnH28rLvDKhClywXVKT8FqEeIQijNeGnEVv/D/u4BQtCiRUDc+VQzm4Qg==
+squad-logs@^1.0.32:
+  version "1.0.32"
+  resolved "https://registry.yarnpkg.com/squad-logs/-/squad-logs-1.0.32.tgz#1f237ea3fdd94291cb6c6b1175f43ee04b1bdc3b"
+  integrity sha512-LtufTdjW2QVbPaVKirjvIlQtWlzOSkWDcafvvrTG9veCJ7q9AHQ8Aw5EuYSo1f1Qh5bRBtsurGrD8T1lidVvJQ==
   dependencies:
     chalk "^5.3.0"
     date-fns "^2.30.0"
