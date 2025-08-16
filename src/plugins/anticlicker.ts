@@ -1,4 +1,4 @@
-import { spawn } from 'child_process'; // +++
+import { spawn } from 'child_process';
 import { TNotifyAcceptingConnection } from 'squad-logs';
 import { EVENTS } from '../constants';
 import { TPluginProps } from '../types';
@@ -28,15 +28,48 @@ const toStr = (v: unknown, def: string): string => {
   return s || def;
 };
 
-function runSh(
+function normalizeIp(v: unknown): string | null {
+  if (v == null) return null;
+  let s = String(v).trim();
+  if (!s) return null;
+  s = s.split(',')[0]?.trim() || s;
+  const m6 = s.match(/::ffff:(\d{1,3}(?:\.\d{1,3}){3})/i);
+  if (m6) s = m6[1];
+  const mp = s.match(/^(\d{1,3}(?:\.\d{1,3}){3})(?::\d+)?$/);
+  if (mp) s = mp[1];
+  return IPV4_RE.test(s) ? s : null;
+}
+
+function dockerRunHostOnce(
+  dockerPath: string,
+  image: string,
   cmd: string,
   onOk?: () => void,
-  onErr?: (code: number | null) => void,
+  onErr?: (code: number | null, stderr?: string) => void,
 ) {
-  const ch = spawn('sh', ['-lc', cmd], { stdio: 'ignore' });
+  const wrappedCmd =
+    'sh -lc "' +
+    'iptables -V >/dev/null 2>&1 || (apk add --no-cache iptables ipset >/dev/null 2>&1 || (apt-get update && apt-get install -y iptables ipset)); ' +
+    cmd.replace(/"/g, '\\"') +
+    '"';
+
+  const args = [
+    'run',
+    '--rm',
+    '--network',
+    'host',
+    '--cap-add',
+    'NET_ADMIN',
+    image,
+    ...['sh', '-lc', wrappedCmd],
+  ];
+
+  const ch = spawn(dockerPath, args);
+  let err = '';
+  ch.stderr.on('data', (c) => (err += String(c)));
   ch.on('exit', (code) => {
     if (code === 0) onOk?.();
-    else onErr?.(code ?? null);
+    else onErr?.(code ?? null, err.trim() || undefined);
   });
 }
 
@@ -64,7 +97,8 @@ export const antiClicker: TPluginProps = (state, options) => {
   ) as 'ipset' | 'iptables';
   const ipsetName = toStr(options?.ipsetName, 'clicker_blacklist');
   const banTtlSec = toNum(options?.banTtlSec, 86_400);
-
+  const dockerPath = toStr(options?.dockerPath, '/usr/bin/docker');
+  const banImage = toStr(options?.banImage, 'alpine:3.20');
   const perIp = new Map<string, IpState>();
   let infraReady = false;
 
@@ -90,10 +124,11 @@ export const antiClicker: TPluginProps = (state, options) => {
 
   const onAccept = (data: TNotifyAcceptingConnection) => {
     const now = Date.now();
-    const ip = (data as any).ip as string;
+
+    const ip = normalizeIp((data as any).ip);
     const port = String((data as any).port ?? '');
 
-    if (!ip || !IPV4_RE.test(ip)) return;
+    if (!ip) return;
 
     let st = perIp.get(ip);
     if (!st) {
@@ -122,23 +157,36 @@ export const antiClicker: TPluginProps = (state, options) => {
 
       if (enableBan) {
         const cmds = buildBanCommands(ip);
-        if (!infraReady && cmds.init) {
-          runSh(
+
+        if (banMode === 'ipset' && !infraReady && cmds.init) {
+          dockerRunHostOnce(
+            dockerPath,
+            banImage,
             cmds.init,
             () => {
               infraReady = true;
               logger.log('[antiClicker] ipset/iptables infra ready');
             },
-            (code) =>
-              logger.warn(`[antiClicker] infra init failed, exit=${code}`),
+            (code, stderr) =>
+              logger.warn(
+                `[antiClicker] infra init failed, exit=${code}${
+                  stderr ? `, stderr=${stderr}` : ''
+                }`,
+              ),
           );
         }
 
-        runSh(
+        dockerRunHostOnce(
+          dockerPath,
+          banImage,
           cmds.add,
           () => logger.warn(`[antiClicker] BAN applied -> ${ip}`),
-          (code) =>
-            logger.warn(`[antiClicker] BAN failed for ${ip}, exit=${code}`),
+          (code, stderr) =>
+            logger.warn(
+              `[antiClicker] BAN failed for ${ip}, exit=${code}${
+                stderr ? `, stderr=${stderr}` : ''
+              }`,
+            ),
         );
       }
     }
