@@ -1,5 +1,6 @@
 import { getServersState } from '../serversState';
 import { adminCamBlocker } from './admin-cam-blocker';
+import { antiClicker } from './anticlicker';
 import { explosiveDamaged } from './apply-explosive-damaged';
 import { autoKickUnassigned } from './auto-kick-unassigned';
 import { autorestartServers } from './autorestart-servers';
@@ -23,6 +24,7 @@ const plugins = [
   voteMap,
   randomizerMaps,
   warnPlayers,
+  antiClicker,
   squadLeaderRole,
   autoKickUnassigned,
   chatCommands,
