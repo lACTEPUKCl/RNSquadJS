@@ -5,7 +5,7 @@ COPY . /app
 WORKDIR /app
 RUN npm install
 RUN apt-get update && \
-	apt-get install -y ca-certificates curl && \
+	apt-get install -y ca-certificates curl iptables ipset && \
 	install -m 0755 -d /etc/apt/keyrings && \
 	curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
 	chmod a+r /etc/apt/keyrings/docker.asc && \
@@ -14,4 +14,3 @@ RUN apt-get update && \
 	tee /etc/apt/sources.list.d/docker.list > /dev/null && \
 	apt-get update && apt-get install -y docker-compose-plugin docker-ce-cli
 CMD [ "npm", "run", "start:prod" ]
-
