@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { promises as fs } from 'fs';
 import { TNotifyAcceptingConnection } from 'squad-logs';
 import { EVENTS } from '../constants';
 import { TPluginProps } from '../types';
@@ -28,7 +29,7 @@ const toStr = (v: unknown, def: string): string => {
   return s || def;
 };
 
-function normalizeIp(v: unknown): string | null {
+function normalizeIp(v: string | null | undefined): string | null {
   if (v == null) return null;
   let s = String(v).trim();
   if (!s) return null;
@@ -73,9 +74,89 @@ function dockerRunHostOnce(
   });
 }
 
-export const antiClicker: TPluginProps = (state, options) => {
-  const { listener, logger } = state;
+async function readFileTail(
+  filePath: string,
+  maxBytes: number,
+): Promise<string | null> {
+  try {
+    const fh = await fs.open(filePath, 'r');
+    try {
+      const stat = await fh.stat();
+      const size = stat.size;
+      if (size === 0) return '';
 
+      const readLen = Math.min(maxBytes, size);
+      const startPos = size - readLen;
+      const buf = new Uint8Array(readLen);
+
+      await fh.read({
+        buffer: buf,
+        offset: 0,
+        length: readLen,
+        position: startPos,
+      });
+
+      return Buffer.from(buf).toString('utf8');
+    } finally {
+      await fh.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
+function extractEosIdFromTail(
+  tail: string,
+): { ip: string; eosid: string } | null {
+  const re =
+    /RemoteAddr:\s(\d{1,3}(?:\.\d{1,3}){3}):\d+[\s\S]*?UniqueId:\sRedpointEOS:([0-9a-fA-F]+)/;
+  const m = tail.match(re);
+  if (!m) return null;
+  return { ip: m[1], eosid: m[2] };
+}
+
+async function sendDiscordWebhook(params: {
+  url?: string;
+  content?: string;
+  username?: string;
+  avatar_url?: string;
+  embeds?: any[];
+  logger?: { warn: (s: string) => void; log: (s: string) => void };
+}) {
+  const { url, logger } = params;
+  if (!url) return;
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: params.content ?? '',
+        username: params.username,
+        avatar_url: params.avatar_url,
+        embeds: params.embeds,
+        allowed_mentions: { parse: ['roles'] },
+      }),
+    });
+
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      logger?.warn?.(`[antiClicker] webhook http=${res.status} body=${t}`);
+    }
+  } catch (e: any) {
+    params.logger?.warn?.(`[antiClicker] webhook error: ${e?.message || e}`);
+  }
+}
+
+export const antiClicker: TPluginProps = (state, options) => {
+  const { listener, logger, id } = state;
+  const webhookUrl = toStr(options?.webhookUrl, '');
+  const mentionRoleId = toStr(options?.mentionRoleId, '');
+  const webhookUsername = toStr(options?.webhookUsername, 'AntiClicker');
+  const webhookAvatarUrl = toStr(options?.webhookAvatarUrl, '');
+  const postBanLookupEnabled = toBool(options?.postBanLookupEnabled, true);
+  const logFilePath = toStr(options?.logFilePath, '');
+  const logTailBytes = toNum(options?.logTailBytes, 512 * 1024);
   const windowMsExplicit = toNum(options?.windowMs, NaN);
   const windowSecExplicit = toNum(options?.windowSec, NaN);
   const windowMs = Number.isFinite(windowMsExplicit)
@@ -99,6 +180,7 @@ export const antiClicker: TPluginProps = (state, options) => {
   const banTtlSec = toNum(options?.banTtlSec, 86_400);
   const dockerPath = toStr(options?.dockerPath, '/usr/bin/docker');
   const banImage = toStr(options?.banImage, 'alpine:3.20');
+
   const perIp = new Map<string, IpState>();
   let infraReady = false;
 
@@ -125,8 +207,10 @@ export const antiClicker: TPluginProps = (state, options) => {
   const onAccept = (data: TNotifyAcceptingConnection) => {
     const now = Date.now();
 
-    const ip = normalizeIp((data as any).ip);
-    const port = String((data as any).port ?? '');
+    const ip = normalizeIp(data.ip as string | null | undefined);
+    const port = String(
+      (data as { port?: string | number | null | undefined }).port ?? '',
+    );
 
     if (!ip) return;
 
@@ -180,7 +264,47 @@ export const antiClicker: TPluginProps = (state, options) => {
           dockerPath,
           banImage,
           cmds.add,
-          () => logger.warn(`[antiClicker] BAN applied -> ${ip}`),
+          async () => {
+            logger.warn(`[antiClicker] BAN applied -> ${ip}`);
+
+            if (postBanLookupEnabled && logFilePath && webhookUrl) {
+              try {
+                const tail = await readFileTail(logFilePath, logTailBytes);
+                if (tail) {
+                  const eos = extractEosIdFromTail(tail);
+                  if (eos) {
+                    const { ip: foundIp, eosid } = eos;
+                    const content = mentionRoleId
+                      ? `<@&${mentionRoleId}>`
+                      : undefined;
+
+                    const embed = {
+                      title: `🔒 AntiClicker: IP забанен на Сервере ${id}`,
+                      description: 'Найден связанный EOS ID по логу.',
+                      timestamp: new Date().toISOString(),
+                      fields: [
+                        { name: 'IP', value: `\`${foundIp}\``, inline: true },
+                        { name: 'EOS ID', value: `\`${eosid}\``, inline: true },
+                      ],
+                    };
+
+                    void sendDiscordWebhook({
+                      url: webhookUrl,
+                      content,
+                      username: webhookUsername || undefined,
+                      avatar_url: webhookAvatarUrl || undefined,
+                      embeds: [embed],
+                      logger,
+                    });
+                  }
+                }
+              } catch (e: any) {
+                logger.warn(
+                  `[antiClicker] post-ban lookup error: ${e?.message || e}`,
+                );
+              }
+            }
+          },
           (code, stderr) =>
             logger.warn(
               `[antiClicker] BAN failed for ${ip}, exit=${code}${
