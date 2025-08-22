@@ -17,6 +17,8 @@ export const chatCommands: TPluginProps = (state, options) => {
     bonusEnable,
     rollEnable,
     swapEnable,
+    balanceEnable,
+    balanceOffEnable,
     swapTimeout,
     statsTimeout,
     stvolTimeout,
@@ -205,6 +207,50 @@ export const chatCommands: TPluginProps = (state, options) => {
     }
   }
 
+  const isAdminSteam = (steamID: string): boolean => {
+    const set = new Set<string>([
+      ...(getAdmins(state, 'forceteamchange') || []),
+    ]);
+    return set.has(steamID);
+  };
+
+  const balanceOn = async (data: TChatMessage) => {
+    if (!balanceEnable) return;
+    if (!isAdminSteam(data.steamID)) {
+      adminWarn(
+        execute,
+        data.steamID,
+        'Команда доступна только администраторам',
+      );
+      return;
+    }
+    state.listener.emit(EVENTS.SMART_BALANCE_ON, {
+      by: data.steamID,
+      source: 'chat',
+    });
+    await adminBroadcast(
+      execute,
+      'Автобаланс активирован - команды будут сбалансированы в конце игры.',
+    );
+  };
+
+  const balanceOff = async (data: TChatMessage) => {
+    if (!balanceOffEnable) return;
+    if (!isAdminSteam(data.steamID)) {
+      adminWarn(
+        execute,
+        data.steamID,
+        'Команда доступна только администраторам',
+      );
+      return;
+    }
+    state.listener.emit(EVENTS.SMART_BALANCE_OFF, {
+      by: data.steamID,
+      source: 'chat',
+    });
+    await adminBroadcast(execute, 'Автобаланс отключен.');
+  };
+
   listener.on(EVENTS.CHAT_COMMAND_ADMINS, admins);
   listener.on(EVENTS.CHAT_COMMAND_REPORT, report);
   listener.on(EVENTS.CHAT_COMMAND_R, report);
@@ -217,4 +263,6 @@ export const chatCommands: TPluginProps = (state, options) => {
   listener.on(EVENTS.CHAT_COMMAND_SWITCH, swap);
   listener.on(EVENTS.CHAT_COMMAND_SWAP, swap);
   listener.on(EVENTS.CHAT_COMMAND_SW, swap);
+  listener.on(EVENTS.CHAT_COMMAND_BALANCE, balanceOn);
+  listener.on(EVENTS.CHAT_COMMAND_BALANCE_OFF, balanceOff);
 };

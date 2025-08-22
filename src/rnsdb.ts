@@ -1,4 +1,4 @@
-import { Collection, Db, MongoClient } from 'mongodb';
+import { AnyBulkWriteOperation, Collection, Db, MongoClient } from 'mongodb';
 
 interface Main {
   _id: string;
@@ -645,4 +645,266 @@ export async function creatingTimeStamp() {
     await collectionTemp.deleteMany({});
     await collectionMain.updateOne(userTemp, dateTemp);
   }
+}
+
+interface SocialEdge {
+  _id?: unknown;
+  a: string;
+  b: string;
+  coSquadSeconds?: number;
+  coTeamSeconds?: number;
+  lastSeenAt: Date;
+  lastDecayAt?: Date;
+}
+interface ClanTagDoc {
+  _id?: unknown;
+  tag: string;
+  totalUses: number;
+  startUses: number;
+  players: string[]; // для подсчёта unique
+  cohesion?: number; // 0..1
+  whitelist?: boolean;
+  blacklist?: boolean;
+  lastSeenAt: Date;
+}
+
+let collectionEdges: Collection<SocialEdge> | undefined;
+let collectionClanTags: Collection<ClanTagDoc> | undefined;
+let collectionControl: Collection<{ key: string; value: any }> | undefined;
+
+/** создать коллекции/индексы (TTL для edges) */
+export async function sbEnsureSmartBalance(
+  retentionDays: number,
+): Promise<void> {
+  if (!isConnected || !db) return;
+  collectionEdges = db.collection<SocialEdge>('social_edges');
+  collectionClanTags = db.collection<ClanTagDoc>('clan_tags');
+  collectionControl = db.collection('smart_balance_control');
+
+  await collectionEdges
+    .createIndex({ a: 1, b: 1 }, { unique: true, name: 'ab_unique' })
+    .catch(() => {});
+  await collectionEdges
+    .createIndex({ lastSeenAt: 1 }, { name: 'lastSeen' })
+    .catch(() => {});
+  await collectionClanTags
+    .createIndex({ tag: 1 }, { unique: true, name: 'tag_unique' })
+    .catch(() => {});
+
+  // TTL на edges по lastSeenAt
+  const ttl = Math.max(1, retentionDays) * 86400;
+  const idx = await collectionEdges.indexes().catch(() => []);
+  const ex = (idx as { name: string; expireAfterSeconds?: number }[]).find(
+    (i) => i.name === 'ttl_lastSeenAt',
+  );
+  if (ex?.expireAfterSeconds !== ttl) {
+    if (ex) await collectionEdges.dropIndex('ttl_lastSeenAt').catch(() => {});
+    await collectionEdges.createIndex(
+      { lastSeenAt: 1 },
+      { expireAfterSeconds: ttl, name: 'ttl_lastSeenAt' },
+    );
+  }
+}
+
+/** пакетно инкрементируем пары "в одном скваде" */
+export async function sbUpsertSocialEdges(
+  batch: Readonly<Record<string, { sq?: number; tm?: number; at: Date }>>,
+): Promise<void> {
+  if (!isConnected || !collectionEdges) return;
+  const ops: AnyBulkWriteOperation<SocialEdge>[] = [];
+  for (const k of Object.keys(batch)) {
+    const [a, b] = k.split('|');
+    const incSq = batch[k].sq ?? 0;
+    const incTm = batch[k].tm ?? 0;
+    const $inc: Partial<Record<'coSquadSeconds' | 'coTeamSeconds', number>> =
+      {};
+    if (incSq) $inc.coSquadSeconds = incSq;
+    if (incTm) $inc.coTeamSeconds = incTm;
+    ops.push({
+      updateOne: {
+        filter: { a, b },
+        update: {
+          $setOnInsert: { a, b },
+          $set: { lastSeenAt: batch[k].at },
+          ...(Object.keys($inc).length > 0 ? { $inc } : {}),
+        },
+        upsert: true,
+      },
+    });
+  }
+  if (ops.length)
+    await collectionEdges.bulkWrite(ops, { ordered: false }).catch(() => {});
+}
+
+/** получить «пати» среди onlineIDs за окно времени */
+export async function sbGetActivePartiesOnline(
+  onlineIDs: readonly string[],
+  windowDays: number,
+  minSec: number,
+  maxParty: number,
+): Promise<string[][]> {
+  if (!isConnected || !collectionEdges || onlineIDs.length === 0) return [];
+  const onlineSet = new Set(onlineIDs);
+  const cutoff = new Date(Date.now() - windowDays * 86400_000);
+  const cursor = collectionEdges.find(
+    { lastSeenAt: { $gte: cutoff }, coSquadSeconds: { $gte: minSec } },
+    { projection: { a: 1, b: 1 } },
+  );
+
+  const adj = new Map<string, Set<string>>();
+  const ensure = (x: string) => {
+    if (!adj.has(x)) adj.set(x, new Set());
+  };
+
+  while (await cursor.hasNext()) {
+    const e = await cursor.next();
+    if (!e) break;
+    if (!onlineSet.has(e.a) || !onlineSet.has(e.b)) continue;
+    ensure(e.a);
+    ensure(e.b);
+    adj.get(e.a)!.add(e.b);
+    adj.get(e.b)!.add(e.a);
+  }
+
+  const seen = new Set<string>();
+  const parties: string[][] = [];
+  for (const node of adj.keys()) {
+    if (seen.has(node)) continue;
+    const q = [node];
+    const comp: string[] = [];
+    seen.add(node);
+    while (q.length) {
+      const v = q.shift()!;
+      comp.push(v);
+      for (const w of adj.get(v) || [])
+        if (!seen.has(w)) {
+          seen.add(w);
+          q.push(w);
+        }
+    }
+    for (let i = 0; i < comp.length; i += maxParty) {
+      const chunk = comp.slice(i, i + maxParty);
+      if (chunk.length >= 2) parties.push(chunk);
+    }
+  }
+  return parties;
+}
+
+/** ежедневный decay для ко-времени */
+export async function sbDailyDecayEdges(factor: number): Promise<void> {
+  if (!isConnected || !collectionEdges || !collectionControl) return;
+  const todayISO = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    new Date().getDate(),
+  ).toISOString();
+  const doc = await collectionControl
+    .findOne({ key: 'decay-last' as const })
+    .catch(() => null);
+  if ((doc as any)?.value?.date === todayISO) return;
+
+  const cursor = collectionEdges.find(
+    {},
+    { projection: { _id: 1, coSquadSeconds: 1, coTeamSeconds: 1 } },
+  );
+  const ops: AnyBulkWriteOperation<SocialEdge>[] = [];
+  while (await cursor.hasNext()) {
+    const e = await cursor.next();
+    if (!e) break;
+    const sq = Math.floor((e.coSquadSeconds ?? 0) * factor);
+    const tm = Math.floor((e.coTeamSeconds ?? 0) * factor);
+    ops.push({
+      updateOne: {
+        filter: { _id: e._id },
+        update: {
+          $set: {
+            coSquadSeconds: sq,
+            coTeamSeconds: tm,
+            lastDecayAt: new Date(),
+          },
+        },
+      },
+    });
+    if (ops.length >= 1000) {
+      await collectionEdges.bulkWrite(ops, { ordered: false });
+      ops.length = 0;
+    }
+  }
+  if (ops.length) await collectionEdges.bulkWrite(ops, { ordered: false });
+  await collectionControl.updateOne(
+    { key: 'decay-last' as const },
+    { $set: { key: 'decay-last', value: { date: todayISO } } },
+    { upsert: true },
+  );
+}
+
+/** обновить счётчики по префиксам */
+export async function sbUpdateClanTagCounters(
+  stats: Array<{
+    tag: string;
+    totalInc: number;
+    startInc: number;
+    steamIDs: string[];
+  }>,
+): Promise<void> {
+  if (!isConnected || !collectionClanTags) return;
+  const now = new Date();
+  const ops: AnyBulkWriteOperation<ClanTagDoc>[] = [];
+  for (const s of stats) {
+    ops.push({
+      updateOne: {
+        filter: { tag: s.tag },
+        update: {
+          $setOnInsert: {
+            tag: s.tag,
+            totalUses: 0,
+            startUses: 0,
+            players: [],
+            lastSeenAt: now,
+          },
+          $inc: { totalUses: s.totalInc, startUses: s.startInc },
+          $addToSet: { players: { $each: s.steamIDs } },
+          $set: { lastSeenAt: now },
+        },
+        upsert: true,
+      },
+    });
+  }
+  if (ops.length)
+    await collectionClanTags.bulkWrite(ops, { ordered: false }).catch(() => {});
+}
+
+/** получить документы по тегам */
+export async function sbGetClanTagDocs(tags: string[]): Promise<ClanTagDoc[]> {
+  if (!isConnected || !collectionClanTags || !tags.length) return [];
+  return (await collectionClanTags
+    .find({ tag: { $in: tags } })
+    .toArray()
+    .catch(() => [])) as ClanTagDoc[];
+}
+
+/** обновить когезию для тега (берём максимум) */
+export async function sbUpdateClanCohesion(
+  tag: string,
+  cohesion: number,
+): Promise<void> {
+  if (!isConnected || !collectionClanTags) return;
+  await collectionClanTags
+    .updateOne(
+      { tag },
+      {
+        $setOnInsert: {
+          tag,
+          totalUses: 0,
+          startUses: 0,
+          players: [],
+          lastSeenAt: new Date(),
+          cohesion: 0,
+        },
+        $max: { cohesion },
+        $set: { lastSeenAt: new Date() },
+      },
+      { upsert: true },
+    )
+    .catch(() => {});
 }
