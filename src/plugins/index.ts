@@ -15,6 +15,7 @@ import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
 import { skipmap } from './skipmap';
+import { smartBalance } from './smart-balance';
 import { squadLeaderRole } from './squad-leader-role';
 import { voteMap } from './votemap';
 import { voteMapMods } from './votemapmods';
@@ -24,6 +25,7 @@ const plugins = [
   voteMap,
   randomizerMaps,
   warnPlayers,
+  smartBalance,
   antiClicker,
   squadLeaderRole,
   autoKickUnassigned,
