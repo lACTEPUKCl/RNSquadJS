@@ -509,178 +509,205 @@ function plan(
 export const smartBalance: TPluginProps = (state: TState, options) => {
   const { listener, logger, execute } = state;
 
-  const opt = {
-    tickSeconds: Number(options?.tickSeconds ?? 60),
-    partyWindowDays: Number(options?.partyWindowDays ?? 14),
-    partyMinSec: Number(options?.partyMinSec ?? 900),
-    partyMaxSize: Number(options?.partyMaxSize ?? 6),
-    decayDailyFactor: Number(options?.decayDailyFactor ?? 0.98),
-    retentionDays: Number(options?.retentionDays ?? 120),
-    teamCap: Number(options?.teamCap ?? 50),
-    skillTolerancePct: clamp01(Number(options?.skillTolerancePct ?? 0.05)),
-    hardSkillTolerancePct: clamp01(
-      Number(options?.hardSkillTolerancePct ?? 0.08),
-    ),
-    swapLimitPerRound: Number(options?.swapLimitPerRound ?? 24),
-    protectCommander: Boolean(options?.protectCommander ?? true),
-    protectSquadLeader: Boolean(options?.protectSquadLeader ?? true),
-    prioritizeClans: Boolean(options?.prioritizeClans ?? true),
-    frontWindow: Number(options?.frontWindow ?? 18),
-    clanMaxLen: Number(options?.clanMaxLen ?? 6),
-    tagMinUnique: Number(options?.tagMinUnique ?? 3),
-    tagMinConfidence: Number(options?.tagMinConfidence ?? 0.6),
-    tagMinCohesion: Number(options?.tagMinCohesion ?? 0.2),
-    blacklistTags: Array.isArray(options?.blacklistTags)
-      ? (options.blacklistTags as string[]).map(normalizeName)
-      : [],
-    whitelistTags: Array.isArray(options?.whitelistTags)
-      ? (options.whitelistTags as string[]).map(normalizeName)
-      : [],
-  };
+  try {
+    logger?.log?.('[smart-balance] init start');
 
-  sbEnsureSmartBalance(opt.retentionDays)
-    .then(() => logger.log('[smart-balance] DB ready'))
-    .catch(() => logger.warn('[smart-balance] DB skipped'));
+    const clamp = (v: unknown, d: number) =>
+      Math.max(0, Math.min(1, Number(v ?? d)));
 
-  const detector = new TagDetector({
-    frontWindow: opt.frontWindow,
-    maxLen: opt.clanMaxLen,
-    minUnique: opt.tagMinUnique,
-    minConfidence: opt.tagMinConfidence,
-    minCohesion: opt.tagMinCohesion,
-    blacklist: opt.blacklistTags,
-    whitelist: opt.whitelistTags,
-  });
+    const opt = {
+      tickSeconds: Number(options?.tickSeconds ?? 60),
+      partyWindowDays: Number(options?.partyWindowDays ?? 14),
+      partyMinSec: Number(options?.partyMinSec ?? 900),
+      partyMaxSize: Number(options?.partyMaxSize ?? 6),
+      decayDailyFactor: Number(options?.decayDailyFactor ?? 0.98),
+      retentionDays: Number(options?.retentionDays ?? 120),
+      teamCap: Number(options?.teamCap ?? 50),
+      skillTolerancePct: clamp(options?.skillTolerancePct, 0.05),
+      hardSkillTolerancePct: clamp(options?.hardSkillTolerancePct, 0.08),
+      swapLimitPerRound: Number(options?.swapLimitPerRound ?? 24),
+      protectCommander: Boolean(options?.protectCommander ?? true),
+      protectSquadLeader: Boolean(options?.protectSquadLeader ?? true),
+      prioritizeClans: Boolean(options?.prioritizeClans ?? true),
+      frontWindow: Number(options?.frontWindow ?? 18),
+      clanMaxLen: Number(options?.clanMaxLen ?? 6),
+      tagMinUnique: Number(options?.tagMinUnique ?? 3),
+      tagMinConfidence: Number(options?.tagMinConfidence ?? 0.6),
+      tagMinCohesion: Number(options?.tagMinCohesion ?? 0.2),
+      blacklistTags: Array.isArray(options?.blacklistTags)
+        ? (options.blacklistTags as string[]).map(normalizeName)
+        : [],
+      whitelistTags: Array.isArray(options?.whitelistTags)
+        ? (options.whitelistTags as string[]).map(normalizeName)
+        : [],
+    };
 
-  let tickTimer: NodeJS.Timeout | null = null;
-  const startTracker = (): void => {
-    if (tickTimer) return;
-    tickTimer = setInterval(async () => {
-      try {
-        const players = (state.players ?? []) as TPlayer[];
-        const now = new Date();
-        const bySquad = new Map<string, string[]>();
-        for (const p of players) {
-          if (!p?.steamID || !p.squadID || p.squadID === '0') continue;
-          const key = `${p.teamID}|${p.squadID}`;
-          if (!bySquad.has(key)) bySquad.set(key, []);
-          bySquad.get(key)!.push(p.steamID);
-        }
+    sbEnsureSmartBalance(opt.retentionDays)
+      .then(() => logger?.log?.('[smart-balance] DB ready'))
+      .catch((e) => logger?.warn?.(`[smart-balance] DB skipped: ${String(e)}`));
 
-        const incs: Record<string, { sq?: number; tm?: number; at: Date }> = {};
-        for (const members of bySquad.values()) {
-          if (members.length < 2 || members.length > 9) continue;
-          for (let i = 0; i < members.length; i += 1) {
-            for (let j = i + 1; j < members.length; j += 1) {
-              const a = members[i],
-                b = members[j];
-              const k = a < b ? `${a}|${b}` : `${b}|${a}`;
-              incs[k] = { sq: (incs[k]?.sq ?? 0) + opt.tickSeconds, at: now };
+    const detector = new TagDetector({
+      frontWindow: opt.frontWindow,
+      maxLen: opt.clanMaxLen,
+      minUnique: opt.tagMinUnique,
+      minConfidence: opt.tagMinConfidence,
+      minCohesion: opt.tagMinCohesion,
+      blacklist: opt.blacklistTags,
+      whitelist: opt.whitelistTags,
+    });
+
+    const START_EVT: any =
+      (EVENTS as any).NEW_GAME ??
+      (EVENTS as any).ROUND_WARMUP ??
+      (EVENTS as any).ROUND_STARTED ??
+      (EVENTS as any).MATCH_STARTED ??
+      EVENTS.UPDATED_PLAYERS;
+
+    const END_EVT: any =
+      (EVENTS as any).ROUND_ENDED ??
+      (EVENTS as any).MATCH_ENDED ??
+      'ROUND_ENDED';
+
+    let tickTimer: NodeJS.Timeout | null = null;
+    const startTracker = (): void => {
+      if (tickTimer) return;
+      tickTimer = setInterval(async () => {
+        try {
+          const players = (state.players ?? []) as TPlayer[];
+          const now = new Date();
+
+          const bySquad = new Map<string, string[]>();
+          for (const p of players) {
+            if (!p?.steamID || !p.squadID || p.squadID === '0') continue;
+            const key = `${p.teamID}|${p.squadID}`;
+            if (!bySquad.has(key)) bySquad.set(key, []);
+            bySquad.get(key)!.push(p.steamID);
+          }
+
+          const incs: Record<string, { sq?: number; tm?: number; at: Date }> =
+            {};
+          for (const members of bySquad.values()) {
+            if (members.length < 2 || members.length > 9) continue;
+            for (let i = 0; i < members.length; i += 1) {
+              for (let j = i + 1; j < members.length; j += 1) {
+                const a = members[i],
+                  b = members[j];
+                const k = a < b ? `${a}|${b}` : `${b}|${a}`;
+                incs[k] = { sq: (incs[k]?.sq ?? 0) + opt.tickSeconds, at: now };
+              }
             }
           }
+          await sbUpsertSocialEdges(incs);
+        } catch (e) {
+          logger?.warn?.(`[smart-balance] tracker error: ${String(e)}`);
         }
-        await sbUpsertSocialEdges(incs);
-      } catch (e) {
-        logger.warn(`[smart-balance] tracker error: ${String(e)}`);
-      }
-    }, opt.tickSeconds * 1000);
-    logger.log(`[smart-balance] tracker started (tick=${opt.tickSeconds}s)`);
-  };
-  const stopTracker = () => {
-    if (tickTimer) {
+      }, opt.tickSeconds * 1000);
+      logger?.log?.(
+        `[smart-balance] tracker started (tick=${opt.tickSeconds}s)`,
+      );
+    };
+    const stopTracker = () => {
+      if (!tickTimer) return;
       clearInterval(tickTimer);
       tickTimer = null;
-      logger.log('[smart-balance] tracker stopped');
-    }
-  };
+      logger?.log?.('[smart-balance] tracker stopped');
+    };
 
-  listener.on(EVENTS.NEW_GAME, () => startTracker());
-  listener.on(EVENTS.ROUND_ENDED, async () => {
-    stopTracker();
-    await sbDailyDecayEdges(opt.decayDailyFactor).catch(() => {});
-  });
+    listener.on(START_EVT, () => startTracker());
+    listener.on(END_EVT, async () => {
+      stopTracker();
+      await sbDailyDecayEdges(opt.decayDailyFactor).catch(() => {});
+    });
 
-  let balanceRequested = false;
-
-  listener.on(EVENTS.SMART_BALANCE_ON, () => {
-    balanceRequested = true;
-  });
-  listener.on(EVENTS.SMART_BALANCE_OFF, () => {
-    balanceRequested = false;
-  });
-
-  listener.on(EVENTS.ROUND_ENDED, async () => {
-    if (!balanceRequested) return;
-    try {
-      const players = (state.players ?? []) as TPlayer[];
-
-      await detector.learnFromOnline(players, 14);
-
-      const miss = players
-        .map((p) => p.steamID)
-        .filter((id) => !skillCache.has(id));
-      await Promise.all(miss.map((id) => getSkill(id)));
-
-      const online = await buildOnline(players, (name) =>
-        detector.detect(name),
-      );
-
-      const parties = await sbGetActivePartiesOnline(
-        online.map((p) => p.steamID),
-        opt.partyWindowDays,
-        opt.partyMinSec,
-        opt.partyMaxSize,
-      );
-
-      const packs = buildPacks(online, parties, opt.prioritizeClans);
-      const { moves, final } = plan(
-        packs,
-        opt.teamCap,
-        opt.skillTolerancePct,
-        Math.max(opt.hardSkillTolerancePct, opt.skillTolerancePct),
-      );
-
-      const preview =
-        `Баланс (предпросмотр): A=${final.cA}/S=${final.sA} | B=${final.cB}/S=${final.sB} | ` +
-        `Цель: 50/50 и Δskill ≤ ${(opt.skillTolerancePct * 100).toFixed(
-          1,
-        )}% | Пачек к переносу: ${moves.length} (лимит ${
-          opt.swapLimitPerRound
-        })`;
-      await adminBroadcast(execute as TExecute, preview);
-
-      let packsApplied = 0;
-      for (const mv of moves) {
-        if (packsApplied >= opt.swapLimitPerRound) break;
-        for (const sid of mv.players) {
-          const p = (state.players ?? []).find((x) => x.steamID === sid);
-          if (!p) continue;
-          if (opt.protectCommander && /COMMANDER/i.test(p.role ?? '')) continue;
-          if (opt.protectSquadLeader && isSLRole(p.role)) continue;
-          if (playerTeam(p) !== mv.from) continue;
-          await adminForceTeamChange(execute as TExecute, sid);
-          await new Promise((res) => setTimeout(res, 350));
-        }
-        packsApplied += 1;
-      }
-
-      await adminBroadcast(
-        execute as TExecute,
-        `Баланс применён. Перенесено пачек: ${Math.min(
-          packsApplied,
-          moves.length,
-        )}.`,
-      );
-    } catch (e) {
-      state.logger.error(`[smart-balance] apply failed: ${String(e)}`);
-      await adminBroadcast(
-        execute as TExecute,
-        'Баланс: ошибка при применении (см. логи).',
-      );
-    } finally {
+    let balanceRequested = false;
+    listener.on(EVENTS.SMART_BALANCE_ON, () => {
+      balanceRequested = true;
+    });
+    listener.on(EVENTS.SMART_BALANCE_OFF, () => {
       balanceRequested = false;
-    }
-  });
+    });
+
+    listener.on(END_EVT, async () => {
+      if (!balanceRequested) return;
+      try {
+        const players = (state.players ?? []) as TPlayer[];
+
+        await detector.learnFromOnline(players, 14);
+
+        const miss = players
+          .map((p) => p.steamID)
+          .filter((id) => !skillCache.has(id));
+        await Promise.all(miss.map((id) => getSkill(id)));
+
+        const online = await buildOnline(players, (name) =>
+          detector.detect(name),
+        );
+
+        const parties = await sbGetActivePartiesOnline(
+          online.map((p) => p.steamID),
+          opt.partyWindowDays,
+          opt.partyMinSec,
+          opt.partyMaxSize,
+        );
+
+        const packs = buildPacks(online, parties, opt.prioritizeClans);
+        const { moves, final } = plan(
+          packs,
+          opt.teamCap,
+          opt.skillTolerancePct,
+          Math.max(opt.hardSkillTolerancePct, opt.skillTolerancePct),
+        );
+
+        const preview =
+          `Баланс (предпросмотр): A=${final.cA}/S=${final.sA} | B=${final.cB}/S=${final.sB} | ` +
+          `Цель: 50/50 и Δskill ≤ ${(opt.skillTolerancePct * 100).toFixed(
+            1,
+          )}% | ` +
+          `Пачек к переносу: ${moves.length} (лимит ${opt.swapLimitPerRound})`;
+        await adminBroadcast(execute as TExecute, preview);
+
+        let packsApplied = 0;
+        for (const mv of moves) {
+          if (packsApplied >= opt.swapLimitPerRound) break;
+          for (const sid of mv.players) {
+            const p = (state.players ?? []).find((x) => x.steamID === sid);
+            if (!p) continue;
+            if (opt.protectCommander && /COMMANDER/i.test(p.role ?? ''))
+              continue;
+            if (opt.protectSquadLeader && isSLRole(p.role)) continue;
+            if (playerTeam(p) !== mv.from) continue;
+            await adminForceTeamChange(execute as TExecute, sid);
+            await new Promise((res) => setTimeout(res, 350));
+          }
+          packsApplied += 1;
+        }
+
+        await adminBroadcast(
+          execute as TExecute,
+          `Баланс применён. Перенесено пачек: ${Math.min(
+            packsApplied,
+            moves.length,
+          )}.`,
+        );
+      } catch (e) {
+        logger?.error?.(`[smart-balance] apply failed: ${String(e)}`);
+        await adminBroadcast(
+          execute as TExecute,
+          'Баланс: ошибка при применении (см. логи).',
+        );
+      } finally {
+        balanceRequested = false;
+      }
+    });
+
+    logger?.log?.('[smart-balance] init done');
+  } catch (err) {
+    const msg =
+      err instanceof Error
+        ? `${err.name}: ${err.message}\n${err.stack}`
+        : String(err);
+    logger?.error?.('[smart-balance] init failed -> ' + msg);
+  }
 };
 
 export default smartBalance;
