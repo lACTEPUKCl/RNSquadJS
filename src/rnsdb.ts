@@ -672,11 +672,11 @@ let collectionEdges: Collection<SocialEdge> | undefined;
 let collectionClanTags: Collection<ClanTagDoc> | undefined;
 let collectionControl: Collection<{ key: string; value: any }> | undefined;
 
-/** создать коллекции/индексы (TTL для edges) */
 export async function sbEnsureSmartBalance(
   retentionDays: number,
 ): Promise<void> {
   if (!isConnected || !db) return;
+
   collectionEdges = db.collection<SocialEdge>('social_edges');
   collectionClanTags = db.collection<ClanTagDoc>('clan_tags');
   collectionControl = db.collection('smart_balance_control');
@@ -684,24 +684,28 @@ export async function sbEnsureSmartBalance(
   await collectionEdges
     .createIndex({ a: 1, b: 1 }, { unique: true, name: 'ab_unique' })
     .catch(() => {});
-  await collectionEdges
-    .createIndex({ lastSeenAt: 1 }, { name: 'lastSeen' })
-    .catch(() => {});
+
   await collectionClanTags
     .createIndex({ tag: 1 }, { unique: true, name: 'tag_unique' })
     .catch(() => {});
 
-  // TTL на edges по lastSeenAt
   const ttl = Math.max(1, retentionDays) * 86400;
-  const idx = await collectionEdges.indexes().catch(() => []);
-  const ex = (idx as { name: string; expireAfterSeconds?: number }[]).find(
-    (i) => i.name === 'ttl_lastSeenAt',
+
+  const indexes = await collectionEdges.indexes().catch(() => []);
+  const sameKey = (indexes as any[]).find(
+    (i) => i.key && i.key.lastSeenAt === 1,
   );
-  if (ex?.expireAfterSeconds !== ttl) {
-    if (ex) await collectionEdges.dropIndex('ttl_lastSeenAt').catch(() => {});
+
+  if (sameKey && sameKey.expireAfterSeconds !== ttl) {
+    await collectionEdges.dropIndex(sameKey.name).catch(() => {});
+  }
+
+  const needCreate = !sameKey || sameKey.expireAfterSeconds !== ttl;
+
+  if (needCreate) {
     await collectionEdges.createIndex(
       { lastSeenAt: 1 },
-      { expireAfterSeconds: ttl, name: 'ttl_lastSeenAt' },
+      { name: 'ttl_lastSeenAt', expireAfterSeconds: ttl },
     );
   }
 }
