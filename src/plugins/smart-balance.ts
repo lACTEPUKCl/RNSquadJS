@@ -59,7 +59,7 @@ type TagDetectOpts = {
 
 const CYR2LAT: Record<string, string> = {
   А: 'A',
-  Б: 'B', // добавлено — помогает с [СОБР] -> SOBR
+  Б: 'B',
   В: 'B',
   Е: 'E',
   К: 'K',
@@ -72,7 +72,7 @@ const CYR2LAT: Record<string, string> = {
   У: 'Y',
   Х: 'X',
   а: 'A',
-  б: 'B', // добавлено
+  б: 'B',
   в: 'B',
   е: 'E',
   к: 'K',
