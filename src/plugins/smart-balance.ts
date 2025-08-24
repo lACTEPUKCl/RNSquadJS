@@ -59,6 +59,7 @@ type TagDetectOpts = {
 
 const CYR2LAT: Record<string, string> = {
   А: 'A',
+  Б: 'B', // добавлено — помогает с [СОБР] -> SOBR
   В: 'B',
   Е: 'E',
   К: 'K',
@@ -71,6 +72,7 @@ const CYR2LAT: Record<string, string> = {
   У: 'Y',
   Х: 'X',
   а: 'A',
+  б: 'B', // добавлено
   в: 'B',
   е: 'E',
   к: 'K',
@@ -536,11 +538,13 @@ export const smartBalance: TPluginProps = (state, options) => {
     whitelistTags: Array.isArray(options?.whitelistTags)
       ? (options.whitelistTags as string[]).map(normalizeName)
       : [],
+    learnCooldownMs: Number(options?.learnCooldownMs ?? 300000), // 5 минут
+    minPlayersToLearn: Number(options?.minPlayersToLearn ?? 16),
   };
 
   sbEnsureSmartBalance(opt.retentionDays)
     .then(() => logger.log('[smart-balance] DB ready'))
-    .catch(() => logger.warn('[smart-balance] DB skipped'));
+    .catch((e) => logger.warn(`[smart-balance] DB skipped: ${String(e)}`));
 
   const detector = new TagDetector({
     frontWindow: opt.frontWindow,
@@ -551,6 +555,32 @@ export const smartBalance: TPluginProps = (state, options) => {
     blacklist: opt.blacklistTags,
     whitelist: opt.whitelistTags,
   });
+
+  let lastLearnAt = 0;
+  let learnInFlight = false;
+
+  const learnNow = async (reason: string) => {
+    if (learnInFlight) return;
+    const players = (state.players ?? []) as TPlayer[];
+    if (players.length < opt.minPlayersToLearn) return;
+
+    learnInFlight = true;
+    try {
+      await detector.learnFromOnline(players, opt.partyWindowDays);
+      logger.log(
+        `[smart-balance] learned clan tags (${reason}), online=${players.length}`,
+      );
+    } catch (e) {
+      logger.warn(`[smart-balance] learn error (${reason}): ${String(e)}`);
+    } finally {
+      learnInFlight = false;
+      lastLearnAt = Date.now();
+    }
+  };
+
+  const learnIfDue = (reason: string) => {
+    if (Date.now() - lastLearnAt >= opt.learnCooldownMs) void learnNow(reason);
+  };
 
   let tickTimer: NodeJS.Timeout | null = null;
   const startTracker = (): void => {
@@ -594,10 +624,19 @@ export const smartBalance: TPluginProps = (state, options) => {
     }
   };
 
-  listener.on(EVENTS.NEW_GAME, () => startTracker());
+  listener.on(EVENTS.NEW_GAME, () => {
+    startTracker();
+    setTimeout(() => learnIfDue('new_game'), 60_000);
+  });
+
+  listener.on(EVENTS.UPDATED_PLAYERS, () => {
+    learnIfDue('players');
+  });
+
   listener.on(EVENTS.ROUND_ENDED, async () => {
     stopTracker();
     await sbDailyDecayEdges(opt.decayDailyFactor).catch(() => {});
+    await learnNow('round_end');
   });
 
   let balanceRequested = false;
@@ -613,9 +652,6 @@ export const smartBalance: TPluginProps = (state, options) => {
     if (!balanceRequested) return;
     try {
       const players = (state.players ?? []) as TPlayer[];
-
-      await detector.learnFromOnline(players, 14);
-
       const miss = players
         .map((p) => p.steamID)
         .filter((id) => !skillCache.has(id));
