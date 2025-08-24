@@ -1321,55 +1321,6 @@
       }
     }
   },
-  "Belaya_Invasion_v2": {
-    "Team1": {
-      "BLUEFOR": {
-        "ADF": ["CombinedArms", "Mechanized"],
-        "BAF": ["CombinedArms", "Mechanized"],
-        "CAF": ["CombinedArms", "Mechanized", "Motorized"],
-        "USA": ["CombinedArms", "Mechanized"],
-        "USMC": ["CombinedArms", "Motorized"]
-      },
-      "PAC": {
-        "PLA": ["CombinedArms", "Motorized"]
-      },
-      "REDFOR": {
-        "RGF": ["CombinedArms", "Motorized"],
-        "VDV": ["CombinedArms", "Mechanized"]
-      },
-      "INDEPENDENT": {
-        "IMF": ["CombinedArms", "Motorized"],
-        "TLF": ["CombinedArms", "Mechanized", "Motorized"]
-      }
-    },
-    "Team2": {
-      "BLUEFOR": {
-        "ADF": ["CombinedArms", "Mechanized"],
-        "BAF": ["CombinedArms", "Mechanized", "Support"],
-        "CAF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
-        "USA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
-        "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
-      },
-      "PAC": {
-        "PLA": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
-      },
-      "REDFOR": {
-        "RGF": [
-          "CombinedArms",
-          "LightInfantry",
-          "Motorized",
-          "Support",
-          "Mechanized"
-        ],
-        "VDV": ["CombinedArms", "Mechanized", "Support"]
-      },
-      "INDEPENDENT": {
-        "IMF": ["CombinedArms", "LightInfantry", "Motorized", "Support"],
-        "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
-        "WPMC": ["CombinedArms", "LightInfantry"]
-      }
-    }
-  },
   "Belaya_RAAS_v1": {
     "Team1 / Team2": {
       "BLUEFOR": {
