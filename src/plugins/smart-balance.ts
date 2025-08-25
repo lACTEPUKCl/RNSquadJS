@@ -122,7 +122,7 @@ class TagDetector {
   async learnFromOnline(
     players: readonly TPlayer[],
     edgesWindowDays: number,
-  ): Promise<void> {
+  ): Promise<number> {
     const buckets = new Map<
       string,
       { total: number; start: number; ids: Set<string> }
@@ -139,7 +139,7 @@ class TagDetector {
       if (main.atStart) b.start += 1;
       b.ids.add(p.steamID);
     }
-    if (!buckets.size) return;
+    if (!buckets.size) return 0;
 
     const payload = Array.from(buckets.entries()).map(
       ([tag, { total, start, ids }]) => ({
@@ -149,7 +149,8 @@ class TagDetector {
         steamIDs: Array.from(ids),
       }),
     );
-    await sbUpdateClanTagCounters(payload);
+
+    const saved = await sbUpdateClanTagCounters(payload);
 
     for (const [tag, { ids }] of buckets) {
       const idsArr = Array.from(ids);
@@ -168,6 +169,8 @@ class TagDetector {
       const cohesion = pairs > 0 ? Math.min(1, strongPairs / pairs) : 0;
       await sbUpdateClanCohesion(tag, cohesion);
     }
+
+    return saved;
   }
 
   async detect(rawName: string): Promise<string | undefined> {
@@ -566,9 +569,13 @@ export const smartBalance: TPluginProps = (state, options) => {
 
     learnInFlight = true;
     try {
-      await detector.learnFromOnline(players, opt.partyWindowDays);
+      const saved = await detector.learnFromOnline(
+        players,
+        opt.partyWindowDays,
+      );
       logger.log(
-        `[smart-balance] learned clan tags (${reason}), online=${players.length}`,
+        `[smart-balance] learn payload saved=${saved}; tokens=` +
+          (players.slice(0, 1).length ? 'OK' : 'EMPTY'),
       );
     } catch (e) {
       logger.warn(`[smart-balance] learn error (${reason}): ${String(e)}`);
