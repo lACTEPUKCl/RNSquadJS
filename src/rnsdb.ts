@@ -854,26 +854,26 @@ export async function sbUpdateClanTagCounters(
   if (!isConnected || !collectionClanTags || !stats.length) return 0;
 
   const now = new Date();
-  const ops: AnyBulkWriteOperation<ClanTagDoc>[] = stats.map((s) => ({
+  const ops = stats.map((s) => ({
     updateOne: {
       filter: { tag: s.tag },
       update: {
         $setOnInsert: {
           tag: s.tag,
-          totalUses: 0,
-          startUses: 0,
-          players: [],
-          lastSeenAt: now,
         },
-        $inc: { totalUses: s.totalInc, startUses: s.startInc },
-        $addToSet: { players: { $each: s.steamIDs } },
+        $inc: {
+          totalUses: s.totalInc,
+          startUses: s.startInc,
+        },
+        $addToSet: {
+          players: { $each: s.steamIDs },
+        },
         $set: { lastSeenAt: now },
       },
       upsert: true,
     },
   }));
 
-  if (!ops.length) return 0;
   const res = await collectionClanTags.bulkWrite(ops, { ordered: false });
   return (res.upsertedCount ?? 0) + (res.modifiedCount ?? 0);
 }
