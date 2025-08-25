@@ -850,32 +850,32 @@ export async function sbUpdateClanTagCounters(
     startInc: number;
     steamIDs: string[];
   }>,
-): Promise<void> {
-  if (!isConnected || !collectionClanTags) return;
+): Promise<number> {
+  if (!isConnected || !collectionClanTags || !stats.length) return 0;
+
   const now = new Date();
-  const ops: AnyBulkWriteOperation<ClanTagDoc>[] = [];
-  for (const s of stats) {
-    ops.push({
-      updateOne: {
-        filter: { tag: s.tag },
-        update: {
-          $setOnInsert: {
-            tag: s.tag,
-            totalUses: 0,
-            startUses: 0,
-            players: [],
-            lastSeenAt: now,
-          },
-          $inc: { totalUses: s.totalInc, startUses: s.startInc },
-          $addToSet: { players: { $each: s.steamIDs } },
-          $set: { lastSeenAt: now },
+  const ops: AnyBulkWriteOperation<ClanTagDoc>[] = stats.map((s) => ({
+    updateOne: {
+      filter: { tag: s.tag },
+      update: {
+        $setOnInsert: {
+          tag: s.tag,
+          totalUses: 0,
+          startUses: 0,
+          players: [],
+          lastSeenAt: now,
         },
-        upsert: true,
+        $inc: { totalUses: s.totalInc, startUses: s.startInc },
+        $addToSet: { players: { $each: s.steamIDs } },
+        $set: { lastSeenAt: now },
       },
-    });
-  }
-  if (ops.length)
-    await collectionClanTags.bulkWrite(ops, { ordered: false }).catch(() => {});
+      upsert: true,
+    },
+  }));
+
+  if (!ops.length) return 0;
+  const res = await collectionClanTags.bulkWrite(ops, { ordered: false });
+  return (res.upsertedCount ?? 0) + (res.modifiedCount ?? 0);
 }
 
 /** получить документы по тегам */
