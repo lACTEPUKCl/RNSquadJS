@@ -50,6 +50,7 @@ const isSLRole = (role?: string) =>
 type TagDetectOpts = {
   frontWindow: number;
   maxLen: number;
+  minLen: number;
   minUnique: number;
   minConfidence: number;
   minCohesion: number;
@@ -105,15 +106,26 @@ class TagDetector {
 
   private candidates(raw: string): { token: string; atStart: boolean }[] {
     const name = normalizeName(raw);
+    const m = raw.match(
+      /^\s*[\[\(\{<«"'’“”‚‘]\s*([A-Za-z0-9]{2,})\s*[\]\)\}>»"'’“”‚‘]/,
+    );
+    if (m && m[1]) {
+      const t = normalizeName(m[1]).slice(0, this.opts.maxLen);
+      if (t.length >= this.opts.minLen) return [{ token: t, atStart: true }];
+    }
+
     const front = name.slice(0, this.opts.frontWindow);
     const cleaned = front.replace(/[^A-Z0-9]+/g, ' ').trim();
     if (!cleaned) return [];
+
     const parts = cleaned.split(/\s+/);
     const out: { token: string; atStart: boolean }[] = [];
     let pos = 0;
     for (const part of parts) {
       const token = part.slice(0, this.opts.maxLen);
-      if (token) out.push({ token, atStart: pos === 0 });
+      if (token && token.length >= this.opts.minLen) {
+        out.push({ token, atStart: pos === 0 });
+      }
       pos += part.length + 1;
     }
     return out;
@@ -532,6 +544,7 @@ export const smartBalance: TPluginProps = (state, options) => {
     prioritizeClans: Boolean(options?.prioritizeClans ?? true),
     frontWindow: Number(options?.frontWindow ?? 18),
     clanMaxLen: Number(options?.clanMaxLen ?? 6),
+    clanMinLen: Number(options?.clanMinLen ?? 2),
     tagMinUnique: Number(options?.tagMinUnique ?? 3),
     tagMinConfidence: Number(options?.tagMinConfidence ?? 0.6),
     tagMinCohesion: Number(options?.tagMinCohesion ?? 0.2),
@@ -552,6 +565,7 @@ export const smartBalance: TPluginProps = (state, options) => {
   const detector = new TagDetector({
     frontWindow: opt.frontWindow,
     maxLen: opt.clanMaxLen,
+    minLen: opt.clanMinLen,
     minUnique: opt.tagMinUnique,
     minConfidence: opt.tagMinConfidence,
     minCohesion: opt.tagMinCohesion,
