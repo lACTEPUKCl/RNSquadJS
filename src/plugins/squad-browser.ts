@@ -12,14 +12,7 @@ function collectSteamIDs(players: readonly TPlayer[]): string[] {
 
 export const squadBrowser: TPluginProps = (state, options) => {
   const { logger } = state;
-
-  const endpoint = String(options?.endpoint ?? '').replace(/\/+$/, '');
-  const apiKey = String(options?.apiKey ?? '');
-  const serverName =
-    String(options?.serverName ?? '') ||
-    (state as any).serverName ||
-    'SquadJS Server';
-
+  const { endpoint, apiKey, serverName } = options;
   const intervalSec = Math.max(10, Number(options?.intervalSeconds ?? 60));
   const startupDelay = Math.max(0, Number(options?.startupDelaySeconds ?? 5));
   const timeoutMs = Number(options?.timeoutMs ?? 5000);
@@ -40,13 +33,7 @@ export const squadBrowser: TPluginProps = (state, options) => {
       logger.log(
         `[squad-browser] sent ${players.length} player IDs (${reason})`,
       );
-    } catch (e: any) {
-      const code = e?.response?.status;
-      const msg = e?.response?.statusText ?? e?.message ?? String(e);
-      logger.warn(
-        `[squad-browser] send failed (${reason}): ${code ?? ''} ${msg}`,
-      );
-    }
+    } catch (e) {}
   };
 
   setTimeout(() => {
