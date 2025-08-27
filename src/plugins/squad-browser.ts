@@ -22,18 +22,71 @@ export const squadBrowser: TPluginProps = (state, options) => {
     return;
   }
 
+  const maskKey = (k: string) => (k ? `${k.slice(0, 3)}…${k.slice(-2)}` : '');
+  const preview = <T>(arr: T[], n = 10) =>
+    arr.length <= n ? arr : [...arr.slice(0, n), `…(+${arr.length - n})`];
+
+  const http = axios.create({ timeout: TIMEOUT_MS });
+
+  http.interceptors.request.use((cfg) => {
+    const data = cfg.data ?? {};
+    const masked = {
+      ...data,
+      key: maskKey(String(data?.key ?? '')),
+      players: Array.isArray(data?.players)
+        ? preview(data.players, 10)
+        : data?.players,
+    };
+    logger.log(
+      `[squad-browser] → ${String(cfg.method).toUpperCase()} ${
+        cfg.url
+      } payload=${JSON.stringify(masked)}`,
+    );
+    return cfg;
+  });
+
+  http.interceptors.response.use(
+    (res) => {
+      const body =
+        typeof res.data === 'string' ? res.data : JSON.stringify(res.data);
+      logger.log(
+        `[squad-browser] ← ${res.status} ${res.config.url} ${String(body).slice(
+          0,
+          200,
+        )}`,
+      );
+      return res;
+    },
+    (err) => {
+      const status = err?.response?.status;
+      const body = err?.response?.data;
+      const snippet = body
+        ? String(typeof body === 'string' ? body : JSON.stringify(body)).slice(
+            0,
+            200,
+          )
+        : '';
+      logger.warn(
+        `[squad-browser] ← ${status ?? 'ERR'} ${err?.config?.url} ${snippet} (${
+          err.message
+        })`,
+      );
+      return Promise.reject(err);
+    },
+  );
+
   const send = async (reason: string) => {
     try {
       const players = collectSteamIDs((state.players ?? []) as TPlayer[]);
-      await axios.post(
-        `${endpoint}/api/updateServer`,
-        { serverName, key: apiKey, players },
-        { timeout: TIMEOUT_MS },
-      );
+      await http.post(`${endpoint}/api/updateServer`, {
+        serverName,
+        key: apiKey,
+        players,
+      });
       logger.log(
         `[squad-browser] sent ${players.length} player IDs (${reason})`,
       );
-    } catch (e) {}
+    } catch (_e) {}
   };
 
   setTimeout(() => {
