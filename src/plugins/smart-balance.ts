@@ -267,23 +267,28 @@ function buildPacks(
   const used = new Set<string>();
 
   if (prioritizeClans) {
-    const cmap = new Map<string, OnlinePlayer[]>();
-    for (const p of online)
-      if (p.clanTag) {
-        if (!cmap.has(p.clanTag)) cmap.set(p.clanTag, []);
-        cmap.get(p.clanTag)!.push(p);
+    const cmap = new Map<string, Map<Team, OnlinePlayer[]>>();
+    for (const p of online) {
+      if (!p.clanTag) continue;
+      if (!cmap.has(p.clanTag)) cmap.set(p.clanTag, new Map());
+      const byTeam = cmap.get(p.clanTag)!;
+      if (!byTeam.has(p._team)) byTeam.set(p._team, []);
+      byTeam.get(p._team)!.push(p);
+    }
+    for (const [tag, byTeam] of cmap) {
+      for (const [team, arr] of byTeam) {
+        if (!arr.length) continue;
+        arr.forEach((p) => used.add(p.steamID));
+        packs.push({
+          id: `CLAN:${tag}:${team}`,
+          type: 'CLAN',
+          players: arr.map((x) => x.steamID),
+          size: arr.length,
+          skillSum: sum(arr, (x) => x.skill),
+          currentTeam: team,
+          clanTag: tag,
+        });
       }
-    for (const [tag, arr] of cmap) {
-      arr.forEach((p) => used.add(p.steamID));
-      packs.push({
-        id: `CLAN:${tag}`,
-        type: 'CLAN',
-        players: arr.map((x) => x.steamID),
-        size: arr.length,
-        skillSum: sum(arr, (x) => x.skill),
-        currentTeam: arr[0]?._team ?? 'A',
-        clanTag: tag,
-      });
     }
   }
 
@@ -699,7 +704,7 @@ export const smartBalance: TPluginProps = (state, options) => {
 
       const preview =
         `Баланс (предпросмотр): A=${final.cA}/S=${final.sA} | B=${final.cB}/S=${final.sB} | ` +
-        `Цель: 50/50 и Δskill ≤ ${(opt.skillTolerancePct * 100).toFixed(
+        `Цель: 50/50 и skill ≤ ${(opt.skillTolerancePct * 100).toFixed(
           1,
         )}% | Пачек к переносу: ${moves.length} (лимит ${
           opt.swapLimitPerRound
