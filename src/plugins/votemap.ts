@@ -1,6 +1,7 @@
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminSetNextLayer, adminWarn } from '../core';
+import { serverHistoryLayers } from '../rnsdb';
 import { TMaps, TPluginProps, TTeamFactions } from '../types';
 
 type TeamKey = 'Team1' | 'Team2' | 'Team1 / Team2';
@@ -142,6 +143,10 @@ export const voteMap: TPluginProps = (state, options) => {
           `За: ${positive} Против: ${negative} Набрано: ${currentVotes} из ${needVotes} голос(ов)`,
         );
         resetVote();
+
+        const [mapLevel] = message.split('_');
+        serverHistoryLayers(state.id, mapLevel);
+
         adminSetNextLayer(execute, message);
         voteCompleted = true;
       } else {
