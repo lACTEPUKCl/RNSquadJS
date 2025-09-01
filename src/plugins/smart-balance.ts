@@ -10,10 +10,14 @@ import {
   sbUpdateClanTagCounters,
   sbUpsertSocialEdges,
 } from '../rnsdb';
-import type { TExecute, TPlayer, TPluginProps } from '../types';
+import type { TExecute, TLogger, TPlayer, TPluginProps } from '../types';
+
+// =============================================
+//              Типы и утилиты
+// =============================================
 
 type Team = 'A' | 'B';
-type PackType = 'CLAN' | 'PARTY' | 'SOLO';
+type PackType = 'SQUAD' | 'PARTY' | 'CLAN' | 'SOLO';
 
 interface OnlinePlayer extends TPlayer {
   clanTag?: string;
@@ -22,19 +26,20 @@ interface OnlinePlayer extends TPlayer {
 }
 
 interface Pack {
-  id: string;
-  type: PackType;
-  players: string[];
-  size: number;
-  skillSum: number;
-  currentTeam: Team;
-  clanTag?: string;
+  id: string; // уникальный идентификатор пака
+  type: PackType; // тип пака
+  players: string[]; // steamIDs
+  size: number; // число игроков
+  skillSum: number; // сумма скиллов
+  currentTeam: Team; // текущая сторона
+  clanTag?: string; // только для CLAN
 }
+
 interface Move {
-  players: string[];
+  players: string[]; // перемещаемые steamIDs (всего пака)
   from: Team;
   to: Team;
-  note: string;
+  note: string; // причина/метка
   packType: PackType;
   packId: string;
 }
@@ -46,17 +51,17 @@ const playerTeam = (p: TPlayer): Team => (p.teamID === '1' ? 'A' : 'B');
 const isSLRole = (role?: string) =>
   !!role &&
   (/(_SL_|^.*\bSQUAD\s*LEADER\b.*$)/i.test(role) || /(^|_)SL(_|$)/i.test(role));
+const typeRank = (p: Pack) =>
+  p.type === 'SQUAD' ? 3 : p.type === 'PARTY' ? 2 : p.type === 'CLAN' ? 1 : 0;
 
-type TagDetectOpts = {
-  frontWindow: number;
-  maxLen: number;
-  minLen: number;
-  minUnique: number;
-  minConfidence: number;
-  minCohesion: number;
-  blacklist: string[];
-  whitelist: string[];
-};
+function fmtNum(n: number): string {
+  return n.toLocaleString('ru-RU');
+}
+
+// =============================================
+//           Нормализация и TagDetector
+//     (только теги в обрамлении/символах)
+// =============================================
 
 const CYR2LAT: Record<string, string> = {
   А: 'A',
@@ -86,6 +91,7 @@ const CYR2LAT: Record<string, string> = {
   у: 'Y',
   х: 'X',
 };
+
 const normalizeName = (s?: string) =>
   (s || '')
     .normalize('NFKC')
@@ -123,23 +129,36 @@ const BRACKET_PAIRS: Array<[string, string]> = [
   ['|', '|'],
 ];
 const SYM_WRAPS = ['-', '=', '*', '~', ':', '.', '_', '|', '—', '–'];
-const esc = (s: string) => s.replace(/[\\/\\^$*+?.()|[\]{}]/g, '\\$&');
+const esc = (s: string) => s.replace(/[\\\^$*+?.()|[\]{}]/g, '\\$&');
+
+export type TagDetectOpts = {
+  maxLen: number;
+  minLen: number;
+  minUnique: number;
+  minConfidence: number;
+  minCohesion: number;
+  blacklist: string[];
+  whitelist: string[];
+};
 
 class TagDetector {
   private readonly opts: TagDetectOpts;
   constructor(opts: TagDetectOpts) {
     this.opts = opts;
   }
-  private candidates(raw: string): { token: string; atStart: boolean }[] {
-    const name = normalizeName(raw);
-    const out: { token: string; atStart: boolean }[] = [];
+
+  // Ищем кандидатов ТОЛЬКО в обрамлениях/символах
+  private candidates(raw: string): string[] {
+    const out: string[] = [];
+    // Лид с обрамлением
     const lead = raw.match(
       /^\s*[\[\(\{<«"'’“”‚‘]\s*([A-Za-z0-9]{2,})\s*[\]\)\}>»"'’“”‚‘]/,
     );
     if (lead && lead[1]) {
       const t = normalizeName(lead[1]).slice(0, this.opts.maxLen);
-      if (t.length >= this.opts.minLen) out.push({ token: t, atStart: true });
+      if (t.length >= this.opts.minLen) out.push(t);
     }
+    // Любые скобки
     for (const [L, R] of BRACKET_PAIRS) {
       const re = new RegExp(
         `${esc(L)}\\s*([A-Za-z0-9]{${this.opts.minLen},${
@@ -150,9 +169,10 @@ class TagDetector {
       let m: RegExpExecArray | null;
       while ((m = re.exec(raw))) {
         const t = normalizeName(m[1]);
-        if (t) out.push({ token: t, atStart: m.index <= 2 });
+        if (t) out.push(t);
       }
     }
+    // Символьные обрамления (---TAG---)
     for (const c of SYM_WRAPS) {
       const re = new RegExp(
         `${esc(c)}+\\s*([A-Za-z0-9]{${this.opts.minLen},${
@@ -163,31 +183,13 @@ class TagDetector {
       let m: RegExpExecArray | null;
       while ((m = re.exec(raw))) {
         const t = normalizeName(m[1]);
-        if (t) out.push({ token: t, atStart: m.index <= 2 });
+        if (t) out.push(t);
       }
     }
-    const front = name.slice(0, this.opts.frontWindow);
-    const cleaned = front.replace(/[^A-Z0-9]+/g, ' ').trim();
-    if (cleaned) {
-      const parts = cleaned.split(/\s+/);
-      let pos = 0;
-      for (const part of parts) {
-        const token = part.slice(0, this.opts.maxLen);
-        if (token && token.length >= this.opts.minLen)
-          out.push({ token, atStart: pos === 0 });
-        pos += part.length + 1;
-      }
-    }
-    const uniq: string[] = [];
-    const seen = new Set<string>();
-    for (const c of out) {
-      if (!seen.has(c.token)) {
-        seen.add(c.token);
-        uniq.push(c.token);
-      }
-    }
-    return uniq.map((t, i) => ({ token: t, atStart: i === 0 }));
+    // uniq
+    return Array.from(new Set(out));
   }
+
   async learnFromOnline(
     players: readonly TPlayer[],
     edgesWindowDays: number,
@@ -200,12 +202,13 @@ class TagDetector {
       const cands = this.candidates(p.name);
       if (!cands.length) continue;
       const main = cands[0];
-      if (this.opts.blacklist.includes(main.token)) continue;
-      if (!buckets.has(main.token))
-        buckets.set(main.token, { total: 0, start: 0, ids: new Set() });
-      const b = buckets.get(main.token)!;
+      if (this.opts.blacklist.includes(main)) continue;
+      if (!buckets.has(main))
+        buckets.set(main, { total: 0, start: 0, ids: new Set() });
+      const b = buckets.get(main)!;
       b.total += 1;
-      if (main.atStart) b.start += 1;
+      // старт учитываем грубо: если матч начался с обрамлением в начале ника
+      if (/^[\[\(\{<«"'’“”‚‘]/.test(p.name)) b.start += 1;
       b.ids.add(p.steamID);
     }
     if (!buckets.size) return 0;
@@ -237,10 +240,10 @@ class TagDetector {
     }
     return saved;
   }
+
   async detect(rawName: string): Promise<string | undefined> {
-    const cands = this.candidates(rawName);
-    if (!cands.length) return undefined;
-    const tokens = [...new Set(cands.slice(0, 2).map((c) => c.token))];
+    const tokens = this.candidates(rawName).slice(0, 2);
+    if (!tokens.length) return undefined;
     for (const t of tokens)
       if (this.opts.whitelist.includes(t) && !this.opts.blacklist.includes(t))
         return t;
@@ -261,6 +264,10 @@ class TagDetector {
     return best?.tag;
   }
 }
+
+// =============================================
+//                Скилл-кэш
+// =============================================
 
 const skillCache = new Map<string, number>();
 async function getSkill(steamID: string): Promise<number> {
@@ -285,7 +292,11 @@ async function getSkill(steamID: string): Promise<number> {
   }
 }
 
-function buildOnline(
+// =============================================
+//           Построение онлайн и паков
+// =============================================
+
+async function buildOnline(
   players: readonly TPlayer[],
   tags: (name: string) => Promise<string | undefined>,
 ): Promise<OnlinePlayer[]> {
@@ -302,37 +313,46 @@ function buildOnline(
   );
 }
 
+function sideCount(packs: readonly Pack[], side: Team) {
+  const arr = packs.filter((p) => p.currentTeam === side);
+  const ids = arr.flatMap((p) => p.players);
+  const count = sum(arr, (x) => x.size);
+  const skill = ids.reduce((s, id) => s + (skillCache.get(id) ?? 1000), 0);
+  return { count, skill, ids };
+}
+
 function buildPacks(
   online: readonly OnlinePlayer[],
   parties: readonly string[][],
   prioritizeClans: boolean,
+  minClanSideSize: number,
 ): Pack[] {
   const packs: Pack[] = [];
   const used = new Set<string>();
-  if (prioritizeClans) {
-    const cmap = new Map<string, Map<Team, OnlinePlayer[]>>();
-    for (const p of online) {
-      if (!p.clanTag) continue;
-      if (!cmap.has(p.clanTag)) cmap.set(p.clanTag, new Map());
-      const byTeam = cmap.get(p.clanTag)!;
-      if (!byTeam.has(p._team)) byTeam.set(p._team, []);
-      byTeam.get(p._team)!.push(p);
-    }
-    for (const [tag, byTeam] of cmap)
-      for (const [team, arr] of byTeam) {
-        if (!arr.length) continue;
-        arr.forEach((p) => used.add(p.steamID));
-        packs.push({
-          id: `CLAN:${tag}:${team}`,
-          type: 'CLAN',
-          players: arr.map((x) => x.steamID),
-          size: arr.length,
-          skillSum: sum(arr, (x) => x.skill),
-          currentTeam: team,
-          clanTag: tag,
-        });
-      }
+
+  // 1) SQUAD
+  const squadsMap = new Map<string, OnlinePlayer[]>();
+  for (const p of online) {
+    if (!p.squadID || p.squadID === '0') continue;
+    const key = `${p._team}|${p.squadID}`;
+    if (!squadsMap.has(key)) squadsMap.set(key, []);
+    squadsMap.get(key)!.push(p);
   }
+  for (const [key, arr] of squadsMap) {
+    if (arr.length < 2) continue; // одиночные сквады не создаём
+    arr.forEach((p) => used.add(p.steamID));
+    const team = arr[0]._team;
+    packs.push({
+      id: `SQUAD:${team}:${key.split('|')[1]}`,
+      type: 'SQUAD',
+      players: arr.map((x) => x.steamID),
+      size: arr.length,
+      skillSum: sum(arr, (x) => x.skill),
+      currentTeam: team,
+    });
+  }
+
+  // 2) PARTY (по активным рёбрам)
   for (const grp of parties) {
     const arr = grp
       .map((id) => online.find((p) => p.steamID === id))
@@ -352,6 +372,36 @@ function buildPacks(
       currentTeam: flt[0]?._team ?? 'A',
     });
   }
+
+  // 3) CLAN (по сторонам)
+  if (prioritizeClans) {
+    const cmap = new Map<string, Map<Team, OnlinePlayer[]>>();
+    for (const p of online) {
+      if (!p.clanTag || used.has(p.steamID)) continue;
+      if (!cmap.has(p.clanTag)) cmap.set(p.clanTag, new Map());
+      const byTeam = cmap.get(p.clanTag)!;
+      if (!byTeam.has(p._team)) byTeam.set(p._team, []);
+      byTeam.get(p._team)!.push(p);
+    }
+    for (const [tag, byTeam] of cmap) {
+      for (const [team, arr] of byTeam) {
+        if (!arr.length) continue;
+        if (arr.length < Math.max(1, minClanSideSize)) continue; // не таскаем одиночные кланы
+        arr.forEach((p) => used.add(p.steamID));
+        packs.push({
+          id: `CLAN:${tag}:${team}`,
+          type: 'CLAN',
+          players: arr.map((x) => x.steamID),
+          size: arr.length,
+          skillSum: sum(arr, (x) => x.skill),
+          currentTeam: team,
+          clanTag: tag,
+        });
+      }
+    }
+  }
+
+  // 4) SOLO
   for (const p of online)
     if (!used.has(p.steamID))
       packs.push({
@@ -362,266 +412,125 @@ function buildPacks(
         skillSum: p.skill,
         currentTeam: p._team,
       });
+
   return packs;
 }
 
-function score(packs: readonly Pack[], teamCap: number, tol: number) {
-  const A = packs.filter((p) => p.currentTeam === 'A');
-  const B = packs.filter((p) => p.currentTeam === 'B');
-  const cA = sum(A, (x) => x.size),
-    cB = sum(B, (x) => x.size);
-  const sA = sum(A, (x) => x.skillSum),
-    sB = sum(B, (x) => x.skillSum);
-  const okCount = Math.abs(cA - cB) <= 1 && cA <= teamCap && cB <= teamCap;
-  const okSkill = Math.abs(sA - sB) <= (sA + sB) * tol;
-  return { cA, cB, sA, sB, okCount, okSkill, ok: okCount && okSkill };
+// =============================================
+//              Метрические функции
+// =============================================
+
+function score(packs: readonly Pack[]) {
+  const A = sideCount(packs, 'A');
+  const B = sideCount(packs, 'B');
+  return { cA: A.count, cB: B.count, sA: A.skill, sB: B.skill };
 }
 
-function pickForEqualize(
-  need: number,
-  srcTeam: Team,
-  teamAIds: readonly string[],
-  teamBIds: readonly string[],
-  eligibleSrc: readonly string[],
-  skill: Map<string, number>,
-  hardTol: number,
-): string[] {
-  let SA = teamAIds.reduce((s, id) => s + (skill.get(id) ?? 1000), 0);
-  let SB = teamBIds.reduce((s, id) => s + (skill.get(id) ?? 1000), 0);
-  const chosen: string[] = [];
-  const pool = new Set(eligibleSrc);
-  for (let step = 0; step < need; step++) {
-    let best: { id: string; diff: number } | null = null;
-    for (const id of pool) {
-      const s = skill.get(id) ?? 1000;
-      const nSA = srcTeam === 'A' ? SA - s : SA + s;
-      const nSB = srcTeam === 'A' ? SB + s : SB - s;
-      const d = Math.abs(nSA - nSB);
-      if (!best || d < best.diff) best = { id, diff: d };
-    }
-    if (!best) break;
-    const s = skill.get(best.id) ?? 1000;
-    const hSA = srcTeam === 'A' ? SA - s : SA + s;
-    const hSB = srcTeam === 'A' ? SB + s : SB - s;
-    if (Math.abs(hSA - hSB) > (hSA + hSB) * hardTol) {
-      pool.delete(best.id);
-      step--;
-      if (pool.size === 0) break;
-      continue;
-    }
-    chosen.push(best.id);
-    pool.delete(best.id);
-    if (srcTeam === 'A') {
-      SA -= s;
-      SB += s;
-    } else {
-      SB -= s;
-      SA += s;
-    }
-  }
-  return chosen;
+function targets(totalPlayers: number, teamCap: number) {
+  // Желаем ровно 50/50, но соблюдаем teamCap и нечётность общего числа
+  const cap = Math.min(teamCap, Math.floor(totalPlayers / 2));
+  const targetA = cap;
+  const targetB = Math.min(teamCap, totalPlayers - cap);
+  return { targetA, targetB };
 }
 
-const sideCount = (packs: readonly Pack[], side: Team) => {
-  const arr = packs.filter((p) => p.currentTeam === side);
-  return { count: sum(arr, (x) => x.size), skill: sum(arr, (x) => x.skillSum) };
-};
-const evacuateCandidates = (
-  allOnSide: readonly Pack[],
-  excludeId: string,
-): Pack[] => {
-  const others = allOnSide.filter((p) => p.id !== excludeId);
-  const solos = others.filter((p) => p.type === 'SOLO');
-  const parties = others
-    .filter((p) => p.type === 'PARTY')
-    .sort((a, b) => a.size - b.size || a.skillSum - b.skillSum);
-  const rest = others
-    .filter((p) => p.type !== 'SOLO' && p.type !== 'PARTY')
-    .sort((a, b) => a.skillSum - b.skillSum);
-  return [...solos, ...parties, ...rest];
-};
-function chooseClanToMove(
-  packs: readonly Pack[],
-  from: Team,
-  to: Team,
-  teamCap: number,
-  hardTol: number,
-): Pack | null {
-  const clans = packs.filter(
-    (p) => p.type === 'CLAN' && p.currentTeam === from,
-  );
-  let best: { pack: Pack; score: number } | null = null;
-  for (const clan of clans) {
-    const np = packs.map<Pack>((p) =>
-      p.id === clan.id ? { ...p, currentTeam: to } : p,
-    );
-    const over = Math.max(0, sideCount(np, to).count - teamCap);
-    const sA = sideCount(np, 'A').skill,
-      sB = sideCount(np, 'B').skill;
-    const dSkill = Math.abs(sA - sB);
-    const hardOk = dSkill <= (sA + sB) * hardTol;
-    if (!hardOk) continue;
-    const sc = over * 1000 + dSkill;
-    if (!best || sc < best.score) best = { pack: clan, score: sc };
-  }
-  return best?.pack ?? null;
-}
+// =============================================
+//      Эвакуации: «слабый сквад, затем добор»
+// =============================================
 
-function chooseEvacUnit(
+function chooseEvacWeakSquadAndFill(
   packs: readonly Pack[],
   from: Team,
   overflowLeft: number,
   hardTol: number,
-  excludeId?: string,
-): Pack | null {
+  lockedClanTags: Set<string>,
+): Pack[] {
   const sA0 = sideCount(packs, 'A').skill;
   const sB0 = sideCount(packs, 'B').skill;
 
-  const cand = packs.filter(
-    (p) =>
-      p.currentTeam === from &&
-      p.id !== excludeId &&
-      p.size <= Math.max(1, overflowLeft),
-  );
+  const cand = packs.filter((p) => p.currentTeam === from);
 
-  let best: { pack: Pack; diff: number; key: number } | null = null;
+  const squads = cand
+    .filter((p) => p.type === 'SQUAD')
+    .map((p) => ({ p, avg: p.skillSum / Math.max(1, p.size) }))
+    .sort((a, b) => a.avg - b.avg)
+    .map((x) => x.p);
 
-  for (const pk of cand) {
-    const nA = from === 'A' ? sA0 - pk.skillSum : sA0 + pk.skillSum;
-    const nB = from === 'A' ? sB0 + pk.skillSum : sB0 - pk.skillSum;
+  for (const sq of squads) {
+    if (sq.size > Math.max(1, overflowLeft)) continue;
+    let SA = sA0,
+      SB = sB0;
+    const nA = from === 'A' ? SA - sq.skillSum : SA + sq.skillSum;
+    const nB = from === 'A' ? SB + sq.skillSum : SB - sq.skillSum;
+    if (Math.abs(nA - nB) > (nA + nB) * hardTol) continue;
+    let need = overflowLeft - sq.size;
+    const chosen: Pack[] = [sq];
+    SA = nA;
+    SB = nB;
 
-    const diff = Math.abs(nA - nB);
-    const lim = (nA + nB) * hardTol;
-    if (diff > lim) continue;
+    if (need > 0) {
+      const fillers = cand
+        .filter(
+          (p) =>
+            p.id !== sq.id &&
+            (p.type === 'SOLO' ||
+              p.type === 'PARTY' ||
+              (p.type === 'CLAN' && !lockedClanTags.has(p.clanTag ?? ''))),
+        )
+        .sort(
+          (a, b) =>
+            a.size - b.size || a.skillSum / a.size - b.skillSum / b.size,
+        );
 
-    const typeRank = pk.type === 'SOLO' ? 0 : pk.type === 'PARTY' ? 1 : 2;
-    const key = typeRank * 1e9 + pk.size * 1e6 + pk.skillSum;
-
-    if (!best || diff < best.diff || (diff === best.diff && key < best.key)) {
-      best = { pack: pk, diff, key };
-    }
-  }
-  return best?.pack ?? null;
-}
-
-function choosePartyOrSolo(
-  packs: readonly Pack[],
-  from: Team,
-  to: Team,
-  teamCap: number,
-  tol: number,
-  hard: number,
-): Pack | null {
-  const cand = packs.filter(
-    (p) => p.currentTeam === from && (p.type === 'PARTY' || p.type === 'SOLO'),
-  );
-  let best: { pack: Pack; gain: number } | null = null;
-  for (const pk of cand) {
-    const base = score(packs, teamCap, tol);
-    const np = packs.map<Pack>((p) =>
-      p.id === pk.id ? { ...p, currentTeam: to } : p,
-    );
-    const sc = score(np, teamCap, tol);
-    const sTot = sc.sA + sc.sB || 1;
-    const hardOk =
-      Math.abs(sc.sA - sc.sB) <= sTot * hard &&
-      sideCount(np, to).count <= teamCap;
-    if (!hardOk) continue;
-    const tolAbs = sTot * (tol || 0.0001);
-    const gain =
-      (Math.abs(base.cA - base.cB) -
-        Math.abs(sc.cA - sc.cB) +
-        (Math.abs(base.sA - base.sB) - Math.abs(sc.sA - sc.sB)) /
-          Math.max(1, tolAbs)) /
-      Math.max(1, pk.size);
-    if (!best || gain > best.gain) best = { pack: pk, gain };
-  }
-  return best?.pack ?? null;
-}
-function enforceHeadcount(
-  packs: readonly Pack[],
-  teamCap: number,
-  hardTol: number,
-  skillMap: Map<string, number>,
-): Move[] {
-  let cur = [...packs];
-  const moves: Move[] = [];
-
-  const side = (t: Team) => {
-    const arr = cur.filter((p) => p.currentTeam === t);
-    const ids = arr.flatMap((p) => p.players);
-    const count = sum(arr, (x) => x.size);
-    const skill = ids.reduce((s, id) => s + (skillMap.get(id) ?? 1000), 0);
-    return { count, skill, ids };
-  };
-
-  for (let i = 0; i < 200; i += 1) {
-    const A = side('A'),
-      B = side('B');
-    const diff = A.count - B.count;
-    const abs = Math.abs(diff);
-    if (abs <= 1) break;
-
-    const from: Team = diff > 0 ? 'A' : 'B';
-    const to: Team = from === 'A' ? 'B' : 'A';
-    const need = Math.floor(abs / 2);
-
-    const fromPacks = cur.filter((p) => p.currentTeam === from);
-    const solos = fromPacks.filter((p) => p.type === 'SOLO');
-    const parties = fromPacks
-      .filter((p) => p.type === 'PARTY')
-      .sort((a, b) => a.size - b.size);
-
-    const tryMove = (pk: Pack) => {
-      const s = pk.players.reduce(
-        (acc, id) => acc + (skillMap.get(id) ?? 1000),
-        0,
-      );
-      const sA = from === 'A' ? A.skill - s : A.skill + s;
-      const sB = from === 'A' ? B.skill + s : B.skill - s;
-      return Math.abs(sA - sB) <= (sA + sB) * hardTol;
-    };
-
-    let moved = 0;
-    for (const s of solos) {
-      if (moved >= need) break;
-      if (!tryMove(s)) continue;
-      cur = cur.map((p) => (p.id === s.id ? { ...p, currentTeam: to } : p));
-      moves.push({
-        players: [...s.players],
-        from,
-        to,
-        note: 'equalize',
-        packType: s.type,
-        packId: s.id,
-      });
-      moved += 1;
-      if (side(to).count > teamCap) break;
-    }
-    if (moved < need) {
-      for (const g of parties) {
-        if (moved >= need) break;
-        if (g.size > need - moved) continue;
-        if (!tryMove(g)) continue;
-        cur = cur.map((p) => (p.id === g.id ? { ...p, currentTeam: to } : p));
-        moves.push({
-          players: [...g.players],
-          from,
-          to,
-          note: 'equalize',
-          packType: g.type,
-          packId: g.id,
-        });
-        moved += g.size;
-        if (side(to).count > teamCap) break;
+      for (const pk of fillers) {
+        if (pk.size > need) continue;
+        const fA = from === 'A' ? SA - pk.skillSum : SA + pk.skillSum;
+        const fB = from === 'A' ? SB + pk.skillSum : SB - pk.skillSum;
+        if (Math.abs(fA - fB) > (fA + fB) * hardTol) continue;
+        chosen.push(pk);
+        need -= pk.size;
+        SA = fA;
+        SB = fB;
+        if (need <= 0) break;
       }
     }
-    if (moved === 0) break;
+    if (need <= 0) return chosen;
   }
-  return moves;
+
+  // fallback: аккуратно собираем мелкими
+  let left = overflowLeft;
+  let SA = sA0,
+    SB = sB0;
+  const chosen: Pack[] = [];
+  const others = cand
+    .filter(
+      (p) =>
+        p.type !== 'SQUAD' &&
+        !(p.type === 'CLAN' && lockedClanTags.has(p.clanTag ?? '')),
+    )
+    .sort(
+      (a, b) => a.size - b.size || a.skillSum / a.size - b.skillSum / b.size,
+    );
+
+  for (const pk of others) {
+    if (pk.size > left) continue;
+    const nA = from === 'A' ? SA - pk.skillSum : SA + pk.skillSum;
+    const nB = from === 'A' ? SB + pk.skillSum : SB - pk.skillSum;
+    if (Math.abs(nA - nB) > (nA + nB) * hardTol) continue;
+    chosen.push(pk);
+    left -= pk.size;
+    SA = nA;
+    SB = nB;
+    if (left <= 0) break;
+  }
+  return left <= 0 ? chosen : [];
 }
 
-function plan(
+// =============================================
+//      Планировщик: 50/50 головы + скилл
+// =============================================
+
+function plan2(
   initial: readonly Pack[],
   teamCap: number,
   tol: number,
@@ -629,140 +538,242 @@ function plan(
 ) {
   let packs = [...initial];
   const moves: Move[] = [];
-  for (let i = 0; i < 500; i += 1) {
-    const sc = score(packs, teamCap, tol);
-    if (sc.ok) break;
-    const strong: Team =
-      sc.cA > sc.cB ? 'A' : sc.cB > sc.cA ? 'B' : sc.sA >= sc.sB ? 'A' : 'B';
-    const weak: Team = strong === 'A' ? 'B' : 'A';
-    const clan = chooseClanToMove(packs, strong, weak, teamCap, hard);
-    if (clan) {
-      packs = packs.map<Pack>((p) =>
-        p.id === clan.id ? { ...p, currentTeam: weak } : p,
+  const total = initial.reduce((s, p) => s + p.size, 0);
+  const { targetA, targetB } = targets(total, teamCap);
+  const lockedClanTags = new Set<string>(); // анти-перекрёст в рамках одной сессии
+
+  // === Фаза 1: выводим головы ровно к targetA/targetB ===
+  for (let guard = 0; guard < 200; guard++) {
+    const sc = score(packs);
+    if (sc.cA === targetA && sc.cB === targetB) break;
+
+    const from: Team =
+      sc.cA > targetA
+        ? 'A'
+        : sc.cB > targetB
+          ? 'B'
+          : sc.cA < targetA
+            ? 'B'
+            : 'A';
+    const to: Team = from === 'A' ? 'B' : 'A';
+    const need = Math.max(0, from === 'A' ? sc.cA - targetA : sc.cB - targetB);
+    if (need <= 0) break;
+
+    // Кандидаты к переносу со стороны from
+    const base = score(packs);
+    const candScored = packs
+      .filter((p) => p.currentTeam === from && p.size <= need)
+      .map((pk) => {
+        const np = packs.map((p0) =>
+          p0.id === pk.id ? { ...p0, currentTeam: to } : p0,
+        );
+        const before = Math.abs(base.sA - base.sB);
+        const after = Math.abs(score(np).sA - score(np).sB);
+        return { pk, rank: typeRank(pk), gain: before - after };
+      })
+      .sort((x, y) => y.rank - x.rank || y.gain - x.gain);
+
+    let moved = false;
+    for (const { pk } of candScored) {
+      // проверим teamCap с возможной эвакуацией
+      const after = packs.map((p) =>
+        p.id === pk.id ? { ...p, currentTeam: to } : p,
       );
+      const overflow = sideCount(after, to).count - teamCap;
+      if (overflow > 0) {
+        const evac = chooseEvacWeakSquadAndFill(
+          after,
+          to,
+          overflow,
+          hard,
+          lockedClanTags,
+        );
+        if (!evac.length) continue; // не получилось вместить
+        // применяем перенос pk и эвакуации
+        packs = after.map((p) => p);
+        for (const ev of evac) {
+          packs = packs.map((p) =>
+            p.id === ev.id ? { ...p, currentTeam: from } : p,
+          );
+          moves.push({
+            players: [...ev.players],
+            from: to,
+            to: from,
+            note: ev.type === 'SQUAD' ? 'evac weak squad' : 'evac fill',
+            packType: ev.type,
+            packId: ev.id,
+          });
+        }
+      } else {
+        packs = after;
+      }
+
       moves.push({
-        players: [...clan.players],
-        from: strong,
-        to: weak,
-        note: `CLAN ${clan.clanTag ?? clan.id}`,
-        packType: 'CLAN',
-        packId: clan.id,
+        players: [...pk.players],
+        from,
+        to,
+        note: pk.type,
+        packType: pk.type,
+        packId: pk.id,
       });
-      let overflow = sideCount(packs, weak).count - teamCap;
-      while (overflow > 0) {
-        const ev = chooseEvacUnit(packs, weak, overflow, hard, clan.id);
-        if (!ev) break;
-        packs = packs.map<Pack>((p) =>
+      if (pk.type === 'CLAN' && pk.clanTag) lockedClanTags.add(pk.clanTag);
+      moved = true;
+      break;
+    }
+    if (!moved) break; // не нашли кандидата для точного headcount
+  }
+
+  // === Фаза 2: подтягиваем скилл свопами (сохраняя точные головы) ===
+  for (let guard = 0; guard < 200; guard++) {
+    const sc = score(packs);
+    if (!(sc.cA === targetA && sc.cB === targetB)) break; // головы уже не совпали (безопасность)
+    const sTot = sc.sA + sc.sB || 1;
+    const tolAbs = sTot * (tol || 0.0001);
+    const diff = Math.abs(sc.sA - sc.sB);
+    if (diff <= tolAbs) break; // уже достаточно близко
+    const strong: Team = sc.sA >= sc.sB ? 'A' : 'B';
+    const weak: Team = strong === 'A' ? 'B' : 'A';
+
+    const base = score(packs);
+    const candScored = packs
+      .filter((p) => p.currentTeam === strong)
+      .map((pk) => {
+        const np = packs.map((p0) =>
+          p0.id === pk.id ? { ...p0, currentTeam: weak } : p0,
+        );
+        const before = Math.abs(base.sA - base.sB);
+        const after = Math.abs(score(np).sA - score(np).sB);
+        return { pk, rank: typeRank(pk), gain: before - after };
+      })
+      .sort((x, y) => y.rank - x.rank || y.gain - x.gain);
+
+    let improved = false;
+    for (const { pk } of candScored) {
+      // перенос pk увеличит головы на weak, нужно эвакуировать столько же слотов обратно
+      const afterPk = packs.map((p) =>
+        p.id === pk.id ? { ...p, currentTeam: weak } : p,
+      );
+      const overflow =
+        sideCount(afterPk, weak).count - sideCount(packs, weak).count; // это = pk.size
+      const evac = chooseEvacWeakSquadAndFill(
+        afterPk,
+        weak,
+        overflow,
+        hard,
+        lockedClanTags,
+      );
+      if (!evac.length) continue;
+
+      // смоделируем итог после эвакуаций
+      let after = afterPk.map((p) => p);
+      for (const ev of evac)
+        after = after.map((p) =>
           p.id === ev.id ? { ...p, currentTeam: strong } : p,
         );
+      const sc2 = score(after);
+      const newDiff = Math.abs(sc2.sA - sc2.sB);
+      if (
+        newDiff < diff &&
+        Math.abs(sc2.cA - targetA) === 0 &&
+        Math.abs(sc2.cB - targetB) === 0
+      ) {
+        // применяем
+        packs = after;
         moves.push({
-          players: [...ev.players],
-          from: weak,
-          to: strong,
-          note: 'overflow evac',
-          packType: ev.type,
-          packId: ev.id,
+          players: [...pk.players],
+          from: strong,
+          to: weak,
+          note: 'skill swap',
+          packType: pk.type,
+          packId: pk.id,
         });
-        overflow -= ev.size;
-      }
-      continue;
-    }
-    const unit = choosePartyOrSolo(packs, strong, weak, teamCap, tol, hard);
-    if (unit) {
-      packs = packs.map<Pack>((p) =>
-        p.id === unit.id ? { ...p, currentTeam: weak } : p,
-      );
-      moves.push({
-        players: [...unit.players],
-        from: strong,
-        to: weak,
-        note: unit.type,
-        packType: unit.type,
-        packId: unit.id,
-      });
-      continue;
-    }
-    const scStrong = sideCount(packs, strong).count,
-      scWeak = sideCount(packs, weak).count;
-    if (scStrong === teamCap && scWeak === teamCap) {
-      const swapFromStrong = [
-        ...packs.filter((p) => p.currentTeam === strong),
-      ].sort((a, b) => b.size - a.size || b.skillSum - a.skillSum)[0];
-      const weakCand = evacuateCandidates(
-        packs.filter((p) => p.currentTeam === weak),
-        '',
-      )[0];
-      if (!swapFromStrong || !weakCand) break;
-      packs = packs.map<Pack>((p) =>
-        p.id === swapFromStrong.id ? { ...p, currentTeam: weak } : p,
-      );
-      moves.push({
-        players: [...swapFromStrong.players],
-        from: strong,
-        to: weak,
-        note: 'swap A',
-        packType: swapFromStrong.type,
-        packId: swapFromStrong.id,
-      });
-      packs = packs.map<Pack>((p) =>
-        p.id === weakCand.id ? { ...p, currentTeam: strong } : p,
-      );
-      moves.push({
-        players: [...weakCand.players],
-        from: weak,
-        to: strong,
-        note: 'swap B',
-        packType: weakCand.type,
-        packId: weakCand.id,
-      });
-      continue;
-    }
-    break;
-  }
-  const extra = enforceHeadcount(
-    packs,
-    teamCap,
-    hard,
-    new Map<string, number>(
-      packs.flatMap((p) =>
-        p.players.map((id) => [id, skillCache.get(id) ?? 1000]),
-      ),
-    ),
-  );
-  for (const m of extra) moves.push(m);
-  const final = score(
-    packs.map((p) => {
-      let mv: Move | undefined = undefined;
-      for (let i = moves.length - 1; i >= 0; i--) {
-        if (moves[i].packId === p.id) {
-          mv = moves[i];
-          break;
+        if (pk.type === 'CLAN' && pk.clanTag) lockedClanTags.add(pk.clanTag);
+        for (const ev of evac) {
+          moves.push({
+            players: [...ev.players],
+            from: weak,
+            to: strong,
+            note: ev.type === 'SQUAD' ? 'swap evac squad' : 'swap evac fill',
+            packType: ev.type,
+            packId: ev.id,
+          });
         }
+        improved = true;
+        break;
       }
-      return mv ? { ...p, currentTeam: mv.to } : p;
-    }),
-    teamCap,
-    tol,
-  );
-  return { moves, final };
+    }
+    if (!improved) break;
+  }
+
+  const final = score(packs);
+  return { moves, final, targetA, targetB };
 }
 
-function fmtNum(n: number): string {
-  return n.toLocaleString('ru-RU');
-}
+// =============================================
+//      Атомарное применение паков и превью
+// =============================================
 
-function currentBalance(players: readonly TPlayer[]): {
-  cA: number;
-  cB: number;
-  sA: number;
-  sB: number;
-} {
+function currentBalance(players: readonly TPlayer[]) {
   const A = players.filter((p) => p.teamID === '1');
   const B = players.filter((p) => p.teamID === '2');
   const sumSide = (arr: TPlayer[]) =>
     arr.reduce((s, p) => s + (skillCache.get(p.steamID) ?? 1000), 0);
   return { cA: A.length, cB: B.length, sA: sumSide(A), sB: sumSide(B) };
 }
+
+async function applyPackMovesAtomically(
+  state: {
+    players?: readonly TPlayer[];
+    logger: TLogger; // ← ваш логгер
+    execute: TExecute; // ← без unknown
+  },
+  moves: readonly Move[],
+  options: {
+    protectCommander: boolean;
+    protectSquadLeader: boolean;
+    swapLimitPerRound: number;
+  },
+): Promise<number> {
+  const { logger, execute } = state; // ← без кастов
+  let packsApplied = 0;
+
+  for (const mv of moves) {
+    if (packsApplied >= options.swapLimitPerRound) break;
+
+    const members = mv.players
+      .map((id) => (state.players ?? []).find((x) => x.steamID === id))
+      .filter((p): p is TPlayer => Boolean(p));
+
+    const allOk =
+      members.length === mv.players.length &&
+      members.every(
+        (p) =>
+          playerTeam(p) === mv.from &&
+          !(options.protectCommander && /COMMANDER/i.test(p.role ?? '')) &&
+          !(options.protectSquadLeader && isSLRole(p.role)),
+      );
+
+    if (!allOk) continue;
+
+    for (const p of members) {
+      await adminForceTeamChange(execute, p.steamID);
+      logger.log(
+        `[smart-balance] move ${mv.from}->${mv.to} ${mv.packType} ${
+          mv.packId
+        } | ${String(p.name || '')} (${p.steamID})`,
+      );
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    packsApplied += 1;
+  }
+
+  return packsApplied;
+}
+
+// =============================================
+//                Основной плагин
+// =============================================
 
 export const smartBalance: TPluginProps = (state, options) => {
   const { listener, logger, execute } = state;
@@ -774,15 +785,17 @@ export const smartBalance: TPluginProps = (state, options) => {
     decayDailyFactor: Number(options?.decayDailyFactor ?? 0.98),
     retentionDays: Number(options?.retentionDays ?? 120),
     teamCap: Number(options?.teamCap ?? 50),
+    // толеранс по скиллу (цель и жёсткий предел)
     skillTolerancePct: clamp01(Number(options?.skillTolerancePct ?? 0.05)),
     hardSkillTolerancePct: clamp01(
       Number(options?.hardSkillTolerancePct ?? 0.08),
     ),
     swapLimitPerRound: Number(options?.swapLimitPerRound ?? 24),
+    // защиты ролей (можно отключить, если надо)
     protectCommander: Boolean(options?.protectCommander ?? true),
     protectSquadLeader: Boolean(options?.protectSquadLeader ?? true),
+    // кланы и детектор
     prioritizeClans: Boolean(options?.prioritizeClans ?? true),
-    frontWindow: Number(options?.frontWindow ?? 18),
     clanMaxLen: Number(options?.clanMaxLen ?? 6),
     clanMinLen: Number(options?.clanMinLen ?? 2),
     tagMinUnique: Number(options?.tagMinUnique ?? 3),
@@ -794,8 +807,8 @@ export const smartBalance: TPluginProps = (state, options) => {
     whitelistTags: Array.isArray(options?.whitelistTags)
       ? (options.whitelistTags as string[]).map(normalizeName)
       : [],
-    learnCooldownMs: Number(options?.learnCooldownMs ?? 300000),
-    minPlayersToLearn: Number(options?.minPlayersToLearn ?? 16),
+    // новое
+    minClanSideSize: Number(options?.minClanSideSize ?? 2), // не таскать клан-пак size=1
   };
 
   sbEnsureSmartBalance(opt.retentionDays)
@@ -803,7 +816,6 @@ export const smartBalance: TPluginProps = (state, options) => {
     .catch((e) => logger.warn(`[smart-balance] DB skipped: ${String(e)}`));
 
   const detector = new TagDetector({
-    frontWindow: opt.frontWindow,
     maxLen: opt.clanMaxLen,
     minLen: opt.clanMinLen,
     minUnique: opt.tagMinUnique,
@@ -818,7 +830,7 @@ export const smartBalance: TPluginProps = (state, options) => {
   const learnNow = async (reason: string) => {
     if (learnInFlight) return;
     const players = (state.players ?? []) as TPlayer[];
-    if (players.length < opt.minPlayersToLearn) return;
+    if (players.length < 8) return; // минимум онлайна для обучения
     learnInFlight = true;
     try {
       const saved = await detector.learnFromOnline(
@@ -834,7 +846,7 @@ export const smartBalance: TPluginProps = (state, options) => {
     }
   };
   const learnIfDue = (reason: string) => {
-    if (Date.now() - lastLearnAt >= opt.learnCooldownMs) void learnNow(reason);
+    if (Date.now() - lastLearnAt >= 300000) void learnNow(reason); // 5 минут
   };
 
   let tickTimer: NodeJS.Timeout | null = null;
@@ -877,22 +889,26 @@ export const smartBalance: TPluginProps = (state, options) => {
     }
   };
 
-  const previewNow = async () => {
+  async function previewNow() {
     const players = (state.players ?? []) as TPlayer[];
     const miss = players
       .map((p) => p.steamID)
       .filter((id) => !skillCache.has(id));
     await Promise.all(miss.map((id) => getSkill(id)));
     const { cA, cB, sA, sB } = currentBalance(players);
+    const total = cA + cB;
+    const { targetA, targetB } = targets(total, opt.teamCap);
     await adminBroadcast(
       execute as TExecute,
       `Баланс (текущий): A=${cA}/S=${fmtNum(
         Math.round(sA),
-      )} | B=${cB}/S=${fmtNum(Math.round(sB))} | цель 50/50, skill ≤ ${(
+      )} | B=${cB}/S=${fmtNum(
+        Math.round(sB),
+      )} | цель ${targetA}/${targetB}, skill ≤ ${(
         opt.skillTolerancePct * 100
       ).toFixed(1)}%`,
     );
-  };
+  }
 
   listener.on(EVENTS.NEW_GAME, () => {
     startTracker();
@@ -908,15 +924,6 @@ export const smartBalance: TPluginProps = (state, options) => {
   });
 
   let balanceRequested = false;
-  const moveLog: Array<{
-    sid: string;
-    name: string;
-    from: Team;
-    to: Team;
-    pack: string;
-    type: PackType;
-  }> = [];
-
   listener.on(EVENTS.SMART_BALANCE_ON, async () => {
     balanceRequested = true;
     await previewNow();
@@ -927,13 +934,13 @@ export const smartBalance: TPluginProps = (state, options) => {
 
   listener.on(EVENTS.ROUND_ENDED, async () => {
     if (!balanceRequested) return;
-    moveLog.length = 0;
     try {
       const players = (state.players ?? []) as TPlayer[];
       const miss = players
         .map((p) => p.steamID)
         .filter((id) => !skillCache.has(id));
       await Promise.all(miss.map((id) => getSkill(id)));
+
       const online = await buildOnline(players, (name) =>
         detector.detect(name),
       );
@@ -943,103 +950,108 @@ export const smartBalance: TPluginProps = (state, options) => {
         opt.partyMinSec,
         opt.partyMaxSize,
       );
-      const packs = buildPacks(online, parties, opt.prioritizeClans);
-      const { moves, final } = plan(
+
+      // ПАКИ: SQUAD -> PARTY -> CLAN(side) -> SOLO
+      const packs = buildPacks(
+        online,
+        parties,
+        opt.prioritizeClans,
+        opt.minClanSideSize,
+      );
+
+      // План на 50/50 + скилл
+      const { moves, final, targetA, targetB } = plan2(
         packs,
         opt.teamCap,
         opt.skillTolerancePct,
         Math.max(opt.hardSkillTolerancePct, opt.skillTolerancePct),
       );
+
+      // Превью
       const preview = `Баланс (предпросмотр): A=${final.cA}/S=${fmtNum(
         Math.round(final.sA),
       )} | B=${final.cB}/S=${fmtNum(
         Math.round(final.sB),
-      )} | Цель: 50/50 и skill ≤ ${(opt.skillTolerancePct * 100).toFixed(
-        1,
-      )}% | Пачек к переносу: ${moves.length} (лимит ${opt.swapLimitPerRound})`;
+      )} | Цель: ${targetA}/${targetB}, skill ≤ ${(
+        opt.skillTolerancePct * 100
+      ).toFixed(1)}% | Паков: ${moves.length} (лимит ${opt.swapLimitPerRound})`;
       await adminBroadcast(execute as TExecute, preview);
-      let packsApplied = 0;
-      for (const mv of moves) {
-        if (packsApplied >= opt.swapLimitPerRound) break;
 
-        let movedThisPack = 0;
-        for (const sid of mv.players) {
-          const p = (state.players ?? []).find((x) => x.steamID === sid);
-          if (!p) continue;
-          if (opt.protectCommander && /COMMANDER/i.test(p.role ?? '')) continue;
-          if (opt.protectSquadLeader && isSLRole(p.role)) continue;
-          if (playerTeam(p) !== mv.from) continue;
-
-          await adminForceTeamChange(execute as TExecute, sid);
-          moveLog.push({
-            sid,
-            name: String(p.name || ''),
-            from: mv.from,
-            to: mv.to,
-            pack: mv.packId,
-            type: mv.packType,
-          });
-          movedThisPack += 1;
-          await new Promise((res) => setTimeout(res, 300));
-        }
-        if (movedThisPack > 0) packsApplied += 1;
-      }
-      const currentPlayers = (state.players ?? []) as TPlayer[];
-      const cur = currentBalance(currentPlayers);
-      const needPlayers = Math.max(
-        0,
-        Math.floor(Math.abs(cur.cA - cur.cB) / 2),
+      // Применяем АТОМАРНО
+      const applied = await applyPackMovesAtomically(
+        { players: state.players, logger, execute },
+        moves,
+        {
+          protectCommander: opt.protectCommander,
+          protectSquadLeader: opt.protectSquadLeader,
+          swapLimitPerRound: opt.swapLimitPerRound,
+        },
       );
-      if (needPlayers > 0) {
-        const strong: Team = cur.cA > cur.cB ? 'A' : 'B';
+
+      // Контрольный добор, если кто-то «выпал» во время применения
+      const curPlayers = (state.players ?? []) as TPlayer[];
+      const cur = currentBalance(curPlayers);
+      const total = cur.cA + cur.cB;
+      const { targetA: curTargetA, targetB: curTargetB } = targets(
+        total,
+        opt.teamCap,
+      );
+
+      const needA = Math.max(0, cur.cA - curTargetA);
+      const needB = Math.max(0, cur.cB - curTargetB);
+      const need = needA > 0 ? needA : needB > 0 ? needB : 0;
+
+      if (need > 0) {
+        // Собираем пак-снимок ещё раз (по актуальным данным), чтобы не трогать группы по одному
+        const online2 = await buildOnline(curPlayers, (name) =>
+          detector.detect(name),
+        );
+        const parties2 = await sbGetActivePartiesOnline(
+          online2.map((p) => p.steamID),
+          opt.partyWindowDays,
+          opt.partyMinSec,
+          opt.partyMaxSize,
+        );
+        const packs2 = buildPacks(
+          online2,
+          parties2,
+          opt.prioritizeClans,
+          opt.minClanSideSize,
+        );
+        const sc2 = score(packs2);
+        const strong: Team = sc2.cA > sc2.cB ? 'A' : 'B';
         const weak: Team = strong === 'A' ? 'B' : 'A';
 
-        const idsA = currentPlayers
-          .filter((p) => p.teamID === '1')
-          .map((p) => p.steamID);
-        const idsB = currentPlayers
-          .filter((p) => p.teamID === '2')
-          .map((p) => p.steamID);
-
-        const eligible = currentPlayers
-          .filter((p) => playerTeam(p) === strong)
-          .filter(
-            (p) => !(opt.protectCommander && /COMMANDER/i.test(p.role ?? '')),
-          )
-          .filter((p) => !(opt.protectSquadLeader && isSLRole(p.role)))
-          .map((p) => p.steamID);
-
-        const skill = new Map<string, number>();
-        for (const p of currentPlayers)
-          skill.set(p.steamID, skillCache.get(p.steamID) ?? 1000);
-
-        const toMove = pickForEqualize(
-          needPlayers,
+        const evac = chooseEvacWeakSquadAndFill(
+          packs2,
           strong,
-          idsA,
-          idsB,
-          eligible,
-          skill,
+          Math.floor(Math.abs(sc2.cA - sc2.cB) / 2),
           Math.max(opt.hardSkillTolerancePct, opt.skillTolerancePct),
+          new Set(),
         );
-
-        let applied = 0;
-        for (const sid of toMove) {
-          const p = currentPlayers.find((x) => x.steamID === sid);
-          if (!p) continue;
-          await adminForceTeamChange(execute as TExecute, sid);
-          moveLog.push({
-            sid,
-            name: String(p.name || ''),
+        const extraMoves: Move[] = [];
+        for (const ev of evac)
+          extraMoves.push({
+            players: [...ev.players],
             from: strong,
             to: weak,
-            pack: 'SOLO:equalize',
-            type: 'SOLO',
+            note: 'final equalize',
+            packType: ev.type,
+            packId: ev.id,
           });
-          applied += 1;
-          await new Promise((r) => setTimeout(r, 250));
+        if (extraMoves.length) {
+          await applyPackMovesAtomically(
+            { players: state.players, logger, execute },
+            extraMoves,
+            {
+              protectCommander: opt.protectCommander,
+              protectSquadLeader: opt.protectSquadLeader,
+              swapLimitPerRound: opt.swapLimitPerRound,
+            },
+          );
         }
       }
+
       const fin = currentBalance((state.players ?? []) as TPlayer[]);
       await adminBroadcast(
         execute as TExecute,
@@ -1048,19 +1060,12 @@ export const smartBalance: TPluginProps = (state, options) => {
         )} | B=${fin.cB}/S=${fmtNum(Math.round(fin.sB))}`,
       );
       logger.log(
-        `[smart-balance] Итог баланса: A=${fin.cA}/S=${Math.round(
-          fin.sA,
-        )} | B=${fin.cB}/S=${Math.round(fin.sB)} | переносов пачек=${Math.min(
-          packsApplied,
-          moves.length,
-        )} | событий=${moveLog.length}`,
+        `[smart-balance] Итог: A=${fin.cA}/S=${Math.round(fin.sA)} | B=${
+          fin.cB
+        }/S=${Math.round(fin.sB)} | паков применено=${applied}`,
       );
-      for (const m of moveLog)
-        logger.log(
-          `[smart-balance] move ${m.from}->${m.to} ${m.type} ${m.pack} | ${m.name} (${m.sid})`,
-        );
     } catch (e) {
-      state.logger.error(`[smart-balance] apply failed: ${String(e)}`);
+      logger.error(`[smart-balance] apply failed: ${String(e)}`);
     } finally {
       balanceRequested = false;
     }
