@@ -36,7 +36,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -44,7 +44,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -100,7 +100,7 @@
       }
     }
   },
-  "AlBasrah_Insurgency_v1": {
+  "AlBasrah_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms", "AirAssault", "Mechanized"],
@@ -137,7 +137,7 @@
         ]
       },
       "INDEPENDENT": {
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -194,7 +194,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -215,8 +215,8 @@
         "USMC": ["CombinedArms", "Armored", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "Armored", "Mechanized"],
+        "MEI": ["CombinedArms", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "Armored", "Mechanized"],
         "TLF": ["CombinedArms", "Armored", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -244,8 +244,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -269,8 +269,8 @@
         "USMC": ["CombinedArms", "Armored", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "Armored", "Mechanized"],
+        "MEI": ["CombinedArms", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "Armored", "Mechanized"],
         "TLF": ["CombinedArms", "Armored", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -298,8 +298,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -350,7 +350,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -358,7 +358,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -424,8 +424,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -448,8 +448,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -472,8 +472,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -523,7 +523,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -531,7 +531,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -624,7 +624,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -632,7 +632,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -689,8 +689,8 @@
         "USMC": ["CombinedArms", "Armored", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Mechanized"],
-        "MEA": ["CombinedArms", "Armored", "Mechanized"],
+        "MEI": ["CombinedArms", "Mechanized"],
+        "GFI": ["CombinedArms", "Armored", "Mechanized"],
         "TLF": ["CombinedArms", "Armored", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -716,8 +716,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
-        "MEA": ["CombinedArms", "LightInfantry", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Support"],
         "TLF": ["CombinedArms", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -767,7 +767,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -775,7 +775,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -859,7 +859,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -867,7 +867,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -924,8 +924,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"]
       },
       "PAC": {
@@ -966,7 +966,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -974,7 +974,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -2017,8 +2017,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2041,8 +2041,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2065,8 +2065,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2079,7 +2079,7 @@
       }
     }
   },
-  "Chora_Insurgency_v1": {
+  "Chora_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms"],
@@ -2089,7 +2089,7 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "MEA": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2103,7 +2103,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": ["CombinedArms"]
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -2117,8 +2117,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"]
       },
       "PAC": {
@@ -2138,8 +2138,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2162,8 +2162,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2186,8 +2186,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2210,8 +2210,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2258,7 +2258,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2266,7 +2266,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2304,7 +2304,7 @@
       }
     }
   },
-  "Fallujah_Insurgency_v1": {
+  "Fallujah_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms", "Mechanized"],
@@ -2333,7 +2333,7 @@
         ]
       },
       "INDEPENDENT": {
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2372,7 +2372,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2393,8 +2393,8 @@
         "USMC": ["CombinedArms", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "Mechanized"],
+        "MEI": ["CombinedArms", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "Mechanized"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -2420,14 +2420,14 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "LightInfantry",
           "Mechanized",
           "Motorized",
           "Support"
         ],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -2456,8 +2456,8 @@
         "USMC": ["CombinedArms", "Armored", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Armored", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "Armored", "Mechanized"],
+        "MEI": ["CombinedArms", "Armored", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "Armored", "Mechanized"],
         "TLF": ["CombinedArms", "Armored", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -2477,14 +2477,14 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "LightInfantry",
           "Mechanized",
           "Motorized",
           "Support"
         ],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -2532,7 +2532,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2540,7 +2540,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2607,7 +2607,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2615,7 +2615,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2663,8 +2663,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2687,8 +2687,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2711,8 +2711,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -2754,7 +2754,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -2762,7 +2762,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -3547,7 +3547,7 @@
       }
     }
   },
-  "Gorodok_Insurgency_v1": {
+  "Gorodok_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "BAF": [
@@ -4410,7 +4410,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4418,7 +4418,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4465,7 +4465,7 @@
       }
     }
   },
-  "Kamdesh_Insurgency_v1": {
+  "Kamdesh_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms", "Mechanized"],
@@ -4494,7 +4494,7 @@
         ]
       },
       "INDEPENDENT": {
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4533,7 +4533,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4554,8 +4554,8 @@
         "USMC": ["CombinedArms", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Motorized"],
-        "MEA": ["CombinedArms", "Mechanized"],
+        "MEI": ["CombinedArms", "Motorized"],
+        "GFI": ["CombinedArms", "Mechanized"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -4575,8 +4575,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Motorized"],
-        "MEA": ["CombinedArms", "LightInfantry", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Motorized"],
+        "GFI": ["CombinedArms", "LightInfantry", "Support"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -4626,7 +4626,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4634,7 +4634,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4691,8 +4691,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -4742,7 +4742,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4750,7 +4750,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4839,7 +4839,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4847,7 +4847,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -4931,7 +4931,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -4939,7 +4939,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5023,7 +5023,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5031,7 +5031,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5088,8 +5088,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5102,7 +5102,7 @@
       }
     }
   },
-  "Kohat_Insurgency_v1": {
+  "Kohat_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms", "AirAssault", "Mechanized"],
@@ -5139,7 +5139,7 @@
         ]
       },
       "INDEPENDENT": {
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5187,7 +5187,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5208,8 +5208,8 @@
         "USMC": ["CombinedArms", "Motorized", "Mechanized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Motorized"],
-        "MEA": ["CombinedArms", "Mechanized"],
+        "MEI": ["CombinedArms", "Motorized"],
+        "GFI": ["CombinedArms", "Mechanized"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -5235,8 +5235,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Motorized"],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Motorized"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Armored", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -5265,8 +5265,8 @@
         "USMC": ["CombinedArms", "Mechanized", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Motorized"],
-        "MEA": ["Mechanized", "CombinedArms"],
+        "MEI": ["CombinedArms", "Motorized"],
+        "GFI": ["Mechanized", "CombinedArms"],
         "TLF": ["Mechanized", "CombinedArms", "Motorized"]
       },
       "PAC": {
@@ -5292,8 +5292,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Motorized"],
-        "MEA": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Motorized"],
+        "GFI": ["CombinedArms", "LightInfantry", "Mechanized", "Support"],
         "TLF": ["CombinedArms", "Armored", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -5349,7 +5349,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5357,7 +5357,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5419,8 +5419,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5443,8 +5443,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5457,7 +5457,7 @@
       }
     }
   },
-  "Kokan_Insurgency_v1": {
+  "Kokan_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms"],
@@ -5467,7 +5467,7 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "MEA": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5481,7 +5481,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": ["CombinedArms"]
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -5495,8 +5495,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"]
       },
       "PAC": {
@@ -5516,8 +5516,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5540,8 +5540,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5564,8 +5564,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5588,8 +5588,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -5644,7 +5644,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5652,7 +5652,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5736,7 +5736,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5744,7 +5744,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5791,7 +5791,7 @@
       }
     }
   },
-  "Lashkar_Insurgency_v1": {
+  "Lashkar_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms", "AirAssault", "Mechanized"],
@@ -5828,7 +5828,7 @@
         ]
       },
       "INDEPENDENT": {
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -5876,7 +5876,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5896,8 +5896,8 @@
         "USMC": ["Mechanized", "CombinedArms", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Motorized"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms", "Motorized"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms", "Motorized"]
       },
       "PAC": {
@@ -5916,8 +5916,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Motorized", "Support"],
-        "MEA": ["CombinedArms", "LightInfantry", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Motorized", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Support"],
         "TLF": ["CombinedArms", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -5967,7 +5967,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -5975,7 +5975,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -6032,8 +6032,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6083,7 +6083,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -6091,7 +6091,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -6175,7 +6175,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -6183,7 +6183,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -6245,8 +6245,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6259,7 +6259,7 @@
       }
     }
   },
-  "Logar_Insurgency_v1": {
+  "Logar_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms"],
@@ -6269,7 +6269,7 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "MEA": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6283,7 +6283,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": ["CombinedArms"]
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -6297,8 +6297,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6321,8 +6321,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6345,8 +6345,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -6369,8 +6369,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -7143,7 +7143,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -7151,7 +7151,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -7235,7 +7235,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -7243,7 +7243,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -7300,8 +7300,8 @@
         "USMC": ["CombinedArms", "Armored", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Armored", "Mechanized", "Motorized"],
-        "MEA": ["CombinedArms", "Armored", "Mechanized"],
+        "MEI": ["CombinedArms", "Armored", "Mechanized", "Motorized"],
+        "GFI": ["CombinedArms", "Armored", "Mechanized"],
         "TLF": ["CombinedArms", "Armored", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -7321,8 +7321,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Motorized", "Support"],
-        "MEA": ["CombinedArms", "LightInfantry", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Motorized", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Support"],
         "TLF": [
           "CombinedArms",
           "Armored",
@@ -7378,7 +7378,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -7386,7 +7386,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -7470,7 +7470,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -7478,7 +7478,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -7535,8 +7535,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -7559,8 +7559,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -7610,7 +7610,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -7618,7 +7618,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -8809,8 +8809,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8833,8 +8833,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8857,8 +8857,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8871,7 +8871,7 @@
       }
     }
   },
-  "Sumari_Insurgency_v1": {
+  "Sumari_MEIurgency_v1": {
     "Team1": {
       "BLUEFOR": {
         "ADF": ["CombinedArms"],
@@ -8881,7 +8881,7 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "MEA": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8895,7 +8895,7 @@
     },
     "Team2": {
       "INDEPENDENT": {
-        "INS": ["CombinedArms"]
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -8909,8 +8909,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8933,8 +8933,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8957,8 +8957,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -8981,8 +8981,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -9037,7 +9037,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -9045,7 +9045,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -9102,8 +9102,8 @@
         "USMC": ["CombinedArms", "Motorized"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "Mechanized"],
-        "MEA": ["CombinedArms", "Mechanized"],
+        "MEI": ["CombinedArms", "Mechanized"],
+        "GFI": ["CombinedArms", "Mechanized"],
         "TLF": ["CombinedArms", "Mechanized", "Motorized"]
       },
       "PAC": {
@@ -9123,8 +9123,8 @@
         "USMC": ["CombinedArms", "LightInfantry", "Motorized", "Support"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms", "LightInfantry", "Support"],
-        "MEA": ["CombinedArms", "LightInfantry", "Support"],
+        "MEI": ["CombinedArms", "LightInfantry", "Support"],
+        "GFI": ["CombinedArms", "LightInfantry", "Support"],
         "TLF": ["CombinedArms", "Motorized", "Support"],
         "WPMC": ["CombinedArms", "LightInfantry"]
       },
@@ -9174,7 +9174,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -9182,7 +9182,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -9266,7 +9266,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -9274,7 +9274,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
@@ -9331,8 +9331,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -9355,8 +9355,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -9379,8 +9379,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -9403,8 +9403,8 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
-        "INS": ["CombinedArms"],
-        "MEA": ["CombinedArms"],
+        "MEI": ["CombinedArms"],
+        "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
       },
@@ -9454,7 +9454,7 @@
         ]
       },
       "INDEPENDENT": {
-        "INS": [
+        "MEI": [
           "CombinedArms",
           "Armored",
           "LightInfantry",
@@ -9462,7 +9462,7 @@
           "Motorized",
           "Support"
         ],
-        "MEA": [
+        "GFI": [
           "CombinedArms",
           "AirAssault",
           "Armored",
