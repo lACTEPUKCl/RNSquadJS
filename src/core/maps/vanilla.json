@@ -2188,6 +2188,11 @@
         "RGF": ["CombinedArms"],
         "VDV": ["CombinedArms"]
       }
+    },
+    "Team2": {
+      "INDEPENDENT": {
+        "MEI": ["CombinedArms"]
+      }
     }
   },
   "Chora_Invasion_v1": {
@@ -5914,6 +5919,7 @@
         "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
+        "INS": ["CombinedArms"],
         "GFI": ["CombinedArms"],
         "TLF": ["CombinedArms"],
         "WPMC": ["CombinedArms"]
@@ -6495,6 +6501,11 @@
       "REDFOR": {
         "RGF": ["CombinedArms"],
         "VDV": ["CombinedArms"]
+      }
+    },
+    "Team2": {
+      "INDEPENDENT": {
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -7387,6 +7398,11 @@
       "REDFOR": {
         "RGF": ["CombinedArms"],
         "VDV": ["CombinedArms"]
+      }
+    },
+    "Team2": {
+      "INDEPENDENT": {
+        "MEI": ["CombinedArms"]
       }
     }
   },
@@ -9712,6 +9728,22 @@
       }
     }
   },
+  "PacificProvingGrounds_AAS_v1": {
+    "Team1 / Team2": {
+      "BLUFOR": {
+        "ADF": ["CombinedArms"],
+        "BAF": ["CombinedArms"],
+        "CAF": ["CombinedArms"],
+        "USA": ["CombinedArms"],
+        "USMC": ["CombinedArms"]
+      },
+      "PAC": {
+        "PLA": ["CombinedArms"],
+        "PLANMC": ["CombinedArms"],
+        "PLAAGF": ["CombinedArms"]
+      }
+    }
+  },
   "PacificProvingGrounds_Seed_v1": {
     "Team1 / Team2": {
       "BLUFOR": {
@@ -10600,6 +10632,11 @@
       "REDFOR": {
         "RGF": ["CombinedArms"],
         "VDV": ["CombinedArms"]
+      }
+    },
+    "Team2": {
+      "INDEPENDENT": {
+        "MEI": ["CombinedArms"]
       }
     }
   },
