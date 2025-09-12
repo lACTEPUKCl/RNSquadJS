@@ -1670,6 +1670,11 @@
     }
   },
   "BlackCoast_Invasion_v1": {
+    "Team1": {
+      "BLUFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
     "Team2": {
       "PAC": {
         "PLA": [
@@ -4642,6 +4647,11 @@
     }
   },
   "Harju_Invasion_v1": {
+    "Team1": {
+      "BLUFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
     "Team2": {
       "REDFOR": {
         "RGF": [
@@ -9941,6 +9951,11 @@
     }
   },
   "Sanxian_Invasion_v1": {
+    "Team1": {
+      "BLUFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
     "Team2": {
       "PAC": {
         "PLA": [
@@ -9973,6 +9988,19 @@
     }
   },
   "Sanxian_Invasion_v2": {
+    "Team1": {
+      "PAC": {
+        "PLANMC": ["AmphibiousAssault"],
+        "PLAAGF": ["AmphibiousAssault"]
+      },
+      "REDFOR": {
+        "VDV": ["AmphibiousAssault"],
+        "RGF": ["AmphibiousAssault"]
+      },
+      "BLUFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
     "Team2": {
       "BLUFOR": {
         "ADF": ["Mechanized", "CombinedArms"],
@@ -10335,6 +10363,15 @@
     }
   },
   "Skorpo_Invasion_v2": {
+    "Team1": {
+      "REDFOR": {
+        "RGF": ["AmphibiousAssault"],
+        "VDV": ["AmphibiousAssault"]
+      },
+      "BLUFOR": {
+        "USMC": ["AmphibiousAssault"]
+      }
+    },
     "Team2": {
       "BLUFOR": {
         "BAF": ["Armored", "Mechanized", "Support", "CombinedArms"],
