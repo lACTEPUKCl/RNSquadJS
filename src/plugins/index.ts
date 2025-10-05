@@ -1,6 +1,5 @@
 import { getServersState } from '../serversState';
 import { adminCamBlocker } from './admin-cam-blocker';
-import { antiClicker } from './anticlicker';
 import { explosiveDamaged } from './apply-explosive-damaged';
 import { autoKickUnassigned } from './auto-kick-unassigned';
 import { autorestartServers } from './autorestart-servers';
@@ -11,12 +10,12 @@ import { chatCommands } from './chat-commands';
 import { fobExplosionDamage } from './fobexplosiondamage';
 import { knifeBroadcast } from './knife-broadcast';
 import { levelSync } from './koth-lvl-sync';
+import { officialKothDb } from './officialKothDb';
 import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
 import { skipmap } from './skipmap';
 import { smartBalance } from './smart-balance';
-import { squadBrowser } from './squad-browser';
 import { squadLeaderRole } from './squad-leader-role';
 import { voteMap } from './votemap';
 import { voteMapMods } from './votemapmods';
@@ -27,7 +26,6 @@ const plugins = [
   randomizerMaps,
   warnPlayers,
   smartBalance,
-  antiClicker,
   squadLeaderRole,
   autoKickUnassigned,
   chatCommands,
@@ -43,7 +41,7 @@ const plugins = [
   knifeBroadcast,
   adminCamBlocker,
   levelSync,
-  squadBrowser,
+  officialKothDb,
 ];
 
 export const initPlugins = async (id: number) => {
