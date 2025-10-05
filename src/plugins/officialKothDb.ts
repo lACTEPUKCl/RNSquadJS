@@ -117,7 +117,7 @@ export const officialKothDb: TPluginProps = (state, options) => {
   const serverId: number =
     typeof options.serverId === 'number' && Number.isFinite(options.serverId)
       ? options.serverId
-      : 0;
+      : 1;
 
   type DbFields = {
     url?: string;
