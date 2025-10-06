@@ -133,7 +133,17 @@ export const officialKothDb: TPluginProps = (state, options) => {
   let sequelize: Sequelize;
 
   if (dbCfg.url && dbCfg.url.trim()) {
-    sequelize = new Sequelize(dbCfg.url, { logging: false });
+    sequelize = new Sequelize(dbCfg.url, {
+      logging: false,
+      dialect: 'mariadb',
+      dialectOptions: {
+        connectTimeout: 15000,
+        keepAlive: true,
+        keepAliveInitialDelay: 10000,
+        socketTimeout: 30000,
+      },
+      pool: { max: 10, min: 1, idle: 20000, acquire: 60000 },
+    });
   } else {
     sequelize = new Sequelize(
       dbCfg.database || 'database',
@@ -144,6 +154,13 @@ export const officialKothDb: TPluginProps = (state, options) => {
         port: typeof dbCfg.port === 'number' ? dbCfg.port : 3306,
         dialect: dbCfg.dialect || 'mariadb',
         logging: false,
+        dialectOptions: {
+          connectTimeout: 15000,
+          keepAlive: true,
+          keepAliveInitialDelay: 10000,
+          socketTimeout: 30000,
+        },
+        pool: { max: 10, min: 1, idle: 20000, acquire: 60000 },
       },
     );
   }
@@ -211,6 +228,96 @@ export const officialKothDb: TPluginProps = (state, options) => {
     return result;
   };
 
+  type NonNullJson = Exclude<JsonValue, null>;
+
+  const readPlayerJson = async (
+    steamID: string,
+  ): Promise<NonNullJson | null> => {
+    const pfile = playerFilePath(steamID);
+    const buf = await readBufSafe(pfile);
+    if (!buf) return null;
+    const raw = decodeHeuristic(buf);
+    const parsed = JSON.parse(raw) as JsonValue;
+    if (parsed == null) return null;
+    return parsed as NonNullJson;
+  };
+
+  const RETRY_DELAY_MS = 300;
+
+  const upsertPlayer = async (steamID: string): Promise<boolean> => {
+    const doUpsert = async (payload: NonNullJson) =>
+      KothPlayerData.upsert({
+        player_id: steamID.trim(),
+        lastsave: new Date(),
+        serversave: Number.isFinite(serverId) ? serverId : 0,
+        playerdata: payload,
+      });
+
+    const pingDb = async (): Promise<boolean> => {
+      try {
+        await sequelize.query('SELECT 1');
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    let first = await readPlayerJson(steamID);
+    if (!first) {
+      logger.warn(`[KothDb] read failed for ${steamID} (file missing/invalid)`);
+      return false;
+    }
+
+    try {
+      await doUpsert(first);
+      return true;
+    } catch (err) {
+      logger.warn(
+        `[KothDb] upsert failed for ${steamID}: ${(err as Error).message}`,
+      );
+    }
+
+    let fresh = await readPlayerJson(steamID);
+    if (!fresh) fresh = first;
+
+    if (await pingDb()) {
+      try {
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        await doUpsert(fresh);
+        logger.log(
+          `[KothDb] upsert recovered for ${steamID} (ping ok, fresh data)`,
+        );
+        return true;
+      } catch (e2) {
+        logger.error(
+          `[KothDb] upsert retry failed for ${steamID}: ${
+            (e2 as Error).message
+          }`,
+        );
+      }
+    } else {
+      try {
+        logger.warn(`[KothDb] DB ping failed; trying authenticate()...`);
+        await sequelize.authenticate();
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        const fresh2 = (await readPlayerJson(steamID)) ?? fresh;
+        await doUpsert(fresh2);
+        logger.log(
+          `[KothDb] upsert recovered for ${steamID} after authenticate() (fresh data)`,
+        );
+        return true;
+      } catch (e3) {
+        logger.error(
+          `[KothDb] upsert failed after authenticate() for ${steamID}: ${
+            (e3 as Error).message
+          }`,
+        );
+      }
+    }
+
+    return false;
+  };
+
   const syncServerSettingsFromDB = async (): Promise<void> => {
     try {
       const row = await KothPlayerData.findOne({
@@ -222,27 +329,9 @@ export const officialKothDb: TPluginProps = (state, options) => {
       const data = fromDbJson(row.playerdata) ?? ({} as JsonValue);
 
       await writeJsonPretty(serverSettingsPath, data);
-    } catch {
-      logger.error(`[KothDb] Error syncing ServerSettings`);
-    }
-  };
-
-  type NonNullJson = Exclude<JsonValue, null>;
-
-  const upsertPlayer = async (
-    steamID: string,
-    json: NonNullJson,
-  ): Promise<void> => {
-    try {
-      await KothPlayerData.upsert({
-        player_id: steamID.trim(),
-        lastsave: new Date(),
-        serversave: Number.isFinite(serverId) ? serverId : 0,
-        playerdata: json,
-      });
-    } catch (err) {
+    } catch (e) {
       logger.error(
-        `[KothDb] DB upsert failed for ${steamID}: ${(err as Error).message}`,
+        `[KothDb] Error syncing ServerSettings: ${(e as Error).message}`,
       );
     }
   };
@@ -260,43 +349,19 @@ export const officialKothDb: TPluginProps = (state, options) => {
       }
 
       let synced = 0,
-        missing = 0,
-        invalid = 0;
+        failed = 0;
 
       for (const steamID of steamIDs) {
-        const pfile = playerFilePath(steamID);
-        const buf = await readBufSafe(pfile);
-
-        if (!buf) {
-          missing++;
-          continue;
-        }
-
-        const raw = decodeHeuristic(buf);
-
-        try {
-          const json = JSON.parse(raw) as JsonValue;
-
-          if (json == null) {
-            invalid++;
-            logger.warn(`[KothDb] Null JSON in ${pfile}, skipping`);
-            continue;
-          }
-
-          await upsertPlayer(steamID, json as NonNullJson);
-
-          synced++;
-        } catch {
-          logger.warn(`[KothDb] Invalid JSON in ${pfile}, skipping`);
-          invalid++;
-        }
+        const ok = await upsertPlayer(steamID);
+        if (ok) synced++;
+        else failed++;
       }
 
       logger.log(
-        `[KothDb] Periodic sync: total=${steamIDs.length}, synced=${synced}, missing=${missing}, invalid=${invalid}`,
+        `[KothDb] Periodic sync: total=${steamIDs.length}, synced=${synced}, failed=${failed}`,
       );
-    } catch {
-      logger.error(`[KothDb] Periodic sync error`);
+    } catch (e) {
+      logger.error(`[KothDb] Periodic sync error: ${(e as Error).message}`);
     }
   };
 
@@ -325,24 +390,9 @@ export const officialKothDb: TPluginProps = (state, options) => {
 
     if (!steamID) return;
 
-    const pfile = playerFilePath(steamID);
-    const buf = await readBufSafe(pfile);
-
-    if (!buf) return;
-
-    const raw = decodeHeuristic(buf);
-
-    try {
-      const json = JSON.parse(raw) as JsonValue;
-
-      if (json == null) {
-        logger.warn(`[KothDb] Null JSON in ${pfile}, skipping`);
-        return;
-      }
-
-      await upsertPlayer(steamID, json as NonNullJson);
-    } catch {
-      logger.warn(`[KothDb] Invalid JSON in ${pfile}, skipping`);
+    const ok = await upsertPlayer(steamID);
+    if (!ok) {
+      logger.warn(`[KothDb] upsert still failed for ${steamID}`);
     }
   };
 
@@ -368,8 +418,8 @@ export const officialKothDb: TPluginProps = (state, options) => {
       } else {
         logger.log(`[KothDb] Periodic sync disabled`);
       }
-    } catch {
-      logger.error(`[KothDb] Bootstrap failed`);
+    } catch (e) {
+      logger.error(`[KothDb] Bootstrap failed: ${(e as Error).message}`);
     }
   })();
 };
