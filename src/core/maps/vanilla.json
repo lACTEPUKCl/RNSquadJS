@@ -6865,48 +6865,6 @@
       }
     }
   },
-  "Manicouagan_AAS_v3": {
-    "Team1 / Team2": {
-      "BLUFOR": {
-        "BAF": [
-          "AirAssault",
-          "Armored",
-          "Mechanized",
-          "Support",
-          "CombinedArms"
-        ],
-        "CAF": ["AirAssault", "Motorized", "Support", "CombinedArms"],
-        "USA": [
-          "AirAssault",
-          "LightInfantry",
-          "Motorized",
-          "Support",
-          "CombinedArms"
-        ],
-        "USMC": ["LightInfantry", "Support"]
-      },
-      "PAC": {
-        "PLA": [
-          "AirAssault",
-          "Armored",
-          "LightInfantry",
-          "Motorized",
-          "Support",
-          "CombinedArms"
-        ],
-        "PLANMC": ["AirAssault", "LightInfantry", "Support", "CombinedArms"],
-        "PLAAGF": ["CombinedArms"]
-      },
-      "REDFOR": {
-        "RGF": ["LightInfantry", "Motorized", "Support", "CombinedArms"],
-        "VDV": ["AirAssault", "Support", "CombinedArms"]
-      },
-      "INDEPENDENT": {
-        "WPMC": ["AirAssault", "LightInfantry", "CombinedArms"],
-        "CRF": ["CombinedArms"]
-      }
-    }
-  },
   "Manicouagan_RAAS_v1": {
     "Team1 / Team2": {
       "BLUFOR": {
