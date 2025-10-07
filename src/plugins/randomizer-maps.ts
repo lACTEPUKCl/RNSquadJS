@@ -51,7 +51,7 @@ const tieredFactions: Record<
     factions: ['RGF', 'USA', 'USMC', 'WPMC', 'CAF', 'ADF', 'GFI', 'CRF'],
   },
   A: {
-    probability: 35,
+    probability: 40,
     factions: ['INS', 'BAF', 'IMF'],
   },
   B: {
@@ -59,7 +59,7 @@ const tieredFactions: Record<
     factions: ['TLF', 'MEI', 'PLA'],
   },
   C: {
-    probability: 5,
+    probability: 0,
     factions: ['PLAAGF', 'PLANMC', 'VDV'],
   },
 };
@@ -69,7 +69,7 @@ const tieredSubfactions: Record<
   { probability: number; subfactions: string[] }
 > = {
   S: {
-    probability: 50,
+    probability: 90,
     subfactions: ['CombinedArms', 'Support', 'LightInfantry', 'Motorized'],
   },
   A: {
@@ -77,7 +77,7 @@ const tieredSubfactions: Record<
     subfactions: [],
   },
   B: {
-    probability: 20,
+    probability: 10,
     subfactions: ['Armored', 'Mechanized', 'AirAssault', 'AmphibiousAssault'],
   },
   C: {
