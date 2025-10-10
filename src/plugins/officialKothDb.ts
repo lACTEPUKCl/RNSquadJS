@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { DataTypes, Model, ModelStatic, Optional, Sequelize } from 'sequelize';
 import { TPlayerConnected, TPlayerDisconnected } from 'squad-logs';
 import { EVENTS } from '../constants';
+import { getSteamIDByEOSID } from '../rnsdb';
 import { TPluginProps } from '../types';
 import { getPlayerByEOSID } from './helpers.js';
 
@@ -102,7 +103,6 @@ const decodeHeuristic = (buf: Buffer): string => {
   }
 
   const s = buf.toString('utf8');
-
   return s.charCodeAt(0) === 0xfeff ? s.slice(1) : s;
 };
 
@@ -132,37 +132,79 @@ export const officialKothDb: TPluginProps = (state, options) => {
   const dbCfg: DbFields = (options.db || {}) as DbFields;
   let sequelize: Sequelize;
 
+  const commonSequelizeOpts = {
+    logging: false,
+    dialect: 'mariadb' as const,
+    retry: { max: 3 },
+    dialectOptions: {
+      connectTimeout: 15000,
+      keepAlive: true,
+      keepAliveInitialDelay: 10000,
+      socketTimeout: 30000,
+    },
+    pool: { max: 10, min: 1, idle: 20000, acquire: 60000 },
+  };
+
   if (dbCfg.url && dbCfg.url.trim()) {
-    sequelize = new Sequelize(dbCfg.url, {
-      logging: false,
-      dialect: 'mariadb',
-      dialectOptions: {
-        connectTimeout: 15000,
-        keepAlive: true,
-        keepAliveInitialDelay: 10000,
-        socketTimeout: 30000,
-      },
-      pool: { max: 10, min: 1, idle: 20000, acquire: 60000 },
-    });
+    sequelize = new Sequelize(dbCfg.url, commonSequelizeOpts);
+    logger.log(`[KothDb] DB target -> url`);
   } else {
     sequelize = new Sequelize(
       dbCfg.database || 'database',
       dbCfg.username || 'username',
       dbCfg.password || 'password',
       {
+        ...commonSequelizeOpts,
         host: dbCfg.host || '127.0.0.1',
         port: typeof dbCfg.port === 'number' ? dbCfg.port : 3306,
-        dialect: dbCfg.dialect || 'mariadb',
-        logging: false,
-        dialectOptions: {
-          connectTimeout: 15000,
-          keepAlive: true,
-          keepAliveInitialDelay: 10000,
-          socketTimeout: 30000,
-        },
-        pool: { max: 10, min: 1, idle: 20000, acquire: 60000 },
       },
     );
+    logger.log(
+      `[KothDb] DB target -> host=${dbCfg.host || '127.0.0.1'} port=${
+        dbCfg.port ?? 3306
+      } db=${dbCfg.database || 'database'}`,
+    );
+  }
+
+  let isDbReady = false;
+
+  async function sleep(ms: number) {
+    return new Promise((r) => setTimeout(r, ms));
+  }
+
+  async function dbAuthenticateWithRetry(
+    s: Sequelize,
+    l: (typeof state)['logger'],
+    retries = 5,
+  ) {
+    const delays = [1000, 2000, 3000, 5000, 8000];
+    for (let i = 0; i < retries; i++) {
+      try {
+        await s.authenticate();
+        isDbReady = true;
+        l.log('[KothDb] DB connected');
+        return true;
+      } catch (e) {
+        isDbReady = false;
+        const d = delays[Math.min(i, delays.length - 1)];
+        l.warn(
+          `[KothDb] DB auth failed (${i + 1}/${retries}): ${
+            (e as Error).message
+          }. Retry in ${d}ms`,
+        );
+        await sleep(d);
+      }
+    }
+    l.error('[KothDb] DB auth failed: out of retries');
+    return false;
+  }
+
+  async function ensureDbReady(
+    s: Sequelize,
+    l: (typeof state)['logger'],
+  ): Promise<boolean> {
+    if (isDbReady) return true;
+    return dbAuthenticateWithRetry(s, l, 3);
   }
 
   const KothPlayerData: ModelStatic<KothPlayerDataInstance> =
@@ -202,7 +244,6 @@ export const officialKothDb: TPluginProps = (state, options) => {
 
   const readPlayerListFlexible = async (): Promise<string[]> => {
     const buf = await readBufSafe(playerListPath);
-
     if (!buf) return [];
 
     const raw = decodeHeuristic(buf);
@@ -218,13 +259,10 @@ export const officialKothDb: TPluginProps = (state, options) => {
 
     const root = json as { readonly [k: string]: JsonValue };
     const players = root['players'];
-
     if (!Array.isArray(players)) return [];
 
     const result: string[] = [];
-
     for (const v of players) if (typeof v === 'string' && v) result.push(v);
-
     return result;
   };
 
@@ -282,7 +320,7 @@ export const officialKothDb: TPluginProps = (state, options) => {
 
     if (await pingDb()) {
       try {
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        await sleep(RETRY_DELAY_MS);
         await doUpsert(fresh);
         logger.log(
           `[KothDb] upsert recovered for ${steamID} (ping ok, fresh data)`,
@@ -299,7 +337,7 @@ export const officialKothDb: TPluginProps = (state, options) => {
       try {
         logger.warn(`[KothDb] DB ping failed; trying authenticate()...`);
         await sequelize.authenticate();
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+        await sleep(RETRY_DELAY_MS);
         const fresh2 = (await readPlayerJson(steamID)) ?? fresh;
         await doUpsert(fresh2);
         logger.log(
@@ -327,7 +365,6 @@ export const officialKothDb: TPluginProps = (state, options) => {
       if (!row || row.playerdata == null) return;
 
       const data = fromDbJson(row.playerdata) ?? ({} as JsonValue);
-
       await writeJsonPretty(serverSettingsPath, data);
     } catch (e) {
       logger.error(
@@ -341,12 +378,17 @@ export const officialKothDb: TPluginProps = (state, options) => {
       const steamIDs = await readPlayerListFlexible();
 
       if (steamIDs.length >= MIN_PLAYERS_FOR_SETTINGS && syncEnabled) {
-        await syncServerSettingsFromDB();
+        if (await ensureDbReady(sequelize, logger)) {
+          await syncServerSettingsFromDB();
+        }
       }
 
       if (steamIDs.length === 0) {
         logger.log(`[KothDb] No connected players found in PlayerList.json`);
+        return;
       }
+
+      if (!(await ensureDbReady(sequelize, logger))) return;
 
       let synced = 0,
         failed = 0;
@@ -367,32 +409,74 @@ export const officialKothDb: TPluginProps = (state, options) => {
 
   const onPlayerConnected = async (data: TPlayerConnected): Promise<void> => {
     const steamID = data.steamID;
-
     if (!steamID) return;
 
-    const row = await KothPlayerData.findOne({
-      where: { player_id: steamID },
-      attributes: ['playerdata'],
-    });
+    if (!(await ensureDbReady(sequelize, logger))) return;
 
-    if (!row || row.playerdata == null) return;
+    try {
+      const row = await KothPlayerData.findOne({
+        where: { player_id: steamID },
+        attributes: ['playerdata'],
+      });
 
-    const pdata = fromDbJson(row.playerdata) ?? ({} as JsonValue);
+      if (!row || row.playerdata == null) return;
 
-    await writeJsonPretty(playerFilePath(steamID), pdata);
+      const pdata = fromDbJson(row.playerdata) ?? ({} as JsonValue);
+      await writeJsonPretty(playerFilePath(steamID), pdata);
+    } catch (e) {
+      logger.error(
+        `[KothDb] onPlayerConnected DB error: ${(e as Error).message}`,
+      );
+    }
   };
 
   const onPlayerDisconnected = async (
     data: TPlayerDisconnected,
   ): Promise<void> => {
     const player = getPlayerByEOSID(state, data.eosID);
-    const steamID = player?.steamID;
+    let steamID: string | undefined = player?.steamID;
 
-    if (!steamID) return;
+    if (!steamID) {
+      const eos = (data.eosID ?? '').trim();
+      if (eos) {
+        try {
+          const resolvedSteamID = await getSteamIDByEOSID(eos);
+          if (resolvedSteamID) {
+            steamID = resolvedSteamID;
+            logger.log(
+              `[KothDb] Resolved steamID=${steamID} via Mongo by eosID=${eos}`,
+            );
+          }
+        } catch (e) {
+          logger.error(
+            `[KothDb] getSteamIDByEOSID failed for eosID=${eos}: ${
+              (e as Error).message
+            }`,
+          );
+        }
+      }
+    }
 
-    const ok = await upsertPlayer(steamID);
-    if (!ok) {
-      logger.warn(`[KothDb] upsert still failed for ${steamID}`);
+    if (!steamID) {
+      logger.warn(
+        `[KothDb] Skip upsert: steamID not resolved for eosID=${(
+          data.eosID ?? 'null'
+        ).toString()}`,
+      );
+      return;
+    }
+
+    if (!(await ensureDbReady(sequelize, logger))) return;
+
+    try {
+      const ok = await upsertPlayer(steamID);
+      if (!ok) {
+        logger.warn(`[KothDb] upsert still failed for ${steamID}`);
+      }
+    } catch (e) {
+      logger.error(
+        `[KothDb] onPlayerDisconnected DB error: ${(e as Error).message}`,
+      );
     }
   };
 
@@ -402,18 +486,28 @@ export const officialKothDb: TPluginProps = (state, options) => {
   (async () => {
     try {
       logger.log(`[KothDb] Resolved KOTH path: ${resolvedKothPath}`);
-
       await ensureKothDir();
-      await sequelize.authenticate();
-      await KothPlayerData.sync();
 
-      logger.log(`[KothDb] DB connected & KOTH_PlayerData ready`);
-
-      await syncServerSettingsFromDB();
-      await periodicSync();
+      const ok = await dbAuthenticateWithRetry(sequelize, logger, 5);
+      if (!ok) {
+        logger.error(
+          '[KothDb] Bootstrap: DB not available now; timers will keep trying',
+        );
+      } else {
+        await KothPlayerData.sync();
+        logger.log(`[KothDb] DB connected & KOTH_PlayerData ready`);
+        await syncServerSettingsFromDB();
+        await periodicSync();
+      }
 
       if (syncEnabled) {
-        setInterval(periodicSync, INTERVAL_MS);
+        setInterval(async () => {
+          if (!(await ensureDbReady(sequelize, logger))) return;
+          try {
+            await KothPlayerData.sync();
+          } catch {}
+          await periodicSync();
+        }, INTERVAL_MS);
         logger.log(`[KothDb] Started periodic sync every 90 seconds`);
       } else {
         logger.log(`[KothDb] Periodic sync disabled`);
