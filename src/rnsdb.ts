@@ -9,6 +9,7 @@ import {
 export interface Main {
   _id: string;
   name: string;
+  eosID: string;
   bonuses: number;
   kills: number;
   death: number;
@@ -175,6 +176,18 @@ export async function writeLastModUpdateDate(modID: string, date: Date) {
   }
 }
 
+export async function getSteamIDByEOSID(eosID: string): Promise<string | null> {
+  if (!isConnected) return null;
+  const trimmed = (eosID ?? '').trim();
+  if (!trimmed) return null;
+
+  const doc = await collectionMain.findOne(
+    { eosID: trimmed },
+    { projection: { _id: 1 } },
+  );
+  return doc?._id ?? null;
+}
+
 export async function getModLastUpdateDate(modID: string) {
   if (!isConnected) return;
   try {
@@ -188,16 +201,16 @@ export async function getModLastUpdateDate(modID: string) {
 export async function createUserIfNullableOrUpdateName(
   steamID: string,
   name: string,
+  eosID?: string,
 ): Promise<void> {
-  if (!db || !isConnected) return;
+  if (!isConnected) return;
 
-  const [resultMain, resultTemp] = await Promise.all([
-    collectionMain.findOne({ _id: steamID }),
-    collectionTemp.findOne({ _id: steamID }),
-  ]);
+  const trimmedName = (name ?? '').trim();
+  const trimmedEosID = (eosID ?? '').trim();
 
   const baseFields: Omit<Main, '_id'> = {
-    name: name.trim(),
+    name: trimmedName,
+    eosID: trimmedEosID,
     kills: 0,
     death: 0,
     revives: 0,
@@ -221,33 +234,42 @@ export async function createUserIfNullableOrUpdateName(
     seedRole: false,
   };
 
-  if (!resultMain) {
-    await collectionMain.updateOne(
+  const [resultMain] = await Promise.all([
+    collectionMain.findOne<{ _id: string; name?: string; eosID?: string }>({
+      _id: steamID,
+    }),
+    collectionTemp.findOne<{ _id: string }>({ _id: steamID }),
+  ]);
+
+  await Promise.all([
+    collectionMain.updateOne(
       { _id: steamID },
       { $setOnInsert: baseFields },
       { upsert: true },
-    );
-  }
-
-  if (!resultTemp) {
-    await collectionTemp.updateOne(
+    ),
+    collectionTemp.updateOne(
       { _id: steamID },
       { $setOnInsert: baseFields },
       { upsert: true },
-    );
-  }
+    ),
+  ]);
 
-  if (resultMain && name.trim() !== resultMain.name.trim()) {
-    await updateUserName(steamID, name.trim());
-  }
-}
+  if (resultMain) {
+    const updates: Record<string, unknown> = {};
+    if ((resultMain.name ?? '').trim() !== trimmedName) {
+      updates.name = trimmedName;
+    }
+    if ((resultMain.eosID ?? '').trim() !== trimmedEosID) {
+      updates.eosID = trimmedEosID;
+    }
 
-async function updateUserName(steamID: string, name: string) {
-  if (!isConnected) return;
-  const user = { _id: steamID };
-  const doc = { $set: { name } };
-  await collectionMain.updateOne(user, doc);
-  await collectionTemp.updateOne(user, doc);
+    if (Object.keys(updates).length > 0) {
+      await Promise.all([
+        collectionMain.updateOne({ _id: steamID }, { $set: updates }),
+        collectionTemp.updateOne({ _id: steamID }, { $set: updates }),
+      ]);
+    }
+  }
 }
 
 export async function updateUserBonuses(
@@ -594,7 +616,7 @@ export async function updateCollectionTemp(
 ) {
   const tempStats = await collectionTemp.updateOne(user, doc);
   if (tempStats.modifiedCount !== 1) {
-    await createUserIfNullableOrUpdateName(user._id, name);
+    await createUserIfNullableOrUpdateName(user._id, '', name);
     await collectionTemp.updateOne(user, doc);
   }
 }
