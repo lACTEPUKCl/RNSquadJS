@@ -15,7 +15,17 @@ import { TPluginProps, TTeamFactions } from '../types';
 
 type TierKey = 'S' | 'A' | 'B' | 'C';
 
-const tieredMaps: Record<TierKey, { probability: number; maps: string[] }> = {
+type TieredMapsRec = Record<TierKey, { probability: number; maps: string[] }>;
+type TieredFactionsRec = Record<
+  TierKey,
+  { probability: number; factions: string[] }
+>;
+type TieredSubfactionsRec = Record<
+  TierKey,
+  { probability: number; subfactions: string[] }
+>;
+
+const DEFAULT_TIERED_MAPS: TieredMapsRec = {
   S: {
     probability: 50,
     maps: [
@@ -30,22 +40,28 @@ const tieredMaps: Record<TierKey, { probability: number; maps: string[] }> = {
   },
   A: {
     probability: 30,
-    maps: ['AlBasrah', 'Belaya', 'Chora', 'GooseBay', 'Tallil', 'BlackCoast'],
+    maps: [
+      'Sumari',
+      'AlBasrah',
+      'Belaya',
+      'Chora',
+      'GooseBay',
+      'Tallil',
+      'BlackCoast',
+      'Logar',
+    ],
   },
   B: {
     probability: 15,
-    maps: ['Sumari', 'Kokan', 'Sanxian', 'Kohat', 'Kamdesh', 'Anvil'],
+    maps: ['Kokan', 'Sanxian', 'Kohat', 'Kamdesh', 'Anvil'],
   },
   C: {
     probability: 5,
-    maps: ['Lashkar', 'Mestia', 'Skorpo', 'FoolsRoad', 'Logar'],
+    maps: ['Lashkar', 'Mestia', 'Skorpo', 'FoolsRoad'],
   },
 };
 
-const tieredFactions: Record<
-  TierKey,
-  { probability: number; factions: string[] }
-> = {
+const DEFAULT_TIERED_FACTIONS: TieredFactionsRec = {
   S: {
     probability: 50,
     factions: ['RGF', 'USA', 'USMC', 'WPMC', 'CAF', 'ADF', 'GFI', 'CRF'],
@@ -64,10 +80,7 @@ const tieredFactions: Record<
   },
 };
 
-const tieredSubfactions: Record<
-  TierKey,
-  { probability: number; subfactions: string[] }
-> = {
+const DEFAULT_TIERED_SUBFACTIONS: TieredSubfactionsRec = {
   S: {
     probability: 50,
     subfactions: ['CombinedArms', 'Support', 'LightInfantry', 'Motorized'],
@@ -95,6 +108,19 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     excludeCountFactions,
     excludeCountUnitTypes,
   } = options;
+
+  const tieredMaps: TieredMapsRec =
+    (options as { tieredMaps?: TieredMapsRec }).tieredMaps ??
+    DEFAULT_TIERED_MAPS;
+
+  const tieredFactions: TieredFactionsRec =
+    (options as { tieredFactions?: TieredFactionsRec }).tieredFactions ??
+    DEFAULT_TIERED_FACTIONS;
+
+  const tieredSubfactions: TieredSubfactionsRec =
+    (options as { tieredSubfactions?: TieredSubfactionsRec })
+      .tieredSubfactions ?? DEFAULT_TIERED_SUBFACTIONS;
+
   const excludeCountLayersNumber = Number(excludeCountLayers);
   const excludeCountFactionsNumber = Number(excludeCountFactions);
   const excludeCountUnitTypesNumber = Number(excludeCountUnitTypes);
@@ -377,7 +403,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     }
   }
 
-  // Новая функция для выбора типов юнитов, когда данные заданы раздельно (Team1 и Team2)
   function pickUnitTypesForSeparateTeams(
     team1Data: TTeamFactions,
     team2Data: TTeamFactions,
@@ -423,7 +448,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           return { type1: chosenType, type2: chosenType };
         }
       }
-      // Если симметричный выбор не сработал — переходим к независимому выбору.
     }
 
     let type1 = pickWeightedUnitType(
@@ -602,7 +626,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       }
 
       let unitTypes: { type1: string; type2: string } | null = null;
-      // Если задан комбинированный формат, используем pickSymmetricUnitTypes
+
       if (layerData['Team1 / Team2']) {
         const teamObj: TTeamFactions = layerData['Team1 / Team2'];
         unitTypes = pickSymmetricUnitTypes(
@@ -612,9 +636,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           await getHistoryUnitTypes(id),
           symmetricUnitTypesBoolean,
         );
-      }
-      // Если заданы отдельно Team1 и Team2, используем новую функцию
-      else if (layerData.Team1 && layerData.Team2) {
+      } else if (layerData.Team1 && layerData.Team2) {
         unitTypes = pickUnitTypesForSeparateTeams(
           layerData.Team1,
           layerData.Team2,
