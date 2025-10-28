@@ -286,41 +286,35 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     available: string[],
     unitTypeHistory: string[],
   ): string | null {
-    const filtered = available.filter(
-      (type) => !unitTypeHistory.includes(type),
-    );
+    const filtered = available.filter((t) => !unitTypeHistory.includes(t));
     if (filtered.length === 0) {
       logger.log(
-        `DEBUG: [pickWeightedUnitType] Нет доступных типов после фильтрации по истории. Доступные: [${available.join(
+        `DEBUG: [pickWeightedUnitType] Нет доступных типов. Доступные: [${available.join(
           ', ',
         )}], история: [${unitTypeHistory.join(', ')}]`,
       );
       return null;
     }
-    const weightedTypes = filtered
-      .map((type) => {
-        let typeWeight = 0;
-        for (const [, tier] of Object.entries(tieredSubfactions) as [
-          TierKey,
-          { probability: number; subfactions: string[] },
-        ][]) {
-          if (tier.subfactions.includes(type)) {
-            typeWeight = tier.probability;
-            break;
-          }
+
+    const weighted = filtered.map((t) => {
+      let w = 0;
+      for (const [, tier] of Object.entries(tieredSubfactions) as [
+        'S' | 'A' | 'B' | 'C',
+        { probability: number; subfactions: string[] },
+      ][]) {
+        if (tier.subfactions.includes(t)) {
+          w = tier.probability;
+          break;
         }
-        return { item: type, weight: typeWeight };
-      })
-      .filter((obj) => obj.weight > 0);
-    if (weightedTypes.length === 0) {
-      logger.log(
-        `DEBUG: [pickWeightedUnitType] После расчета весов не осталось вариантов. Фильтрованные: [${filtered.join(
-          ', ',
-        )}]`,
-      );
-      return filtered.join(', ');
+      }
+      if (w <= 0) w = 1;
+      return { item: t, weight: w };
+    });
+
+    const chosen = weightedRandom(weighted);
+    if (!chosen) {
+      return filtered[Math.floor(Math.random() * filtered.length)];
     }
-    const chosen = weightedRandom(weightedTypes);
     logger.log(
       `DEBUG: [pickWeightedUnitType] Из [${available.join(
         ', ',
@@ -339,68 +333,64 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     const alliance1 = getAllianceForFactionFromMap(teamObj, faction1);
     const alliance2 = getAllianceForFactionFromMap(teamObj, faction2);
     if (!alliance1 || !alliance2) return null;
-    const availableTypes1: string[] = teamObj[alliance1][faction1];
-    const availableTypes2: string[] = teamObj[alliance2][faction2];
-    if (!availableTypes1?.length || !availableTypes2?.length) return null;
 
-    if (symmetricUnitTypes) {
+    const availableTypes1: string[] = teamObj[alliance1][faction1] ?? [];
+    const availableTypes2: string[] = teamObj[alliance2][faction2] ?? [];
+    if (!availableTypes1.length || !availableTypes2.length) return null;
+
+    const mustAsymmetric =
+      availableTypes1.length <= 1 || availableTypes2.length <= 1;
+
+    if (symmetricUnitTypes && !mustAsymmetric) {
       let intersection = availableTypes1.filter(
-        (type) =>
-          availableTypes2.includes(type) && !unitTypeHistory.includes(type),
+        (t) => availableTypes2.includes(t) && !unitTypeHistory.includes(t),
       );
       if (intersection.length > 0) {
         const chosenType = pickWeightedUnitType(intersection, unitTypeHistory);
         if (chosenType) {
           logger.log(
-            `DEBUG: [pickSymmetricUnitTypes] (с историей) Выбран единый тип: ${chosenType} из пересечения: [${intersection.join(
-              ', ',
-            )}]`,
+            `DEBUG: [pickSymmetricUnitTypes] Симметрия (с историей): ${chosenType}`,
           );
           return { type1: chosenType, type2: chosenType };
         }
       }
-      intersection = availableTypes1.filter((type) =>
-        availableTypes2.includes(type),
-      );
+      intersection = availableTypes1.filter((t) => availableTypes2.includes(t));
       if (intersection.length > 0) {
         const chosenType = pickWeightedUnitType(intersection, []);
         if (chosenType) {
           logger.log(
-            `DEBUG: [pickSymmetricUnitTypes] (без истории) Выбран единый тип: ${chosenType} из пересечения: [${intersection.join(
-              ', ',
-            )}]`,
+            `DEBUG: [pickSymmetricUnitTypes] Симметрия (без истории): ${chosenType}`,
           );
           return { type1: chosenType, type2: chosenType };
         }
       }
-      return null;
-    } else {
-      let filteredTypes1 = availableTypes1.filter(
-        (t) => !unitTypeHistory.includes(t),
-      );
-      let filteredTypes2 = availableTypes2.filter(
-        (t) => !unitTypeHistory.includes(t),
-      );
-      let type1 = pickWeightedUnitType(filteredTypes1, unitTypeHistory);
-      let type2 = pickWeightedUnitType(filteredTypes2, unitTypeHistory);
-      if (!type1) {
-        logger.log(
-          `DEBUG: [pickSymmetricUnitTypes] Не удалось выбрать тип для ${faction1} с учетом истории, игнорируем историю.`,
-        );
-        type1 = pickWeightedUnitType(availableTypes1, []);
-      }
-      if (!type2) {
-        logger.log(
-          `DEBUG: [pickSymmetricUnitTypes] Не удалось выбрать тип для ${faction2} с учетом истории, игнорируем историю.`,
-        );
-        type2 = pickWeightedUnitType(availableTypes2, []);
-      }
+
       logger.log(
-        `DEBUG: [pickSymmetricUnitTypes] Итоговый выбор: type1=${type1}, type2=${type2}.`,
+        `DEBUG: [pickSymmetricUnitTypes] Пересечение пусто — переключаемся на асимметрию.`,
       );
-      if (!type1 || !type2) return null;
-      return { type1, type2 };
+    } else if (symmetricUnitTypes && mustAsymmetric) {
+      logger.log(
+        `DEBUG: [pickSymmetricUnitTypes] У одной из фракций ≤1 типа — принудительно асимметрия.`,
+      );
     }
+
+    let type1 = pickWeightedUnitType(
+      availableTypes1.filter((t) => !unitTypeHistory.includes(t)),
+      unitTypeHistory,
+    );
+    let type2 = pickWeightedUnitType(
+      availableTypes2.filter((t) => !unitTypeHistory.includes(t)),
+      unitTypeHistory,
+    );
+
+    if (!type1) type1 = pickWeightedUnitType(availableTypes1, []);
+    if (!type2) type2 = pickWeightedUnitType(availableTypes2, []);
+    if (!type1 || !type2) return null;
+
+    logger.log(
+      `DEBUG: [pickSymmetricUnitTypes] Асимметрия: ${faction1}=${type1}, ${faction2}=${type2}`,
+    );
+    return { type1, type2 };
   }
 
   function pickUnitTypesForSeparateTeams(
