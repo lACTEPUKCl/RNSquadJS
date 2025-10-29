@@ -20,7 +20,11 @@ const defaultOptions: AdminCamBlockerOptions = {
 
 export const adminCamBlocker: TPluginProps = (state, options) => {
   const { listener, execute, logger } = state;
-  const opts: AdminCamBlockerOptions = { ...defaultOptions, ...options };
+  const opts: Required<AdminCamBlockerOptions> = {
+    ...defaultOptions,
+    ...options,
+  } as Required<AdminCamBlockerOptions>;
+
   const excludedAdmins: string[] = opts.adminSearchKey
     ? getAdmins(state, opts.adminSearchKey) || []
     : [];
@@ -35,143 +39,168 @@ export const adminCamBlocker: TPluginProps = (state, options) => {
   const adminStates = new Map<string, AdminState>();
   const knownAdmins = new Set<string>();
 
+  const isExcluded = (steamID?: string) =>
+    !steamID || excludedAdmins.includes(steamID);
+
   const initCooldown = (steamID: string) => {
-    let adminState = adminStates.get(steamID);
-    if (!adminState) {
-      adminState = {
+    let aState = adminStates.get(steamID);
+    if (!aState) {
+      aState = {
         isInCamera: false,
         cooldownTimeout: null,
         warningInterval: null,
         expiresAt: 0,
       };
-      adminStates.set(steamID, adminState);
+      adminStates.set(steamID, aState);
     }
-    if (adminState!.cooldownTimeout) clearTimeout(adminState!.cooldownTimeout);
-    if (adminState!.warningInterval) clearInterval(adminState!.warningInterval);
 
-    const cooldownDuration = opts.cooldownDuration!;
-    adminState!.expiresAt = Date.now() + cooldownDuration;
+    if (aState.cooldownTimeout) clearTimeout(aState.cooldownTimeout);
+    if (aState.warningInterval) clearInterval(aState.warningInterval);
+
+    const cooldownMs = opts.cooldownDuration;
+    aState.expiresAt = Date.now() + cooldownMs;
 
     adminWarn(
       execute,
       steamID,
-      opts.warnMessage!.replace('{time}', (cooldownDuration / 1000).toString()),
+      opts.warnMessage.replace('{time}', String(Math.ceil(cooldownMs / 1000))),
     );
 
-    adminState!.warningInterval = setInterval(() => {
+    aState.warningInterval = setInterval(() => {
       const currentState = adminStates.get(steamID);
       if (!currentState) return;
+
       const player = getPlayerBySteamID(state, steamID);
+
       if (!player || !player.squadID) {
         if (currentState.cooldownTimeout)
           clearTimeout(currentState.cooldownTimeout);
         if (currentState.warningInterval)
           clearInterval(currentState.warningInterval);
         adminStates.delete(steamID);
-        knownAdmins.delete(steamID);
-        logger.log(`Админ ${steamID} покинул отряд.`);
+        logger.log(
+          `[admin-cam] ${steamID}: покинул отряд — таймеры остановлены`,
+        );
         return;
       }
+
       const remainingMs = Math.max(currentState.expiresAt - Date.now(), 0);
-      const remainingSeconds = Math.ceil(remainingMs / 1000);
+      const remainingSec = Math.ceil(remainingMs / 1000);
+
       adminWarn(
         execute,
         steamID,
-        opts.warnMessage!.replace('{time}', remainingSeconds.toString()),
+        opts.warnMessage.replace('{time}', String(remainingSec)),
       );
     }, opts.warningInterval);
 
-    adminState!.cooldownTimeout = setTimeout(() => {
+    aState.cooldownTimeout = setTimeout(() => {
       const currentState = adminStates.get(steamID);
       if (!currentState) return;
+
       const player = getPlayerBySteamID(state, steamID);
+
       if (!player || !player.squadID) {
         if (currentState.warningInterval)
           clearInterval(currentState.warningInterval);
         adminStates.delete(steamID);
-        knownAdmins.delete(steamID);
+        logger.log(
+          `[admin-cam] ${steamID}: к моменту распуска уже не в отряде — очистка`,
+        );
         return;
       }
+
       adminRemovePlayerFromSquad(execute, steamID);
       if (currentState.warningInterval)
         clearInterval(currentState.warningInterval);
       adminStates.delete(steamID);
-      logger.log(`Админ ${steamID} удален из отряда.`);
-    }, cooldownDuration);
 
-    adminStates.set(steamID, adminState!);
+      logger.log(
+        `[admin-cam] ${steamID}: удалён из отряда по истечении кулдауна`,
+      );
+    }, cooldownMs);
+
+    adminStates.set(steamID, aState);
+    logger.log(
+      `[admin-cam] ${steamID}: старт кулдауна ${Math.ceil(cooldownMs / 1000)}s`,
+    );
   };
 
   const onCameraPossessed = (data: TPossessedAdminCamera) => {
-    if (excludedAdmins.includes(data.steamID)) return;
+    if (isExcluded(data.steamID)) return;
+
     const steamID = data.steamID;
     knownAdmins.add(steamID);
-    if (adminStates.has(steamID)) {
-      const stateObj = adminStates.get(steamID)!;
-      if (stateObj.cooldownTimeout) clearTimeout(stateObj.cooldownTimeout);
-      if (stateObj.warningInterval) clearInterval(stateObj.warningInterval);
+    const prev = adminStates.get(steamID);
+
+    if (prev?.cooldownTimeout) clearTimeout(prev.cooldownTimeout);
+    if (prev?.warningInterval) clearInterval(prev.warningInterval);
+
+    adminStates.set(steamID, {
+      isInCamera: true,
+      cooldownTimeout: null,
+      warningInterval: null,
+      expiresAt: 0,
+    });
+
+    logger.log(`[admin-cam] ${steamID}: POSSESSED (в камере)`);
+  };
+
+  const onCameraUnpossessed = (data: TUnPossessedAdminCamera) => {
+    if (isExcluded(data.steamID)) return;
+
+    const steamID = data.steamID;
+    const aState = adminStates.get(steamID);
+    if (!aState) {
       adminStates.set(steamID, {
-        isInCamera: true,
+        isInCamera: false,
         cooldownTimeout: null,
         warningInterval: null,
         expiresAt: 0,
       });
     } else {
-      adminStates.set(steamID, {
-        isInCamera: true,
-        cooldownTimeout: null,
-        warningInterval: null,
-        expiresAt: 0,
-      });
+      aState.isInCamera = false;
+      adminStates.set(steamID, aState);
     }
-  };
 
-  const onCameraUnpossessed = (data: TUnPossessedAdminCamera) => {
-    if (excludedAdmins.includes(data.steamID)) return;
-    const steamID = data.steamID;
-    const stateObj = adminStates.get(steamID);
-    if (!stateObj) return;
-    stateObj.isInCamera = false;
-    adminStates.set(steamID, stateObj);
-    initCooldown(steamID);
+    logger.log(`[admin-cam] ${steamID}: UNPOSSESSED (вышел из камеры)`);
   };
 
   const onSquadChanged = (data: TPlayer) => {
     const steamID = data.steamID;
-    if (
-      !steamID ||
-      excludedAdmins.includes(steamID) ||
-      !knownAdmins.has(steamID)
-    )
-      return;
+    if (isExcluded(steamID)) return;
+    if (!knownAdmins.has(steamID)) return;
 
     if (!data.squadID) {
-      const stateObj = adminStates.get(steamID);
-      if (stateObj) {
-        if (stateObj.cooldownTimeout) clearTimeout(stateObj.cooldownTimeout);
-        if (stateObj.warningInterval) clearInterval(stateObj.warningInterval);
+      const s = adminStates.get(steamID);
+      if (s) {
+        if (s.cooldownTimeout) clearTimeout(s.cooldownTimeout);
+        if (s.warningInterval) clearInterval(s.warningInterval);
         adminStates.delete(steamID);
       }
-      knownAdmins.delete(steamID);
-      logger.log(`Админ ${steamID} покинул отряд.`);
+      logger.log(`[admin-cam] ${steamID}: вышел из отряда — состояние очищено`);
       return;
     }
 
-    const stateObj = adminStates.get(steamID);
+    const s = adminStates.get(steamID);
 
-    if (!stateObj || (!stateObj.cooldownTimeout && !stateObj.isInCamera)) {
-      logger.log(`Админ ${steamID} создал новый отряд.`);
+    if (!s || (!s.cooldownTimeout && !s.isInCamera)) {
+      logger.log(
+        `[admin-cam] ${steamID}: создал/вступил в отряд вне камеры — запускаю кулдаун`,
+      );
       initCooldown(steamID);
+      return;
     }
   };
 
   const onNewGame = () => {
-    adminStates.forEach((state) => {
-      if (state.cooldownTimeout) clearTimeout(state.cooldownTimeout);
-      if (state.warningInterval) clearInterval(state.warningInterval);
+    adminStates.forEach((s) => {
+      if (s.cooldownTimeout) clearTimeout(s.cooldownTimeout);
+      if (s.warningInterval) clearInterval(s.warningInterval);
     });
     adminStates.clear();
     knownAdmins.clear();
+    logger.log('[admin-cam] NEW_GAME: состояния и knownAdmins очищены');
   };
 
   listener.on(EVENTS.POSSESSED_ADMIN_CAMERA, onCameraPossessed);
