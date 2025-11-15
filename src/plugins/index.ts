@@ -1,5 +1,6 @@
 import { getServersState } from '../serversState';
 import { adminCamBlocker } from './admin-cam-blocker';
+import { adminsReloadConfig } from './admins-reload-config';
 import { explosiveDamaged } from './apply-explosive-damaged';
 import { autoKickUnassigned } from './auto-kick-unassigned';
 import { autorestartServers } from './autorestart-servers';
@@ -42,6 +43,7 @@ const plugins = [
   adminCamBlocker,
   levelSync,
   officialKothDb,
+  adminsReloadConfig,
 ];
 
 export const initPlugins = async (id: number) => {

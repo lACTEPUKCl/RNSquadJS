@@ -65,3 +65,7 @@ export const adminRemovePlayerFromSquad = async (
 ) => {
   await execute(`AdminRemovePlayerFromSquad ${steamID}`);
 };
+
+export const adminReloadServerConfig = async (execute: TExecute) => {
+  await execute(`AdminReloadServerConfig`);
+};
