@@ -4932,7 +4932,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -4971,7 +4980,8 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": ["CombinedArms"]
+        "USMC": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "IMF": ["CombinedArms"],
@@ -4990,7 +5000,8 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": ["CombinedArms"]
+        "USMC": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "IMF": ["CombinedArms"],
@@ -5067,7 +5078,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5123,7 +5143,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5183,7 +5211,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5239,7 +5276,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5299,7 +5344,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5365,7 +5419,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -5404,7 +5467,8 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": ["CombinedArms"]
+        "USMC": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "IMF": ["CombinedArms"],
@@ -5423,7 +5487,8 @@
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
         "USMC": ["CombinedArms"],
-        "ADF": ["CombinedArms"]
+        "ADF": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
@@ -5442,7 +5507,8 @@
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
         "USMC": ["CombinedArms"],
-        "ADF": ["CombinedArms"]
+        "ADF": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
@@ -5461,7 +5527,8 @@
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
         "USMC": ["CombinedArms"],
-        "ADF": ["CombinedArms"]
+        "ADF": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
@@ -9398,7 +9465,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9464,7 +9540,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9530,7 +9615,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9596,7 +9690,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9652,7 +9755,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9712,7 +9823,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9768,7 +9888,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9828,7 +9956,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9884,7 +10021,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9944,7 +10089,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -9983,7 +10137,8 @@
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
         "USMC": ["CombinedArms"],
-        "ADF": ["CombinedArms"]
+        "ADF": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
@@ -10029,7 +10184,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -10645,7 +10809,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -10701,7 +10874,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -10734,7 +10915,8 @@
         "VDV": ["AmphibiousAssault"]
       },
       "BLUFOR": {
-        "USMC": ["AmphibiousAssault"]
+        "USMC": ["AmphibiousAssault"],
+        "AFU": ["AmphibiousAssault"]
       }
     },
     "Team2": {
@@ -10762,7 +10944,15 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["Mechanized", "CombinedArms"]
+        "ADF": ["Mechanized", "CombinedArms"],
+        "AFU": [
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -10822,7 +11012,16 @@
           "Support",
           "CombinedArms"
         ],
-        "ADF": ["AirAssault", "Mechanized", "CombinedArms"]
+        "ADF": ["AirAssault", "Mechanized", "CombinedArms"],
+        "AFU": [
+          "AirAssault",
+          "Armored",
+          "LightInfantry",
+          "Mechanized",
+          "Motorized",
+          "Support",
+          "CombinedArms"
+        ]
       },
       "REDFOR": {
         "RGF": [
@@ -10861,7 +11060,8 @@
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
         "USMC": ["CombinedArms"],
-        "ADF": ["CombinedArms"]
+        "ADF": ["CombinedArms"],
+        "AFU": ["CombinedArms"]
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
