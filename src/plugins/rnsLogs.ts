@@ -19,7 +19,6 @@ import {
   TSquadCreated,
   TUnPossessedAdminCamera,
 } from 'squad-rcon';
-import { promisify } from 'util';
 import { EVENTS } from '../constants';
 import { TPlayerRoleChanged, TPluginProps } from '../types';
 import {
@@ -27,8 +26,6 @@ import {
   getPlayerByName,
   getPlayerBySteamID,
 } from './helpers';
-
-const rename = promisify(fs.rename);
 
 interface LogData {
   currentTime: string;
@@ -43,6 +40,21 @@ export const rnsLogs: TPluginProps = (state, options) => {
   const writeInterval = 6000;
   const cleanLogsInterval = 24 * 60 * 60 * 1000;
   let matchIsEnded = false;
+
+  if (!logPath) {
+    logger.error('[RnsLogs] logPath option is required but not provided');
+    return;
+  }
+
+  async function ensureLogDir() {
+    try {
+      await fs.mkdir(logPath, { recursive: true });
+    } catch (err) {
+      logger.error('[RnsLogs] Не удалось создать директорию логов');
+    }
+  }
+
+  ensureLogDir();
 
   async function cleanOldLogsFiles() {
     try {
@@ -84,48 +96,50 @@ export const rnsLogs: TPluginProps = (state, options) => {
   }
 
   async function writeLogToFile(tempData: LogData[]) {
-    if (!tempData) return;
-    if (tempData.length === 0) return;
-    if (matchIsEnded) return;
-    const { currentMap } = state;
-    const logFilePath = `${logPath}${currentMap?.layer}.json`;
-
     try {
-      let logs = [];
+      if (!tempData || tempData.length === 0) return;
+
+      const { currentMap } = state;
+      const layer = currentMap?.layer || 'Undefined';
+      const logFilePath = path.join(logPath, `${layer}.json`);
+
+      let logs: LogData[] = [];
       try {
         const data = await fs.readFile(logFilePath, 'utf-8');
-        logs = JSON.parse(data);
-      } catch (err) {
+        const parsed = JSON.parse(data);
+        logs = Array.isArray(parsed) ? parsed : [];
+      } catch {
         logs = [];
       }
 
       logs = logs.concat(tempData);
 
       await fs.writeFile(logFilePath, JSON.stringify(logs, null, 2));
-    } catch (error) {}
+    } catch (error) {
+      logger.error('[RnsLogs] Error writing log file');
+    }
   }
 
   setInterval(() => {
     if (logData.length > 0) {
-      writeLogToFile(logData);
+      void writeLogToFile(logData);
       logData = [];
     }
   }, writeInterval);
 
   setInterval(() => {
-    cleanOldLogsFiles();
+    void cleanOldLogsFiles();
   }, cleanLogsInterval);
 
   async function renameFileLog(data: { time: string; layer: string }) {
     const { time, layer } = data;
-    const currentFilePath = `${logPath}${layer}.json`;
+    const currentFilePath = path.join(logPath, `${layer}.json`);
     const newName = `${time}_${layer}`;
     const safeNewName = newName.replace(/[:*?"<>|]/g, '.');
-
-    const newFilePath = `${logPath}${safeNewName}.json`;
+    const newFilePath = path.join(logPath, `${safeNewName}.json`);
 
     try {
-      await rename(currentFilePath, newFilePath);
+      await fs.rename(currentFilePath, newFilePath);
     } catch (err) {
       logger.error('Ошибка при переименовании файла');
     }
@@ -179,6 +193,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
     const currentTime = new Date().toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
     });
+
     const nameLogFile = {
       time: currentTime,
       layer: currentMap?.layer || 'Undefined',
@@ -188,6 +203,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
       currentTime,
       action: 'RoundEnd',
     });
+
     await writeLogToFile(logData);
     logData = [];
     await renameFileLog(nameLogFile);
