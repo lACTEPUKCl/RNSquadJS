@@ -1752,7 +1752,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -1765,7 +1765,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -1776,7 +1776,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -1789,7 +1789,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -1800,7 +1800,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -1813,7 +1813,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -1944,7 +1944,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -1957,7 +1957,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -2633,7 +2633,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -2646,7 +2646,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -2657,7 +2657,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -2670,7 +2670,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -2773,7 +2773,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -2786,7 +2786,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -4195,7 +4195,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -4204,7 +4204,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -4215,7 +4215,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -4224,7 +4224,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -5833,7 +5833,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -5846,7 +5846,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -5857,7 +5857,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -5870,7 +5870,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -5955,7 +5955,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -5968,7 +5968,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -6646,7 +6646,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -6659,7 +6659,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -6698,7 +6698,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -6711,7 +6711,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -7304,7 +7304,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -7317,7 +7317,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -7328,7 +7328,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -7341,7 +7341,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -7398,7 +7398,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": [],
+        "USMC": ["CombinedArms"],
         "AFU": ["CombinedArms"]
       },
       "INDEPENDENT": {
@@ -7411,7 +7411,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -8659,11 +8659,11 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "PAC": {
         "PLA": ["CombinedArms"],
-        "PLANMC": []
+        "PLANMC": ["CombinedArms"]
       }
     }
   },
@@ -9296,7 +9296,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -9309,7 +9309,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -9320,7 +9320,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -9333,7 +9333,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -9344,7 +9344,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -9357,7 +9357,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
@@ -9420,7 +9420,7 @@
         "BAF": ["CombinedArms"],
         "CAF": ["CombinedArms"],
         "USA": ["CombinedArms"],
-        "USMC": []
+        "USMC": ["CombinedArms"]
       },
       "INDEPENDENT": {
         "MEI": ["CombinedArms"],
@@ -9433,7 +9433,7 @@
       },
       "REDFOR": {
         "RGF": ["CombinedArms"],
-        "VDV": []
+        "VDV": ["CombinedArms"]
       }
     }
   },
