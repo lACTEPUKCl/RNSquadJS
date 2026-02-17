@@ -145,17 +145,6 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     return normalizeAllianceKey(alliance).startsWith('PAC');
   }
 
-  function isBluforAlliance(alliance: string | null): boolean {
-    return normalizeAllianceKey(alliance).startsWith('BLUFOR');
-  }
-
-  function isSameAllianceAllowedWhenEnabled(alliance: string | null): boolean {
-    if (isRedforAlliance(alliance)) return false;
-    if (isPacAlliance(alliance)) return false;
-    if (isBluforAlliance(alliance)) return false;
-    return true;
-  }
-
   function isAllianceMatchAllowed(
     alliance1: string | null,
     alliance2: string | null,
@@ -169,7 +158,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
 
     if (!allowSameAllianceExceptRedforBoolean) return false;
 
-    return isSameAllianceAllowedWhenEnabled(a1);
+    return !isRedforAlliance(a1) && !isPacAlliance(a1);
   }
 
   function filterMirrorFactions(
