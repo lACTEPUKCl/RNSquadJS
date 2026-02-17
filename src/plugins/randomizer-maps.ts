@@ -107,6 +107,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     excludeCountLayers,
     excludeCountFactions,
     excludeCountUnitTypes,
+    allowSameAllianceExceptRedfor,
   } = options;
 
   const tieredMaps: TieredMapsRec =
@@ -124,7 +125,33 @@ export const randomizerMaps: TPluginProps = (state, options) => {
   const excludeCountLayersNumber = Number(excludeCountLayers);
   const excludeCountFactionsNumber = Number(excludeCountFactions);
   const excludeCountUnitTypesNumber = Number(excludeCountUnitTypes);
+  const allowSameAllianceExceptRedforBoolean =
+    Boolean(allowSameAllianceExceptRedfor) === true;
   const symmetricUnitTypesBoolean = Boolean(symmetricUnitTypes) === true;
+
+  function normalizeAllianceKey(alliance: string | null): string {
+    return (alliance ?? '').trim().toUpperCase();
+  }
+
+  function isRedforAlliance(alliance: string | null): boolean {
+    return normalizeAllianceKey(alliance).startsWith('REDFOR');
+  }
+
+  function isAllianceMatchAllowed(
+    alliance1: string | null,
+    alliance2: string | null,
+  ): boolean {
+    const a1 = normalizeAllianceKey(alliance1);
+    const a2 = normalizeAllianceKey(alliance2);
+
+    if (!a1 || !a2) return false;
+
+    if (a1 !== a2) return true;
+
+    if (!allowSameAllianceExceptRedforBoolean) return false;
+
+    return !isRedforAlliance(a1);
+  }
 
   function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
     const totalWeight = items.reduce((sum, cur) => sum + cur.weight, 0);
@@ -199,14 +226,17 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     if (!alliance1) return null;
     let availableFactions2 = availableFactions.filter((f) => {
       const alliance = getAllianceForFactionFromMap(teamObj, f);
-      return alliance && alliance !== alliance1;
+      return isAllianceMatchAllowed(alliance1, alliance);
     });
     if (availableFactions2.length === 0) {
       logger.log(
         `DEBUG: [pickTwoDistinctFactions] Недостаточно фракций для второй команды после фильтрации, пробуем игнорировать историю.`,
       );
-      availableFactions2 = getAvailableFactions(teamObj).filter(
-        (f) => getAllianceForFactionFromMap(teamObj, f) !== alliance1,
+      availableFactions2 = getAvailableFactions(teamObj).filter((f) =>
+        isAllianceMatchAllowed(
+          alliance1,
+          getAllianceForFactionFromMap(teamObj, f),
+        ),
       );
       if (availableFactions2.length === 0) return null;
     }
@@ -260,7 +290,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         .filter((f) => !factionHistory.includes(f))
         .filter((f) => {
           const alliance2 = getAllianceForFactionFromMap(team2Data, f);
-          return alliance2 && alliance2 !== alliance1;
+          return isAllianceMatchAllowed(alliance1, alliance2);
         });
 
       let faction2 = pickRandomFaction(availableTeam2);
@@ -270,7 +300,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
         );
         availableTeam2 = getAvailableFactions(team2Data).filter((f) => {
           const alliance2 = getAllianceForFactionFromMap(team2Data, f);
-          return alliance2 && alliance2 !== alliance1;
+          return isAllianceMatchAllowed(alliance1, alliance2);
         });
         faction2 = pickRandomFaction(availableTeam2);
       }
