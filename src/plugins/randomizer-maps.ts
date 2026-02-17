@@ -121,12 +121,16 @@ export const randomizerMaps: TPluginProps = (state, options) => {
   const tieredSubfactions: TieredSubfactionsRec =
     (options as { tieredSubfactions?: TieredSubfactionsRec })
       .tieredSubfactions ?? DEFAULT_TIERED_SUBFACTIONS;
-
+  const disallowMirrorFactions = true;
   const excludeCountLayersNumber = Number(excludeCountLayers);
   const excludeCountFactionsNumber = Number(excludeCountFactions);
   const excludeCountUnitTypesNumber = Number(excludeCountUnitTypes);
   const allowSameAllianceExceptRedforBoolean =
     Boolean(allowSameAllianceExceptRedfor) === true;
+  const disallowMirrorFactionsBoolean =
+    disallowMirrorFactions === undefined
+      ? true
+      : Boolean(disallowMirrorFactions) === true;
   const symmetricUnitTypesBoolean = Boolean(symmetricUnitTypes) === true;
 
   function normalizeAllianceKey(alliance: string | null): string {
@@ -151,6 +155,14 @@ export const randomizerMaps: TPluginProps = (state, options) => {
     if (!allowSameAllianceExceptRedforBoolean) return false;
 
     return !isRedforAlliance(a1);
+  }
+
+  function filterMirrorFactions(
+    factions: string[],
+    faction1: string,
+  ): string[] {
+    if (!disallowMirrorFactionsBoolean) return factions;
+    return factions.filter((f) => f !== faction1);
   }
 
   function weightedRandom<T>(items: { item: T; weight: number }[]): T | null {
@@ -228,6 +240,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
       const alliance = getAllianceForFactionFromMap(teamObj, f);
       return isAllianceMatchAllowed(alliance1, alliance);
     });
+    availableFactions2 = filterMirrorFactions(availableFactions2, faction1);
     if (availableFactions2.length === 0) {
       logger.log(
         `DEBUG: [pickTwoDistinctFactions] Недостаточно фракций для второй команды после фильтрации, пробуем игнорировать историю.`,
@@ -238,6 +251,7 @@ export const randomizerMaps: TPluginProps = (state, options) => {
           getAllianceForFactionFromMap(teamObj, f),
         ),
       );
+      availableFactions2 = filterMirrorFactions(availableFactions2, faction1);
       if (availableFactions2.length === 0) return null;
     }
     const faction2 = pickRandomFaction(availableFactions2);
