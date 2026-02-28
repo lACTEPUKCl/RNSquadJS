@@ -21,7 +21,7 @@
     "mariadb": "^3.4.5",
     "mongodb": "^6.5.0",
     "sequelize": "^6.37.7",
-    "squad-logs": "^1.0.32",
+    "squad-logs": "github:lACTEPUKCl/squad-logs",
     "squad-rcon": "^1.1.8"
   },
   "devDependencies": {

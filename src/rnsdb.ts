@@ -6,6 +6,22 @@ import {
   UpdateFilter,
 } from 'mongodb';
 
+export interface MatchHistoryEntry {
+  matchID: string;
+  layer: string | null;
+  level: string | null;
+  startTime: number;
+  endTime: number;
+  result: string;
+  kills: number;
+  death: number;
+  revives: number;
+  teamkills: number;
+  kd: number;
+  team1: { subfaction: string | null; tickets: number | null };
+  team2: { subfaction: string | null; tickets: number | null };
+}
+
 export interface Main {
   _id: string;
   name: string;
@@ -35,6 +51,7 @@ export interface Main {
     cmdwinrate: number;
   };
   weapons: Record<string, number>;
+  matchHistory?: MatchHistoryEntry[];
   date?: number;
   seedRole?: boolean;
 }
@@ -231,6 +248,7 @@ export async function createUserIfNullableOrUpdateName(
       cmdwinrate: 0,
     },
     weapons: {},
+    matchHistory: [],
     seedRole: false,
   };
 
@@ -633,6 +651,29 @@ export async function creatingTimeStamp() {
     console.log('Статистика очищена');
     await collectionTemp.deleteMany({});
     await collectionMain.updateOne(userTemp, dateTemp);
+  }
+}
+
+export async function pushMatchHistory(
+  steamID: string,
+  entry: MatchHistoryEntry,
+): Promise<void> {
+  if (!isConnected) return;
+
+  try {
+    await collectionMain.updateOne(
+      { _id: steamID },
+      {
+        $push: {
+          matchHistory: {
+            $each: [entry],
+            $slice: -5,
+          },
+        } as any,
+      },
+    );
+  } catch (error) {
+    console.error('Error pushing match history:', error);
   }
 }
 
