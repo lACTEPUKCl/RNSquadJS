@@ -274,10 +274,10 @@ export async function createUserIfNullableOrUpdateName(
 
   if (resultMain) {
     const updates: Record<string, unknown> = {};
-    if ((resultMain.name ?? '').trim() !== trimmedName) {
+    if (trimmedName && (resultMain.name ?? '').trim() !== trimmedName) {
       updates.name = trimmedName;
     }
-    if ((resultMain.eosID ?? '').trim() !== trimmedEosID) {
+    if (trimmedEosID && (resultMain.eosID ?? '').trim() !== trimmedEosID) {
       updates.eosID = trimmedEosID;
     }
 
