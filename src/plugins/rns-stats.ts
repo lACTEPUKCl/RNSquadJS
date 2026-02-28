@@ -4,6 +4,7 @@ import { adminWarn } from '../core';
 import {
   creatingTimeStamp,
   getUserDataWithSteamID,
+  pushMatchHistory,
   updateGames,
   updatePossess,
   updateRoles,
@@ -18,6 +19,23 @@ import {
   getSquadByID,
 } from './helpers';
 
+interface MatchPlayerStats {
+  steamID: string;
+  name: string;
+  teamID: string;
+  kills: number;
+  death: number;
+  revives: number;
+  teamkills: number;
+}
+
+interface MatchTicketInfo {
+  team: string;
+  action: string;
+  subfaction?: string;
+  tickets?: number;
+}
+
 export const rnsStats: TPluginProps = (state) => {
   const { listener, execute, logger, id } = state;
   let playersCurrenTime: Array<{
@@ -26,16 +44,82 @@ export const rnsStats: TPluginProps = (state) => {
   }> = [];
   let winner: string;
 
+  // --- Match history in-memory state ---
+  let matchStartTime: number = Date.now();
+  let matchPlayerStats: Map<string, MatchPlayerStats> = new Map();
+  let matchTickets: MatchTicketInfo[] = [];
+  let matchCounter = 0;
+
+  const getOrCreatePlayerStats = (
+    steamID: string,
+    name: string,
+    teamID: string,
+  ): MatchPlayerStats => {
+    let stats = matchPlayerStats.get(steamID);
+    if (!stats) {
+      stats = {
+        steamID,
+        name,
+        teamID,
+        kills: 0,
+        death: 0,
+        revives: 0,
+        teamkills: 0,
+      };
+      matchPlayerStats.set(steamID, stats);
+    }
+    stats.name = name;
+    stats.teamID = teamID;
+    return stats;
+  };
+
+  const resetMatchState = () => {
+    matchStartTime = Date.now();
+    matchPlayerStats = new Map();
+    matchTickets = [];
+  };
+
+  const onNewGame = () => {
+    resetMatchState();
+  };
+
   const onRoundTickets = (data: TRoundTickets) => {
     const { team, action } = data;
     if (action === 'won') winner = team;
+
+    matchTickets.push({
+      team: data.team,
+      action: data.action,
+      subfaction: (data as Record<string, unknown>).subfaction as
+        | string
+        | undefined,
+      tickets: (data as Record<string, unknown>).tickets as number | undefined,
+    });
   };
 
   const onRoundEnded = async () => {
     if (state.skipmap) return;
 
-    const { players } = state;
+    const { players, currentMap } = state;
     if (!players) return;
+
+    const matchEndTime = Date.now();
+    const matchID = `${id}_${matchEndTime}_${++matchCounter}`;
+
+    const team1Info = matchTickets.find((t) => t.team === '1');
+    const team2Info = matchTickets.find((t) => t.team === '2');
+
+    const layer = currentMap?.layer || null;
+    const level = currentMap?.level || null;
+
+    const team1 = {
+      subfaction: team1Info?.subfaction || null,
+      tickets: team1Info?.tickets ?? null,
+    };
+    const team2 = {
+      subfaction: team2Info?.subfaction || null,
+      tickets: team2Info?.tickets ?? null,
+    };
 
     const updatePlayerGames = async (player: TPlayer) => {
       const { teamID, steamID, possess } = player;
@@ -73,7 +157,50 @@ export const rnsStats: TPluginProps = (state) => {
 
     try {
       await Promise.all(players.map(updatePlayerGames));
+
+      for (const player of players) {
+        if (player.steamID) {
+          getOrCreatePlayerStats(player.steamID, player.name, player.teamID);
+        }
+      }
+
+      const pushPromises: Promise<void>[] = [];
+
+      for (const [steamID, p] of matchPlayerStats) {
+        const kd =
+          p.death > 0 && Number.isFinite(p.kills / p.death)
+            ? Number((p.kills / p.death).toFixed(2))
+            : p.kills;
+
+        const result = winner
+          ? p.teamID === winner
+            ? 'won'
+            : 'lose'
+          : 'unknown';
+
+        pushPromises.push(
+          pushMatchHistory(steamID, {
+            matchID,
+            layer,
+            level,
+            startTime: matchStartTime,
+            endTime: matchEndTime,
+            result,
+            kills: p.kills,
+            death: p.death,
+            revives: p.revives,
+            teamkills: p.teamkills,
+            kd,
+            team1,
+            team2,
+          }),
+        );
+      }
+
+      await Promise.all(pushPromises);
+
       winner = '';
+      resetMatchState();
       await creatingTimeStamp();
     } catch (error) {
       logger.error(`Произошла ошибка при обновлении данных игрока: ${error}`);
@@ -109,8 +236,7 @@ export const rnsStats: TPluginProps = (state) => {
       }
     } catch (error) {
       logger.error(
-        `Ошибка при обновлении данных для игрока с SteamID ${steamID}:,
-        ${error}`,
+        `Ошибка при обновлении данных для игрока с SteamID ${steamID}: ${error}`,
       );
     }
   };
@@ -154,16 +280,72 @@ export const rnsStats: TPluginProps = (state) => {
     const victim = getPlayerByName(state, victimName);
     if (!victim) return;
 
+    const killerSteamID = attackerSteamID || attacker?.steamID || '';
+
     try {
-      if (
-        attacker?.teamID === victim?.teamID &&
-        attacker.name !== victim.name
-      ) {
-        await updateUser(attackerSteamID, 'teamkills');
-      } else {
-        await updateUser(attackerSteamID, 'kills', victim.weapon || 'null');
+      if (killerSteamID && killerSteamID === victim.steamID) {
         await updateUser(victim.steamID, 'death');
+        const vs = getOrCreatePlayerStats(
+          victim.steamID,
+          victim.name,
+          victim.teamID,
+        );
+        vs.death++;
+        return;
       }
+
+      if (!killerSteamID && !attacker) {
+        await updateUser(victim.steamID, 'death');
+        const vs = getOrCreatePlayerStats(
+          victim.steamID,
+          victim.name,
+          victim.teamID,
+        );
+        vs.death++;
+        return;
+      }
+
+      if (
+        attacker?.teamID === victim.teamID &&
+        attacker?.name !== victim.name
+      ) {
+        if (killerSteamID) await updateUser(killerSteamID, 'teamkills');
+        await updateUser(victim.steamID, 'death');
+        if (killerSteamID && attacker) {
+          const as = getOrCreatePlayerStats(
+            killerSteamID,
+            attacker.name,
+            attacker.teamID,
+          );
+          as.teamkills++;
+        }
+        const vs = getOrCreatePlayerStats(
+          victim.steamID,
+          victim.name,
+          victim.teamID,
+        );
+        vs.death++;
+        return;
+      }
+
+      if (killerSteamID) {
+        await updateUser(killerSteamID, 'kills', attacker?.weapon || 'null');
+        if (attacker) {
+          const as = getOrCreatePlayerStats(
+            killerSteamID,
+            attacker.name,
+            attacker.teamID,
+          );
+          as.kills++;
+        }
+      }
+      await updateUser(victim.steamID, 'death');
+      const vs = getOrCreatePlayerStats(
+        victim.steamID,
+        victim.name,
+        victim.teamID,
+      );
+      vs.death++;
     } catch (error) {
       logger.error(`Ошибка при обновлении данных игрока: ${error}`);
     }
@@ -180,6 +362,16 @@ export const rnsStats: TPluginProps = (state) => {
       const { reviverSteamID } = data;
 
       await updateUser(reviverSteamID, 'revives');
+
+      const reviver = getPlayerBySteamID(state, reviverSteamID);
+      if (reviver) {
+        const rs = getOrCreatePlayerStats(
+          reviverSteamID,
+          reviver.name,
+          reviver.teamID,
+        );
+        rs.revives++;
+      }
     } catch (error) {
       logger.error(
         `Ошибка при обновлении данных пользователя на возрождение: ${error}`,
@@ -192,4 +384,5 @@ export const rnsStats: TPluginProps = (state) => {
   listener.on(EVENTS.PLAYER_REVIVED, onRevived);
   listener.on(EVENTS.ROUND_ENDED, onRoundEnded);
   listener.on(EVENTS.ROUND_TICKETS, onRoundTickets);
+  listener.on(EVENTS.NEW_GAME, onNewGame);
 };

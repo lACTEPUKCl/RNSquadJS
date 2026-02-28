@@ -22,6 +22,9 @@ export const getSquadByID = (state: TState, squadID: string, teamID: string) =>
     (squad) => squad.squadID === squadID && squad.teamID === teamID,
   ) || null;
 
+export const getPlayerByPossess = (state: TState, possess: string) =>
+  state.players?.find((player) => player.possess === possess) || null;
+
 export const getAdmins = (state: TState, adminPermission: string) =>
   state.admins
     ? Object.keys(state.admins).filter(

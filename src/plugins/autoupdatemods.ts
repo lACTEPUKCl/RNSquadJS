@@ -18,6 +18,17 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     checkUpdateInterval,
   } = options;
 
+  if (!modID || !steamAPIkey) {
+    logger.error(
+      '[AutoUpdateMods] modID или steamAPIkey не указаны в конфиге, плагин не запущен',
+    );
+    return;
+  }
+
+  logger.log(
+    `[AutoUpdateMods] Плагин запущен. modID=${modID}, интервал проверки=${checkUpdateInterval}мс`,
+  );
+
   let newUpdate = false;
   let currentVersion: Date | null = null;
   let updateMessage: NodeJS.Timeout;
@@ -26,17 +37,30 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
   listener.on(EVENTS.ROUND_ENDED, endMatch);
 
   setInterval(async () => {
-    currentVersion = await getWorkshopItemDetails();
+    try {
+      logger.log('[AutoUpdateMods] Проверка обновлений...');
+      currentVersion = await getWorkshopItemDetails();
 
-    if (currentVersion) {
+      if (!currentVersion) {
+        logger.warn('[AutoUpdateMods] Не удалось получить версию из Steam API');
+        return;
+      }
+
       const lastSavedUpdate = await getLastSavedUpdate(modID);
+
+      logger.log(
+        `[AutoUpdateMods] Steam версия: ${currentVersion.toISOString()}, сохранённая: ${
+          lastSavedUpdate?.toISOString() ?? 'нет'
+        }`,
+      );
 
       if (!lastSavedUpdate || currentVersion > lastSavedUpdate) {
         const players = getPlayers(state);
 
         logger.log(
-          'Доступно новое обновление:',
-          currentVersion.toLocaleString(),
+          `[AutoUpdateMods] Доступно новое обновление: ${currentVersion.toLocaleString()}, игроков: ${
+            players?.length ?? 0
+          }`,
         );
 
         if (players && players.length < 50) {
@@ -46,12 +70,17 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
         }
 
         newUpdate = true;
+        clearInterval(updateMessage);
         updateMessage = setInterval(() => {
           adminBroadcast(execute, text);
         }, Number(intervalBroadcast));
       }
+    } catch (error) {
+      logger.error(
+        `[AutoUpdateMods] Ошибка в цикле проверки обновлений: ${error}`,
+      );
     }
-  }, checkUpdateInterval);
+  }, Number(checkUpdateInterval));
 
   async function endMatch() {
     if (newUpdate && currentVersion) {
@@ -68,13 +97,25 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
+          timeout: 15000,
         },
       );
 
-      const itemDetails = response.data.response.publishedfiledetails[0];
+      const itemDetails = response.data?.response?.publishedfiledetails?.[0];
+      if (!itemDetails || !itemDetails.time_updated) {
+        logger.error(
+          `[AutoUpdateMods] Steam API вернул некорректный ответ: ${JSON.stringify(
+            response.data?.response,
+          )}`,
+        );
+        return null;
+      }
+
       return new Date(itemDetails.time_updated * 1000);
     } catch (error) {
-      logger.error(`Ошибка при получении деталей воркшопа: ${error}`);
+      logger.error(
+        `[AutoUpdateMods] Ошибка при получении деталей воркшопа: ${error}`,
+      );
       return null;
     }
   }
