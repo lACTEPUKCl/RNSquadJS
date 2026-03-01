@@ -31,6 +31,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     statsPlayerNotFoundMessage,
     bonusWarnMessage,
     swapOnlyForVip,
+    swapMaxDiff,
   } = options;
   type SwapHistoryItem = {
     steamID: string;
@@ -165,6 +166,31 @@ export const chatCommands: TPluginProps = (state, options) => {
     if (swapOnlyForVip && !admins?.includes(steamID)) {
       adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
       return;
+    }
+
+    const maxDiff = Number(swapMaxDiff) || 10;
+    if (maxDiff > 0) {
+      const allPlayers = getPlayers(state);
+      const player = allPlayers?.find((p) => p.steamID === steamID);
+
+      if (allPlayers && player) {
+        const team1Count = allPlayers.filter((p) => p.teamID === '1').length;
+        const team2Count = allPlayers.filter((p) => p.teamID === '2').length;
+        const playerTeam = player.teamID;
+
+        const newTeam1 = playerTeam === '1' ? team1Count - 1 : team1Count + 1;
+        const newTeam2 = playerTeam === '2' ? team2Count - 1 : team2Count + 1;
+        const newDiff = Math.abs(newTeam1 - newTeam2);
+
+        if (newDiff > maxDiff) {
+          adminWarn(
+            execute,
+            steamID,
+            `Дизбаланс команд (${team1Count} vs ${team2Count}). Смена невозможна, попробуйте позже.`,
+          );
+          return;
+        }
+      }
     }
 
     const deletionTime = parseInt(swapTimeout);
