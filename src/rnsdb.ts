@@ -54,6 +54,7 @@ export interface Main {
   matchHistory?: MatchHistoryEntry[];
   date?: number;
   seedRole?: boolean;
+  lastActiveAt?: number;
 }
 
 export interface Info {
@@ -250,6 +251,7 @@ export async function createUserIfNullableOrUpdateName(
     weapons: {},
     matchHistory: [],
     seedRole: false,
+    lastActiveAt: undefined,
   };
 
   const [resultMain] = await Promise.all([
@@ -274,6 +276,7 @@ export async function createUserIfNullableOrUpdateName(
 
   if (resultMain) {
     const updates: Record<string, unknown> = {};
+
     if (trimmedName && (resultMain.name ?? '').trim() !== trimmedName) {
       updates.name = trimmedName;
     }
@@ -288,6 +291,11 @@ export async function createUserIfNullableOrUpdateName(
       ]);
     }
   }
+
+  await collectionMain.updateOne(
+    { _id: steamID },
+    { $set: { lastActiveAt: Date.now() } },
+  );
 }
 
 export async function updateUserBonuses(
