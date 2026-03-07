@@ -15,6 +15,7 @@ import { officialKothDb } from './officialKothDb';
 import { randomizerMaps } from './randomizer-maps';
 import { rnsStats } from './rns-stats';
 import { rnsLogs } from './rnsLogs';
+import { rnsTelemetry } from './rnsTelemetry';
 import { skipmap } from './skipmap';
 import { smartBalance } from './smart-balance';
 import { squadLeaderRole } from './squad-leader-role';
@@ -26,6 +27,7 @@ const plugins = [
   voteMap,
   randomizerMaps,
   warnPlayers,
+  rnsTelemetry,
   smartBalance,
   squadLeaderRole,
   autoKickUnassigned,
