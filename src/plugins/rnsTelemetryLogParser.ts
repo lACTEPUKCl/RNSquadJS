@@ -19,8 +19,7 @@
 // Использование: вызывается из rnsTelemetry через initLogParser()
 // ─────────────────────────────────────────────────────────────────────────
 
-import { existsSync, statSync, openSync, readSync, closeSync } from 'fs';
-import path from 'path';
+import { closeSync, existsSync, openSync, readSync, statSync } from 'fs';
 
 // Функции appendCsv и esc импортируются / передаются из основного модуля
 type AppendFn = (filePath: string, header: string, cols: unknown[]) => void;
@@ -38,11 +37,9 @@ export const RAW_HEADERS = {
     'timestamp,server_id,event,player_name,player_steam,player_eosid,' +
     'vehicle_asset,vehicle_type,seat_number,map',
 
-  fobs:
-    'timestamp,server_id,event,team_id,pos_x,pos_y,pos_z,map',
+  fobs: 'timestamp,server_id,event,team_id,pos_x,pos_y,pos_z,map',
 
-  rallies:
-    'timestamp,server_id,event,team_id,pos_x,pos_y,pos_z,map',
+  rallies: 'timestamp,server_id,event,team_id,pos_x,pos_y,pos_z,map',
 
   spawns:
     'timestamp,server_id,player_name,spawn_point,spawn_type,deploy_role,faction_prefix,map',
@@ -118,8 +115,7 @@ const RE_DISBAND =
   /ADMIN COMMAND:\s*Remote admin disbanded squad\s+(\d+)\s+on team\s+(\d+),\s*named "(.+?)"/;
 
 // TK Auto-Ban
-const RE_TK_BAN =
-  /Banning player:\s*(.+?)\s*;\s*Reason\s*=\s*(.+)/;
+const RE_TK_BAN = /Banning player:\s*(.+?)\s*;\s*Reason\s*=\s*(.+)/;
 
 // Set next layer
 const RE_SET_LAYER =
@@ -134,8 +130,7 @@ const RE_WARN =
   /ADMIN COMMAND:\s*Remote admin has warned player\s+(.+?)\.\s*Message was "(.+?)"\s*from/;
 
 // Admin Broadcast
-const RE_BROADCAST =
-  /ADMIN COMMAND:\s*Message broadcasted\s*<(.+?)>\s*from/;
+const RE_BROADCAST = /ADMIN COMMAND:\s*Message broadcasted\s*<(.+?)>\s*from/;
 
 // ═══════════════════════════════════════════════════════════════════
 // Helpers
@@ -160,11 +155,48 @@ function classifyVehicle(raw: string): string {
   const lc = (raw || '').toLowerCase();
   if (lc.includes('logi')) return 'logi';
   if (lc.includes('transport') || lc.includes('util')) return 'transport';
-  if (lc.includes('heli') || lc.includes('mi8') || lc.includes('uh60') || lc.includes('ch146') || lc.includes('sa330') || lc.includes('mi17') || lc.includes('z8')) return 'helicopter';
-  if (lc.includes('tank') || lc.includes('abrams') || lc.includes('leopard') || lc.includes('t72') || lc.includes('t62') || lc.includes('challenger') || lc.includes('ztz')) return 'tank';
-  if (lc.includes('btr') || lc.includes('stryker') || lc.includes('warrior') || lc.includes('m113') || lc.includes('bmp') || lc.includes('lav') || lc.includes('mt-lb') || lc.includes('zbd') || lc.includes('zsl') || lc.includes('brdm')) return 'apc_ifv';
-  if (lc.includes('mrap') || lc.includes('matv') || lc.includes('tigr') || lc.includes('cpv')) return 'mrap';
-  if (lc.includes('technical') || lc.includes('ural') || lc.includes('truck')) return 'truck';
+  if (
+    lc.includes('heli') ||
+    lc.includes('mi8') ||
+    lc.includes('uh60') ||
+    lc.includes('ch146') ||
+    lc.includes('sa330') ||
+    lc.includes('mi17') ||
+    lc.includes('z8')
+  )
+    return 'helicopter';
+  if (
+    lc.includes('tank') ||
+    lc.includes('abrams') ||
+    lc.includes('leopard') ||
+    lc.includes('t72') ||
+    lc.includes('t62') ||
+    lc.includes('challenger') ||
+    lc.includes('ztz')
+  )
+    return 'tank';
+  if (
+    lc.includes('btr') ||
+    lc.includes('stryker') ||
+    lc.includes('warrior') ||
+    lc.includes('m113') ||
+    lc.includes('bmp') ||
+    lc.includes('lav') ||
+    lc.includes('mt-lb') ||
+    lc.includes('zbd') ||
+    lc.includes('zsl') ||
+    lc.includes('brdm')
+  )
+    return 'apc_ifv';
+  if (
+    lc.includes('mrap') ||
+    lc.includes('matv') ||
+    lc.includes('tigr') ||
+    lc.includes('cpv')
+  )
+    return 'mrap';
+  if (lc.includes('technical') || lc.includes('ural') || lc.includes('truck'))
+    return 'truck';
   return 'other';
 }
 
@@ -195,7 +227,8 @@ function classifySpawn(sp: string): string {
   if (!sp || sp === 'nullptr') return 'main';
   if (sp.includes('ForwardBaseSpawn') || sp.includes('HAB')) return 'hab';
   if (sp.includes('RallyPoint')) return 'rally';
-  if (sp.includes('SpawnGroup') || sp.includes('Team') || sp.includes('Main')) return 'main';
+  if (sp.includes('SpawnGroup') || sp.includes('Team') || sp.includes('Main'))
+    return 'main';
   return 'other';
 }
 
@@ -216,7 +249,11 @@ export interface LogParserOptions {
   file: FileFn;
   playerIPs: Map<string, string>;
   currentMap: () => string;
-  logger: { log: (msg: string) => void; warn: (msg: string) => void; error: (msg: string) => void };
+  logger: {
+    log: (msg: string) => void;
+    warn: (msg: string) => void;
+    error: (msg: string) => void;
+  };
 }
 
 export class RawLogParser {
@@ -254,7 +291,10 @@ export class RawLogParser {
       closeSync(fd);
       this.offset += chunkSize;
 
-      const lines = buf.toString('utf8').split('\n').filter((l) => l.length > 20);
+      const lines = buf
+        .toString('utf8')
+        .split('\n')
+        .filter((l) => l.length > 20);
       this.parseLines(lines);
     } catch (err) {
       // Silent — может быть недоступен лог
@@ -262,7 +302,8 @@ export class RawLogParser {
   }
 
   private parseLines(lines: string[]): void {
-    const { appendCsv, file, serverId, playerIPs, currentMap, logger } = this.opts;
+    const { appendCsv, file, serverId, playerIPs, currentMap, logger } =
+      this.opts;
     const map = currentMap();
     let m: RegExpMatchArray | null;
 
@@ -282,7 +323,14 @@ export class RawLogParser {
         const pc = pcMatch ? pcMatch[1] : '';
 
         appendCsv(file('player_ips'), RAW_HEADERS.player_ips, [
-          ts, serverId, '', steamID, eosID, pc, ip, map,
+          ts,
+          serverId,
+          '',
+          steamID,
+          eosID,
+          pc,
+          ip,
+          map,
         ]);
         continue;
       }
@@ -297,8 +345,16 @@ export class RawLogParser {
         const vehType = classifyVehicle(asset);
 
         appendCsv(file('vehicle_usage'), RAW_HEADERS.vehicle_usage, [
-          ts, serverId, 'enter', playerName, steamID, eosID,
-          cleanAssetName(asset), vehType, seat, map,
+          ts,
+          serverId,
+          'enter',
+          playerName,
+          steamID,
+          eosID,
+          cleanAssetName(asset),
+          vehType,
+          seat,
+          map,
         ]);
         continue;
       }
@@ -313,8 +369,16 @@ export class RawLogParser {
         const vehType = classifyVehicle(asset);
 
         appendCsv(file('vehicle_usage'), RAW_HEADERS.vehicle_usage, [
-          ts, serverId, 'exit', playerName, steamID, eosID,
-          cleanAssetName(asset), vehType, seat, map,
+          ts,
+          serverId,
+          'exit',
+          playerName,
+          steamID,
+          eosID,
+          cleanAssetName(asset),
+          vehType,
+          seat,
+          map,
         ]);
         continue;
       }
@@ -322,7 +386,14 @@ export class RawLogParser {
       // ── FOB Created ──
       if ((m = line.match(RE_FOB_CREATED))) {
         appendCsv(file('fobs'), RAW_HEADERS.fobs, [
-          ts, serverId, 'fob_created', m[1], m[2], m[3], m[4], map,
+          ts,
+          serverId,
+          'fob_created',
+          m[1],
+          m[2],
+          m[3],
+          m[4],
+          map,
         ]);
         continue;
       }
@@ -330,7 +401,14 @@ export class RawLogParser {
       // ── Rally Point Created ──
       if ((m = line.match(RE_RALLY_CREATED))) {
         appendCsv(file('rallies'), RAW_HEADERS.rallies, [
-          ts, serverId, 'rally_created', m[1], m[2], m[3], m[4], map,
+          ts,
+          serverId,
+          'rally_created',
+          m[1],
+          m[2],
+          m[3],
+          m[4],
+          map,
         ]);
         continue;
       }
@@ -344,7 +422,14 @@ export class RawLogParser {
         const factionPrefix = extractFactionPrefix(deployRole);
 
         appendCsv(file('spawns'), RAW_HEADERS.spawns, [
-          ts, serverId, playerName, spawnPoint, spawnType, deployRole, factionPrefix, map,
+          ts,
+          serverId,
+          playerName,
+          spawnPoint,
+          spawnType,
+          deployRole,
+          factionPrefix,
+          map,
         ]);
         continue;
       }
@@ -352,7 +437,14 @@ export class RawLogParser {
       // ── Match Result ──
       if ((m = line.match(RE_MATCH_RESULT))) {
         appendCsv(file('match_results'), RAW_HEADERS.match_results, [
-          ts, serverId, m[1], factionAbbr(m[3]), m[4], m[5], m[6].trim(), m[7].trim(),
+          ts,
+          serverId,
+          m[1],
+          factionAbbr(m[3]),
+          m[4],
+          m[5],
+          m[6].trim(),
+          m[7].trim(),
         ]);
         continue;
       }
@@ -360,7 +452,13 @@ export class RawLogParser {
       // ── EAC Anti-Cheat Events ──
       if ((m = line.match(RE_EAC))) {
         appendCsv(file('eac_events'), RAW_HEADERS.eac_events, [
-          ts, serverId, 'action_required', m[1], m[2], m[3], m[4].trim(),
+          ts,
+          serverId,
+          'action_required',
+          m[1],
+          m[2],
+          m[3],
+          m[4].trim(),
         ]);
         continue;
       }
@@ -368,7 +466,13 @@ export class RawLogParser {
       // ── Player State Change ──
       if ((m = line.match(RE_CHANGE_STATE))) {
         appendCsv(file('player_states'), RAW_HEADERS.player_states, [
-          ts, serverId, m[1].trim(), m[3], m[2], m[4], m[5],
+          ts,
+          serverId,
+          m[1].trim(),
+          m[3],
+          m[2],
+          m[4],
+          m[5],
         ]);
         continue;
       }
@@ -376,7 +480,13 @@ export class RawLogParser {
       // ── Admin Kick (with EOS + Steam) ──
       if ((m = line.match(RE_KICK))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'kick', m[3].trim(), m[2], m[1], '',
+          ts,
+          serverId,
+          'kick',
+          m[3].trim(),
+          m[2],
+          m[1],
+          '',
         ]);
         continue;
       }
@@ -384,7 +494,13 @@ export class RawLogParser {
       // ── Admin Force Team Change ──
       if ((m = line.match(RE_TEAMCHANGE))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'force_team_change', m[3].trim(), m[2], m[1], '',
+          ts,
+          serverId,
+          'force_team_change',
+          m[3].trim(),
+          m[2],
+          m[1],
+          '',
         ]);
         continue;
       }
@@ -392,7 +508,12 @@ export class RawLogParser {
       // ── Admin Disband Squad ──
       if ((m = line.match(RE_DISBAND))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'disband_squad', '', '', '',
+          ts,
+          serverId,
+          'disband_squad',
+          '',
+          '',
+          '',
           `squad=${m[1]},team=${m[2]},name=${m[3]}`,
         ]);
         continue;
@@ -401,7 +522,13 @@ export class RawLogParser {
       // ── TK Auto-Ban ──
       if ((m = line.match(RE_TK_BAN))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'tk_autoban', m[1].trim(), '', '', m[2].trim(),
+          ts,
+          serverId,
+          'tk_autoban',
+          m[1].trim(),
+          '',
+          '',
+          m[2].trim(),
         ]);
         continue;
       }
@@ -409,7 +536,13 @@ export class RawLogParser {
       // ── Set next layer ──
       if ((m = line.match(RE_SET_LAYER))) {
         appendCsv(file('next_layers'), RAW_HEADERS.next_layers, [
-          ts, serverId, m[1], m[2], m[3], m[4], m[5],
+          ts,
+          serverId,
+          m[1],
+          m[2],
+          m[3],
+          m[4],
+          m[5],
         ]);
         continue;
       }
@@ -417,7 +550,13 @@ export class RawLogParser {
       // ── Change layer ──
       if ((m = line.match(RE_CHANGE_LAYER))) {
         appendCsv(file('next_layers'), RAW_HEADERS.next_layers, [
-          ts, serverId, m[1], m[2], '', m[3], '',
+          ts,
+          serverId,
+          m[1],
+          m[2],
+          '',
+          m[3],
+          '',
         ]);
         continue;
       }
@@ -425,7 +564,13 @@ export class RawLogParser {
       // ── Admin Warn ──
       if ((m = line.match(RE_WARN))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'warn', m[1].trim(), '', '', m[2],
+          ts,
+          serverId,
+          'warn',
+          m[1].trim(),
+          '',
+          '',
+          m[2],
         ]);
         continue;
       }
@@ -433,7 +578,13 @@ export class RawLogParser {
       // ── Admin Broadcast ──
       if ((m = line.match(RE_BROADCAST))) {
         appendCsv(file('admin_actions'), RAW_HEADERS.admin_actions, [
-          ts, serverId, 'broadcast', '', '', '', m[1],
+          ts,
+          serverId,
+          'broadcast',
+          '',
+          '',
+          '',
+          m[1],
         ]);
         continue;
       }
