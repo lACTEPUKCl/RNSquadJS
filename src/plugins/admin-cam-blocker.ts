@@ -5,22 +5,22 @@ import { TPlayer, TPluginProps } from '../types';
 import { getAdmins, getPlayerBySteamID } from './helpers';
 
 interface AdminCamBlockerOptions {
-  cooldownDuration?: number;
+  kickDelay?: number;
   warningInterval?: number;
   warnMessage?: string;
   adminSearchKey?: string;
 }
 
 const defaultOptions: AdminCamBlockerOptions = {
-  cooldownDuration: 2 * 60 * 1000,
-  warningInterval: 30000,
+  kickDelay: 30_000,
+  warningInterval: 10_000,
   warnMessage:
-    'Вы не можете создавать или вступать в отряды вне админ-камеры. Отряд будет распущен через {time} секунд.',
+    'Вы заходили в админ-камеру — играть в отрядах запрещено до конца карты. Кик из отряда через {time} сек.',
 };
 
 export const adminCamBlocker: TPluginProps = (state, options) => {
   const { listener, execute, logger } = state;
-  const opts: Required<AdminCamBlockerOptions> = {
+  const opts = {
     ...defaultOptions,
     ...options,
   } as Required<AdminCamBlockerOptions>;
@@ -29,64 +29,53 @@ export const adminCamBlocker: TPluginProps = (state, options) => {
     ? getAdmins(state, opts.adminSearchKey) || []
     : [];
 
-  interface AdminState {
-    isInCamera: boolean;
-    cooldownTimeout: NodeJS.Timeout | null;
-    warningInterval: NodeJS.Timeout | null;
-    expiresAt: number;
-  }
-
-  const adminStates = new Map<string, AdminState>();
-  const knownAdmins = new Set<string>();
+  const taintedAdmins = new Set<string>();
+  const activeTimers = new Map<
+    string,
+    {
+      kickTimeout: NodeJS.Timeout;
+      warnInterval: NodeJS.Timeout;
+      expiresAt: number;
+    }
+  >();
 
   const isExcluded = (steamID?: string) =>
     !steamID || excludedAdmins.includes(steamID);
 
-  const initCooldown = (steamID: string) => {
-    let aState = adminStates.get(steamID);
-    if (!aState) {
-      aState = {
-        isInCamera: false,
-        cooldownTimeout: null,
-        warningInterval: null,
-        expiresAt: 0,
-      };
-      adminStates.set(steamID, aState);
-    }
+  const clearTimers = (steamID: string) => {
+    const timers = activeTimers.get(steamID);
+    if (!timers) return;
+    clearTimeout(timers.kickTimeout);
+    clearInterval(timers.warnInterval);
+    activeTimers.delete(steamID);
+  };
 
-    if (aState.cooldownTimeout) clearTimeout(aState.cooldownTimeout);
-    if (aState.warningInterval) clearInterval(aState.warningInterval);
+  const startKickSequence = (steamID: string) => {
+    clearTimers(steamID);
 
-    const cooldownMs = opts.cooldownDuration;
-    aState.expiresAt = Date.now() + cooldownMs;
+    const kickMs = opts.kickDelay;
+    const expiresAt = Date.now() + kickMs;
 
     adminWarn(
       execute,
       steamID,
-      opts.warnMessage.replace('{time}', String(Math.ceil(cooldownMs / 1000))),
+      opts.warnMessage.replace('{time}', String(Math.ceil(kickMs / 1000))),
     );
 
-    aState.warningInterval = setInterval(() => {
-      const currentState = adminStates.get(steamID);
-      if (!currentState) return;
-
+    const warnInterval = setInterval(() => {
       const player = getPlayerBySteamID(state, steamID);
-
-      if (!player || !player.squadID) {
-        if (currentState.cooldownTimeout)
-          clearTimeout(currentState.cooldownTimeout);
-        if (currentState.warningInterval)
-          clearInterval(currentState.warningInterval);
-        adminStates.delete(steamID);
+      if (!player?.squadID) {
+        clearTimers(steamID);
         logger.log(
-          `[admin-cam] ${steamID}: покинул отряд — таймеры остановлены`,
+          `[admin-cam] ${steamID}: покинул отряд сам — таймеры сброшены`,
         );
         return;
       }
 
-      const remainingMs = Math.max(currentState.expiresAt - Date.now(), 0);
-      const remainingSec = Math.ceil(remainingMs / 1000);
-
+      const remainingSec = Math.max(
+        Math.ceil((expiresAt - Date.now()) / 1000),
+        0,
+      );
       adminWarn(
         execute,
         steamID,
@@ -94,113 +83,75 @@ export const adminCamBlocker: TPluginProps = (state, options) => {
       );
     }, opts.warningInterval);
 
-    aState.cooldownTimeout = setTimeout(() => {
-      const currentState = adminStates.get(steamID);
-      if (!currentState) return;
+    const kickTimeout = setTimeout(() => {
+      clearInterval(warnInterval);
+      activeTimers.delete(steamID);
 
       const player = getPlayerBySteamID(state, steamID);
-
-      if (!player || !player.squadID) {
-        if (currentState.warningInterval)
-          clearInterval(currentState.warningInterval);
-        adminStates.delete(steamID);
-        logger.log(
-          `[admin-cam] ${steamID}: к моменту распуска уже не в отряде — очистка`,
-        );
+      if (!player?.squadID) {
+        logger.log(`[admin-cam] ${steamID}: к моменту кика уже не в отряде`);
         return;
       }
 
       adminRemovePlayerFromSquad(execute, steamID);
-      if (currentState.warningInterval)
-        clearInterval(currentState.warningInterval);
-      adminStates.delete(steamID);
+      logger.log(`[admin-cam] ${steamID}: кикнут из отряда (был в камере)`);
+    }, kickMs);
 
-      logger.log(
-        `[admin-cam] ${steamID}: удалён из отряда по истечении кулдауна`,
-      );
-    }, cooldownMs);
-
-    adminStates.set(steamID, aState);
+    activeTimers.set(steamID, { kickTimeout, warnInterval, expiresAt });
     logger.log(
-      `[admin-cam] ${steamID}: старт кулдауна ${Math.ceil(cooldownMs / 1000)}s`,
+      `[admin-cam] ${steamID}: запущен кик-таймер (${Math.ceil(kickMs / 1000)}s)`,
     );
   };
 
   const onCameraPossessed = (data: TPossessedAdminCamera) => {
     if (isExcluded(data.steamID)) return;
 
-    const steamID = data.steamID;
-    knownAdmins.add(steamID);
-    const prev = adminStates.get(steamID);
+    taintedAdmins.add(data.steamID);
 
-    if (prev?.cooldownTimeout) clearTimeout(prev.cooldownTimeout);
-    if (prev?.warningInterval) clearInterval(prev.warningInterval);
+    clearTimers(data.steamID);
 
-    adminStates.set(steamID, {
-      isInCamera: true,
-      cooldownTimeout: null,
-      warningInterval: null,
-      expiresAt: 0,
-    });
-
-    logger.log(`[admin-cam] ${steamID}: POSSESSED (в камере)`);
+    logger.log(`[admin-cam] ${data.steamID}: вошёл в камеру — помечен`);
   };
 
   const onCameraUnpossessed = (data: TUnPossessedAdminCamera) => {
     if (isExcluded(data.steamID)) return;
+    if (!taintedAdmins.has(data.steamID)) return;
 
-    const steamID = data.steamID;
-    const aState = adminStates.get(steamID);
-    if (!aState) {
-      adminStates.set(steamID, {
-        isInCamera: false,
-        cooldownTimeout: null,
-        warningInterval: null,
-        expiresAt: 0,
-      });
-    } else {
-      aState.isInCamera = false;
-      adminStates.set(steamID, aState);
+    const player = getPlayerBySteamID(state, data.steamID);
+    if (player?.squadID) {
+      logger.log(
+        `[admin-cam] ${data.steamID}: вышел из камеры, уже в отряде — запуск кика`,
+      );
+      startKickSequence(data.steamID);
     }
 
-    logger.log(`[admin-cam] ${steamID}: UNPOSSESSED (вышел из камеры)`);
+    logger.log(`[admin-cam] ${data.steamID}: вышел из камеры`);
   };
 
   const onSquadChanged = (data: TPlayer) => {
-    const steamID = data.steamID;
-    if (isExcluded(steamID)) return;
-    if (!knownAdmins.has(steamID)) return;
+    if (isExcluded(data.steamID)) return;
+
+    if (!taintedAdmins.has(data.steamID)) return;
 
     if (!data.squadID) {
-      const s = adminStates.get(steamID);
-      if (s) {
-        if (s.cooldownTimeout) clearTimeout(s.cooldownTimeout);
-        if (s.warningInterval) clearInterval(s.warningInterval);
-        adminStates.delete(steamID);
-      }
-      logger.log(`[admin-cam] ${steamID}: вышел из отряда — состояние очищено`);
+      clearTimers(data.steamID);
+      logger.log(`[admin-cam] ${data.steamID}: вышел из отряда`);
       return;
     }
 
-    const s = adminStates.get(steamID);
-
-    if (!s || (!s.cooldownTimeout && !s.isInCamera)) {
+    if (!activeTimers.has(data.steamID)) {
       logger.log(
-        `[admin-cam] ${steamID}: создал/вступил в отряд вне камеры — запускаю кулдаун`,
+        `[admin-cam] ${data.steamID}: вступил в отряд после камеры — запуск кика`,
       );
-      initCooldown(steamID);
-      return;
+      startKickSequence(data.steamID);
     }
   };
 
   const onNewGame = () => {
-    adminStates.forEach((s) => {
-      if (s.cooldownTimeout) clearTimeout(s.cooldownTimeout);
-      if (s.warningInterval) clearInterval(s.warningInterval);
-    });
-    adminStates.clear();
-    knownAdmins.clear();
-    logger.log('[admin-cam] NEW_GAME: состояния и knownAdmins очищены');
+    activeTimers.forEach((_, steamID) => clearTimers(steamID));
+    activeTimers.clear();
+    taintedAdmins.clear();
+    logger.log('[admin-cam] NEW_GAME: всё сброшено');
   };
 
   listener.on(EVENTS.POSSESSED_ADMIN_CAMERA, onCameraPossessed);
