@@ -162,12 +162,6 @@ export const chatCommands: TPluginProps = (state, options) => {
     if (!swapEnable) return;
 
     const { steamID } = data;
-    const admins = getAdmins(state, 'reserved');
-
-    if (swapOnlyForVip && !admins?.includes(steamID)) {
-      adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
-      return;
-    }
 
     const players = getPlayers(state);
     const player = players?.find((p) => p.steamID === steamID);
@@ -181,7 +175,6 @@ export const chatCommands: TPluginProps = (state, options) => {
     const targetTeam = playerTeam === '1' ? '2' : '1';
 
     const smallerTeam = team1 < team2 ? '1' : '2';
-    const biggerTeam = team1 > team2 ? '1' : '2';
 
     const isBalancing = targetTeam === smallerTeam;
 
