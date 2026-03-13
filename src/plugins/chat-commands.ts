@@ -161,12 +161,6 @@ export const chatCommands: TPluginProps = (state, options) => {
   const swap = async (data: TChatMessage) => {
     if (!swapEnable) return;
     const { steamID } = data;
-    const admins = getAdmins(state, 'reserved');
-
-    if (swapOnlyForVip && !admins?.includes(steamID)) {
-      adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
-      return;
-    }
 
     const maxDiff = Number(swapMaxDiff) || 10;
 
