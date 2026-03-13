@@ -179,7 +179,7 @@ export const chatCommands: TPluginProps = (state, options) => {
           adminWarn(
             execute,
             steamID,
-            `Вы уже на стороне с меньшим количеством игроков (${team1Count} vs ${team2Count}).`,
+            `Дизбаланс команд (${team1Count} vs ${team2Count}). Смена невозможна, попробуйте позже.`,
           );
           return;
         }
