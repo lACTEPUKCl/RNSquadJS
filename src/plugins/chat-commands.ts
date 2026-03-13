@@ -160,71 +160,85 @@ export const chatCommands: TPluginProps = (state, options) => {
 
   const swap = async (data: TChatMessage) => {
     if (!swapEnable) return;
+
     const { steamID } = data;
 
-    const maxDiff = Number(swapMaxDiff) || 10;
+    const players = getPlayers(state);
+    const player = players?.find((p) => p.steamID === steamID);
 
-    if (maxDiff > 0) {
-      const allPlayers = getPlayers(state);
-      const player = allPlayers?.find((p) => p.steamID === steamID);
+    if (!players || !player) return;
 
-      if (allPlayers && player) {
-        const team1Count = allPlayers.filter((p) => p.teamID === '1').length;
-        const team2Count = allPlayers.filter((p) => p.teamID === '2').length;
+    const team1 = players.filter((p) => p.teamID === '1').length;
+    const team2 = players.filter((p) => p.teamID === '2').length;
 
-        const biggerTeam = team1Count > team2Count ? '1' : '2';
-        const playerTeam = player.teamID;
+    const playerTeam = player.teamID;
+    const targetTeam = playerTeam === '1' ? '2' : '1';
 
-        if (playerTeam !== biggerTeam) {
-          adminWarn(
-            execute,
-            steamID,
-            `Дизбаланс команд (${team1Count} vs ${team2Count}). Смена невозможна, попробуйте позже.`,
-          );
-          return;
-        }
-      }
-    }
+    const smallerTeam = team1 < team2 ? '1' : '2';
 
-    const deletionTime = parseInt(swapTimeout);
-    const existingEntry = swapHistory.find(
-      (entry) => entry.steamID === steamID,
-    );
+    const isBalancing = targetTeam === smallerTeam;
 
-    if (existingEntry) {
-      const remainingTime =
-        deletionTime - (Date.now() - existingEntry.startTime);
-      const remainingHours = Math.floor(remainingTime / (1000 * 60 * 60));
-      const remainingMinutes = Math.floor(
-        (remainingTime % (1000 * 60 * 60)) / (1000 * 60),
-      );
+    if (!isBalancing && team1 !== team2) {
       adminWarn(
         execute,
         steamID,
-        `Команда доступна через ${remainingHours} ч ${remainingMinutes} мин!`,
+        `Нельзя перейти в сторону с большим количеством игроков (${team1} vs ${team2}).`,
       );
       return;
     }
 
+    const maxDiff = Number(swapMaxDiff) || 10;
+
+    if (maxDiff > 0) {
+      const newTeam1 = playerTeam === '1' ? team1 - 1 : team1 + 1;
+      const newTeam2 = playerTeam === '2' ? team2 - 1 : team2 + 1;
+
+      if (Math.abs(newTeam1 - newTeam2) > maxDiff) {
+        adminWarn(
+          execute,
+          steamID,
+          `Слишком большой дисбаланс (${team1} vs ${team2}).`,
+        );
+        return;
+      }
+    }
+
+    const cooldown = Number(swapTimeout) || 600000;
+
+    const existing = swapHistory.find((p) => p.steamID === steamID);
+
+    if (existing && !isBalancing) {
+      const remaining = Math.max(
+        0,
+        cooldown - (Date.now() - existing.startTime),
+      );
+
+      const minutes = Math.floor(remaining / 60000);
+
+      adminWarn(
+        execute,
+        steamID,
+        `Команда будет доступна через ${minutes} мин.`,
+      );
+
+      return;
+    }
+
     adminForceTeamChange(execute, steamID);
-    const deletionTimer = setTimeout(
-      () => removeSteamID(steamID),
-      deletionTime,
-    );
+
+    if (isBalancing) return;
+
+    const timer = setTimeout(() => {
+      const index = swapHistory.findIndex((p) => p.steamID === steamID);
+      if (index !== -1) swapHistory.splice(index, 1);
+    }, cooldown);
+
     swapHistory.push({
-      steamID: steamID,
-      deletionTimer: deletionTimer,
+      steamID,
+      deletionTimer: timer,
       startTime: Date.now(),
     });
   };
-
-  function removeSteamID(steamID: string) {
-    const index = swapHistory.findIndex((entry) => entry.steamID === steamID);
-    if (index !== -1) {
-      clearTimeout(swapHistory[index].deletionTimer);
-      swapHistory.splice(index, 1);
-    }
-  }
 
   const isAdminSteam = (steamID: string): boolean => {
     const set = new Set<string>([
