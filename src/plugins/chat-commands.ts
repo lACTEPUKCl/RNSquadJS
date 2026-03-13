@@ -161,14 +161,9 @@ export const chatCommands: TPluginProps = (state, options) => {
   const swap = async (data: TChatMessage) => {
     if (!swapEnable) return;
     const { steamID } = data;
-    const admins = getAdmins(state, 'reserved');
-
-    if (swapOnlyForVip && !admins?.includes(steamID)) {
-      adminWarn(execute, steamID, 'Команда доступна только Vip пользователям');
-      return;
-    }
 
     const maxDiff = Number(swapMaxDiff) || 10;
+
     if (maxDiff > 0) {
       const allPlayers = getPlayers(state);
       const player = allPlayers?.find((p) => p.steamID === steamID);
@@ -176,17 +171,15 @@ export const chatCommands: TPluginProps = (state, options) => {
       if (allPlayers && player) {
         const team1Count = allPlayers.filter((p) => p.teamID === '1').length;
         const team2Count = allPlayers.filter((p) => p.teamID === '2').length;
+
+        const biggerTeam = team1Count > team2Count ? '1' : '2';
         const playerTeam = player.teamID;
 
-        const newTeam1 = playerTeam === '1' ? team1Count - 1 : team1Count + 1;
-        const newTeam2 = playerTeam === '2' ? team2Count - 1 : team2Count + 1;
-        const newDiff = Math.abs(newTeam1 - newTeam2);
-
-        if (newDiff > maxDiff) {
+        if (playerTeam !== biggerTeam) {
           adminWarn(
             execute,
             steamID,
-            `Дизбаланс команд (${team1Count} vs ${team2Count}). Смена невозможна, попробуйте позже.`,
+            `Вы уже на стороне с меньшим количеством игроков (${team1Count} vs ${team2Count}).`,
           );
           return;
         }
