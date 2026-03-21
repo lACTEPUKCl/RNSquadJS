@@ -469,6 +469,9 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   const squadMemberships = new Map<string, Map<string, SquadMemberSnapshot>>();
   let lastSocialFlush = Date.now();
 
+  // ─── Weapon tracking: victimName → weapon из PLAYER_DAMAGED ───
+  const lastDamageWeapon = new Map<string, string>();
+
   // ─── IP tracking (заполняется из RawLogParser) ───
   const playerIPs = new Map<string, string>();
 
@@ -561,6 +564,7 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     friendlyDeployDmg.clear();
     playerKillStats.clear();
     squadMemberships.clear();
+    lastDamageWeapon.clear();
   }
 
   function getPlayerIP(steamID: string): string {
@@ -1016,6 +1020,11 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const ap = pi(attacker);
     const vp = pi(victim);
 
+    // Запоминаем оружие для использования в onPlayerDied
+    if (victimName && weapon) {
+      lastDamageWeapon.set(victimName, weapon);
+    }
+
     appendCsv(file('damage_dealt'), H.damage_dealt, [
       nowISO(),
       serverId,
@@ -1041,7 +1050,10 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const { map, layer } = mapInfo();
     const { attackerEOSID, victimName, damage, attackerSteamID } = data;
     const dExtra = data as Record<string, unknown>;
-    const weapon = (dExtra.weapon as string) || '';
+    const dieWeapon = (dExtra.weapon as string) || '';
+    // Оружие из PLAYER_DAMAGED, fallback на weapon из Die события
+    const weapon = lastDamageWeapon.get(victimName) || dieWeapon;
+    lastDamageWeapon.delete(victimName);
     const victim = getPlayerByName(state, victimName);
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const ap = pi(attacker);
@@ -1133,6 +1145,9 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const victim = getPlayerByEOSID(state, data.victimEOSID);
     const rp = pi(reviver);
     const vp = pi(victim);
+
+    // Игрока подняли — оружие урона больше не актуально
+    if (data.victimName) lastDamageWeapon.delete(data.victimName);
 
     appendCsv(file('revives'), H.revives, [
       nowISO(),
