@@ -1,4 +1,9 @@
-import { TPlayerDied, TPlayerRevived, TRoundTickets } from 'squad-logs';
+import {
+  TPlayerDamaged,
+  TPlayerDied,
+  TPlayerRevived,
+  TRoundTickets,
+} from 'squad-logs';
 import { EVENTS } from '../constants';
 import { adminWarn } from '../core';
 import {
@@ -50,6 +55,9 @@ export const rnsStats: TPluginProps = (state) => {
   let matchTickets: MatchTicketInfo[] = [];
   let matchCounter = 0;
 
+  // victimName → weapon из последнего PLAYER_DAMAGED
+  const lastDamageWeapon = new Map<string, string>();
+
   const getOrCreatePlayerStats = (
     steamID: string,
     name: string,
@@ -77,6 +85,7 @@ export const rnsStats: TPluginProps = (state) => {
     matchStartTime = Date.now();
     matchPlayerStats = new Map();
     matchTickets = [];
+    lastDamageWeapon.clear();
   };
 
   const onNewGame = () => {
@@ -268,6 +277,13 @@ export const rnsStats: TPluginProps = (state) => {
     });
   };
 
+  const onDamaged = (data: TPlayerDamaged) => {
+    const { victimName, weapon } = data;
+    if (victimName && weapon) {
+      lastDamageWeapon.set(victimName, weapon);
+    }
+  };
+
   const onDied = async (data: TPlayerDied) => {
     const { currentMap } = state;
 
@@ -279,6 +295,10 @@ export const rnsStats: TPluginProps = (state) => {
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const victim = getPlayerByName(state, victimName);
     if (!victim) return;
+
+    // Оружие из последнего PLAYER_DAMAGED для этой жертвы
+    const weapon = lastDamageWeapon.get(victimName) || 'null';
+    lastDamageWeapon.delete(victimName);
 
     const killerSteamID = attackerSteamID || attacker?.steamID || '';
 
@@ -309,7 +329,7 @@ export const rnsStats: TPluginProps = (state) => {
         attacker?.teamID === victim.teamID &&
         attacker?.name !== victim.name
       ) {
-        if (killerSteamID) await updateUser(killerSteamID, 'teamkills');
+        if (killerSteamID) await updateUser(killerSteamID, 'teamkills', weapon);
         await updateUser(victim.steamID, 'death');
         if (killerSteamID && attacker) {
           const as = getOrCreatePlayerStats(
@@ -329,7 +349,7 @@ export const rnsStats: TPluginProps = (state) => {
       }
 
       if (killerSteamID) {
-        await updateUser(killerSteamID, 'kills', attacker?.weapon || 'null');
+        await updateUser(killerSteamID, 'kills', weapon);
         if (attacker) {
           const as = getOrCreatePlayerStats(
             killerSteamID,
@@ -359,7 +379,10 @@ export const rnsStats: TPluginProps = (state) => {
 
       if (currentMap.layer.toLowerCase().includes('seed')) return;
 
-      const { reviverSteamID } = data;
+      const { reviverSteamID, victimName } = data;
+
+      // Игрока подняли — оружие урона больше не актуально
+      if (victimName) lastDamageWeapon.delete(victimName);
 
       await updateUser(reviverSteamID, 'revives');
 
@@ -380,6 +403,7 @@ export const rnsStats: TPluginProps = (state) => {
   };
 
   listener.on(EVENTS.UPDATED_PLAYERS, updatedPlayers);
+  listener.on(EVENTS.PLAYER_DAMAGED, onDamaged);
   listener.on(EVENTS.PLAYER_DIED, onDied);
   listener.on(EVENTS.PLAYER_REVIVED, onRevived);
   listener.on(EVENTS.ROUND_ENDED, onRoundEnded);

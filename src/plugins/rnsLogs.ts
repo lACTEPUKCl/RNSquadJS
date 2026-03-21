@@ -41,6 +41,9 @@ export const rnsLogs: TPluginProps = (state, options) => {
   const cleanLogsInterval = 24 * 60 * 60 * 1000;
   let matchIsEnded = false;
 
+  // victimName → weapon из последнего PLAYER_DAMAGED
+  const lastDamageWeapon = new Map<string, string>();
+
   if (!logPath) {
     logger.error('[RnsLogs] logPath option is required but not provided');
     return;
@@ -147,6 +150,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function onNewGame(data: TNewGame) {
     matchIsEnded = false;
+    lastDamageWeapon.clear();
     const { layerClassname } = data;
     const currentTime = new Date().toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
@@ -211,7 +215,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function onPlayerWounded(data: TPlayerWounded) {
     if (matchIsEnded) return;
-    const { attackerEOSID, victimName, damage } = data;
+    const { attackerEOSID, victimName, damage, weapon } = data;
     const victim = getPlayerByName(state, victimName);
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const currentTime = new Date().toLocaleString('ru-RU', {
@@ -227,6 +231,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
         currentTime,
         action: 'TeamKill',
         damage,
+        weapon: weapon || null,
         attacker: attacker?.name ? attacker : null,
         victim: victim?.name ? victim : null,
       });
@@ -235,6 +240,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
         currentTime,
         action: 'Wound',
         damage,
+        weapon: weapon || null,
         attacker: attacker?.name ? attacker : null,
         victim: victim?.name ? victim : null,
       });
@@ -243,12 +249,18 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function onPlayerDamaged(data: TPlayerDamaged) {
     if (matchIsEnded) return;
-    const { attackerEOSID, victimName, damage } = data;
+    const { attackerEOSID, victimName, damage, weapon } = data;
     const victim = getPlayerByName(state, victimName);
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const currentTime = new Date().toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
     });
+
+    // Запоминаем оружие для onPlayerDied
+    if (victimName && weapon) {
+      lastDamageWeapon.set(victimName, weapon);
+    }
+
     if (
       attacker &&
       victim &&
@@ -259,6 +271,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
         currentTime,
         action: 'TeamDamaged',
         damage,
+        weapon: weapon || null,
         attacker: attacker?.name ? attacker : null,
         victim: victim?.name ? victim : null,
       });
@@ -267,6 +280,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
         currentTime,
         action: 'PlayerDamaged',
         damage,
+        weapon: weapon || null,
         attacker: attacker?.name ? attacker : null,
         victim: victim?.name ? victim : null,
       });
@@ -282,10 +296,15 @@ export const rnsLogs: TPluginProps = (state, options) => {
       timeZone: 'Europe/Moscow',
     });
 
+    // Оружие из последнего PLAYER_DAMAGED
+    const weapon = lastDamageWeapon.get(victimName) || null;
+    lastDamageWeapon.delete(victimName);
+
     logData.push({
       currentTime,
       action: 'Died',
       damage,
+      weapon,
       attacker: attacker?.name ? attacker : null,
       victim: victim?.name ? victim : null,
     });
@@ -293,10 +312,14 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function onPlayerRevived(data: TPlayerRevived) {
     if (matchIsEnded) return;
-    const { reviverEOSID, victimEOSID } = data;
+    const { reviverEOSID, victimEOSID, victimName } = data;
     const currentTime = new Date().toLocaleString('ru-RU', {
       timeZone: 'Europe/Moscow',
     });
+
+    // Игрока подняли — оружие урона больше не актуально
+    if (victimName) lastDamageWeapon.delete(victimName);
+
     const reviver = getPlayerByEOSID(state, reviverEOSID);
     const victim = getPlayerByEOSID(state, victimEOSID);
     logData.push({
