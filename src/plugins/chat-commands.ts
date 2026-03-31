@@ -189,7 +189,7 @@ export const chatCommands: TPluginProps = (state, options) => {
 
     const maxDiff = Number(swapMaxDiff) || 10;
 
-    if (maxDiff > 0) {
+    if (maxDiff > 0 && !isBalancing) {
       const newTeam1 = playerTeam === '1' ? team1 - 1 : team1 + 1;
       const newTeam2 = playerTeam === '2' ? team2 - 1 : team2 + 1;
 
