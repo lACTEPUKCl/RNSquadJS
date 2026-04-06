@@ -172,7 +172,6 @@ export const chatCommands: TPluginProps = (state, options) => {
     const team2 = players.filter((p) => p.teamID === '2').length;
 
     const playerTeam = player.teamID;
-    const targetTeam = playerTeam === '1' ? '2' : '1';
 
     const newTeam1 = playerTeam === '1' ? team1 - 1 : team1 + 1;
     const newTeam2 = playerTeam === '2' ? team2 - 1 : team2 + 1;
