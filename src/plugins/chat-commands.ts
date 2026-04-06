@@ -191,15 +191,6 @@ export const chatCommands: TPluginProps = (state, options) => {
         );
         return;
       }
-
-      if (team1 !== team2) {
-        adminWarn(
-          execute,
-          steamID,
-          `Нельзя перейти в сторону с большим количеством игроков (${team1} vs ${team2}).`,
-        );
-        return;
-      }
     }
 
     const cooldown = Number(swapTimeout) || 600000;
