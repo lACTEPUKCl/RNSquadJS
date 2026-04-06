@@ -174,37 +174,36 @@ export const chatCommands: TPluginProps = (state, options) => {
     const playerTeam = player.teamID;
     const targetTeam = playerTeam === '1' ? '2' : '1';
 
-    const smallerTeam = team1 < team2 ? '1' : '2';
+    const newTeam1 = playerTeam === '1' ? team1 - 1 : team1 + 1;
+    const newTeam2 = playerTeam === '2' ? team2 - 1 : team2 + 1;
+    const newDiff = Math.abs(newTeam1 - newTeam2);
 
-    const isBalancing = targetTeam === smallerTeam;
+    const currentDiff = Math.abs(team1 - team2);
+    const isBalancing = newDiff < currentDiff;
 
-    if (!isBalancing && team1 !== team2) {
-      adminWarn(
-        execute,
-        steamID,
-        `Нельзя перейти в сторону с большим количеством игроков (${team1} vs ${team2}).`,
-      );
-      return;
-    }
+    const maxDiff = Number(swapMaxDiff) || 0;
 
-    const maxDiff = Number(swapMaxDiff) || 10;
-
-    if (maxDiff > 0 && !isBalancing) {
-      const newTeam1 = playerTeam === '1' ? team1 - 1 : team1 + 1;
-      const newTeam2 = playerTeam === '2' ? team2 - 1 : team2 + 1;
-
-      if (Math.abs(newTeam1 - newTeam2) > maxDiff) {
+    if (!isBalancing) {
+      if (maxDiff > 0 && newDiff > maxDiff) {
         adminWarn(
           execute,
           steamID,
-          `Слишком большой дисбаланс (${team1} vs ${team2}).`,
+          `Свап заблокирован: дисбаланс после перехода ${newDiff} (макс ${maxDiff}). Сейчас ${team1} vs ${team2}.`,
+        );
+        return;
+      }
+
+      if (team1 !== team2) {
+        adminWarn(
+          execute,
+          steamID,
+          `Нельзя перейти в сторону с большим количеством игроков (${team1} vs ${team2}).`,
         );
         return;
       }
     }
 
     const cooldown = Number(swapTimeout) || 600000;
-
     const existing = swapHistory.find((p) => p.steamID === steamID);
 
     if (existing && !isBalancing) {
@@ -212,15 +211,13 @@ export const chatCommands: TPluginProps = (state, options) => {
         0,
         cooldown - (Date.now() - existing.startTime),
       );
-
-      const minutes = Math.floor(remaining / 60000);
+      const minutes = Math.ceil(remaining / 60000);
 
       adminWarn(
         execute,
         steamID,
         `Команда будет доступна через ${minutes} мин.`,
       );
-
       return;
     }
 
