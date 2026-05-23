@@ -2,6 +2,7 @@ import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminEndMatch, adminWarn } from '../core';
 import { TPluginProps } from '../types';
+import { getPlayers } from './helpers';
 
 export const skipmap: TPluginProps = (state, options) => {
   const { listener, execute } = state;
@@ -12,7 +13,9 @@ export const skipmap: TPluginProps = (state, options) => {
     onlyForVip,
     needVotes,
     voteTimeout,
+    minPlayers,
   } = options;
+  const minPlayersNum = Number(minPlayers);
   let voteReadyToStart = true;
   let voteTimeOutToStart = false;
   let voteStarting = false;
@@ -52,6 +55,10 @@ export const skipmap: TPluginProps = (state, options) => {
     }
     if (voteTimeOutToStart) {
       return `Голосование за завершение матча доступно только в первые ${skipMapTimeout} минуты после начала матча!`;
+    }
+    const currentPlayers = getPlayers(state)?.length ?? 0;
+    if (minPlayersNum && currentPlayers < minPlayersNum) {
+      return `Для запуска голосования необходимо минимум ${minPlayersNum} игроков на сервере! Сейчас: ${currentPlayers}`;
     }
     if (onlyForVip && !admins?.[steamID]) {
       return 'Команда доступна только Vip пользователям';

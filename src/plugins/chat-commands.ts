@@ -32,6 +32,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     bonusWarnMessage,
     swapOnlyForVip,
     swapMaxDiff,
+    reportNotifyAdmins,
   } = options;
   type SwapHistoryItem = {
     steamID: string;
@@ -56,7 +57,25 @@ export const chatCommands: TPluginProps = (state, options) => {
 
   const report = (data: TChatMessage) => {
     if (!reportEnable) return;
-    sendWarningMessages(data.steamID, reportMessage);
+    const { steamID, name, message } = data;
+    sendWarningMessages(steamID, reportMessage);
+
+    if (!reportNotifyAdmins) return;
+
+    const onlineAdmins = getAdmins(state, 'cameraman');
+    const onlinePlayers = getPlayers(state);
+    if (onlineAdmins && onlinePlayers) {
+      const onlineAdminSteamIDs = onlinePlayers
+        .filter((p) => onlineAdmins.includes(p.steamID))
+        .map((p) => p.steamID);
+
+      const reportText = message.trim() || 'Без текста';
+
+      for (const adminSteamID of onlineAdminSteamIDs) {
+        adminWarn(execute, adminSteamID, `${name} отправил репорт!`);
+        adminWarn(execute, adminSteamID, reportText);
+      }
+    }
   };
 
   const stvol = (data: TChatMessage) => {
