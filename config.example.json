@@ -22,7 +22,8 @@
           "voteDuration": 120000,
           "voteRepeatDelay": 900000,
           "onlyForVip": true,
-          "needVotes": 15
+          "needVotes": 15,
+          "minPlayers": 90
         }
       },
       {
@@ -87,6 +88,7 @@
         "options": {
           "adminsEnable": true,
           "reportEnable": true,
+          "reportNotifyAdmins": true,
           "stvolEnable": true,
           "fixEnable": true,
           "discordEnable": true,
