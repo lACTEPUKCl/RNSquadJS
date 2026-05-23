@@ -89,6 +89,7 @@
           "adminsEnable": true,
           "reportEnable": true,
           "reportNotifyAdmins": true,
+          "reportWebhookUrl": "",
           "stvolEnable": true,
           "fixEnable": true,
           "discordEnable": true,
