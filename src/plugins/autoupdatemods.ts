@@ -18,9 +18,9 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
     checkUpdateInterval,
   } = options;
 
-  if (!modID || !steamAPIkey) {
+  if (!modID || !steamAPIkey || !dockerName) {
     logger.error(
-      '[AutoUpdateMods] modID или steamAPIkey не указаны в конфиге, плагин не запущен',
+      '[AutoUpdateMods] modID, steamAPIkey или dockerName не указаны в конфиге, плагин не запущен',
     );
     return;
   }
@@ -30,22 +30,29 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
   );
 
   let newUpdate = false;
+  let updating = false;
   let currentVersion: Date | null = null;
-  let updateMessage: NodeJS.Timeout;
-  let intervalMessage: NodeJS.Timeout;
+  let updateMsgInterval: NodeJS.Timeout | null = null;
+  let forceMsgInterval: NodeJS.Timeout | null = null;
+  let forceTimeout: NodeJS.Timeout | null = null;
 
-  listener.on(EVENTS.ROUND_ENDED, endMatch);
+  const onRoundEnd = () => {
+    if (newUpdate && !updating && currentVersion) {
+      performUpdate();
+    }
+  };
+  listener.on(EVENTS.ROUND_ENDED, onRoundEnd);
 
-  setInterval(async () => {
+  const checkTimer = setInterval(async () => {
     try {
       logger.log('[AutoUpdateMods] Проверка обновлений...');
-      currentVersion = await getWorkshopItemDetails();
-
-      if (!currentVersion) {
+      const freshVersion = await getWorkshopItemDetails();
+      if (!freshVersion) {
         logger.warn('[AutoUpdateMods] Не удалось получить версию из Steam API');
         return;
       }
 
+      currentVersion = freshVersion;
       const lastSavedUpdate = await getLastSavedUpdate(modID);
 
       logger.log(
@@ -56,36 +63,69 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
 
       if (!lastSavedUpdate || currentVersion > lastSavedUpdate) {
         const players = getPlayers(state);
-
         logger.log(
-          `[AutoUpdateMods] Доступно новое обновление: ${currentVersion.toLocaleString()}, игроков: ${
+          `[AutoUpdateMods] Доступно обновление: ${currentVersion.toLocaleString()}, игроков: ${
             players?.length ?? 0
           }`,
         );
 
-        if (players && players.length < 50) {
-          newUpdate = true;
-          scheduleUpdate();
-          return;
-        }
-
         newUpdate = true;
-        clearInterval(updateMessage);
-        updateMessage = setInterval(() => {
-          adminBroadcast(execute, text);
-        }, Number(intervalBroadcast));
+
+        if (players && players.length < 50) {
+          clearMsgInterval();
+          scheduleForceUpdate();
+        } else {
+          clearForceTimers();
+          startMsgInterval();
+        }
       }
     } catch (error) {
-      logger.error(
-        `[AutoUpdateMods] Ошибка в цикле проверки обновлений: ${error}`,
-      );
+      logger.error(`[AutoUpdateMods] Ошибка в цикле проверки: ${error}`);
     }
   }, Number(checkUpdateInterval));
 
-  async function endMatch() {
-    if (newUpdate && currentVersion) {
-      await performUpdate();
+  function clearMsgInterval() {
+    if (updateMsgInterval) {
+      clearInterval(updateMsgInterval);
+      updateMsgInterval = null;
     }
+  }
+
+  function clearForceTimers() {
+    if (forceMsgInterval) {
+      clearInterval(forceMsgInterval);
+      forceMsgInterval = null;
+    }
+    if (forceTimeout) {
+      clearTimeout(forceTimeout);
+      forceTimeout = null;
+    }
+  }
+
+  function clearAllTimers() {
+    clearMsgInterval();
+    clearForceTimers();
+  }
+
+  function startMsgInterval() {
+    clearMsgInterval();
+    updateMsgInterval = setInterval(() => {
+      adminBroadcast(execute, text);
+    }, Number(intervalBroadcast));
+  }
+
+  function scheduleForceUpdate() {
+    clearForceTimers();
+    forceMsgInterval = setInterval(() => {
+      adminBroadcast(execute, textForceUpdate);
+    }, 10000);
+
+    forceTimeout = setTimeout(async () => {
+      clearForceTimers();
+      if (newUpdate && !updating && currentVersion) {
+        await performUpdate();
+      }
+    }, 60000);
   }
 
   async function getWorkshopItemDetails(): Promise<Date | null> {
@@ -94,132 +134,116 @@ export const autoUpdateMods: TPluginProps = async (state, options) => {
         'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/',
         `key=${steamAPIkey}&itemcount=1&publishedfileids[0]=${modID}`,
         {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           timeout: 15000,
         },
       );
-
-      const itemDetails = response.data?.response?.publishedfiledetails?.[0];
-      if (!itemDetails || !itemDetails.time_updated) {
+      const item = response.data?.response?.publishedfiledetails?.[0];
+      if (!item?.time_updated) {
         logger.error(
-          `[AutoUpdateMods] Steam API вернул некорректный ответ: ${JSON.stringify(
-            response.data?.response,
-          )}`,
+          `[AutoUpdateMods] Некорректный ответ Steam API: ${JSON.stringify(response.data?.response)}`,
         );
         return null;
       }
-
-      return new Date(itemDetails.time_updated * 1000);
+      return new Date(item.time_updated * 1000);
     } catch (error) {
-      logger.error(
-        `[AutoUpdateMods] Ошибка при получении деталей воркшопа: ${error}`,
-      );
+      logger.error(`[AutoUpdateMods] Ошибка Steam API: ${error}`);
       return null;
     }
   }
 
   async function getLastSavedUpdate(modID: string): Promise<Date | null> {
     try {
-      const savedTime = await getModLastUpdateDate(modID);
-      return savedTime ? new Date(savedTime) : null;
+      const saved = await getModLastUpdateDate(modID);
+      return saved ? new Date(saved) : null;
     } catch (error) {
-      logger.error(`Ошибка при чтении времени последнего обновления: ${error}`);
+      logger.error(`[AutoUpdateMods] Ошибка чтения даты обновления: ${error}`);
       return null;
     }
   }
 
-  async function saveLastUpdate(currentVersion: Date) {
+  async function saveLastUpdate(version: Date) {
     try {
-      await writeLastModUpdateDate(modID, currentVersion);
+      await writeLastModUpdateDate(modID, version);
     } catch (error) {
       logger.error(
-        `Ошибка при сохранении времени последнего обновления: ${error}`,
+        `[AutoUpdateMods] Ошибка сохранения даты обновления: ${error}`,
       );
     }
   }
 
-  async function stopService() {
-    try {
-      logger.log('Попытка остановить сервис:', dockerName);
+  function stopService(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      logger.log(`Останавливаем сервис ${dockerName}...`);
       const child = spawn('/usr/bin/docker', ['compose', 'down', dockerName], {
-        cwd: '/root/servers',
+        cwd: '/root/host',
       });
-
-      child.on('exit', async (code) => {
+      child.on('exit', (code) => {
         if (code === 0) {
-          logger.log(`Сервис ${dockerName} успешно остановлен.`);
-          await startService();
+          logger.log(`Сервис ${dockerName} остановлен`);
+          resolve();
         } else {
-          logger.error(
-            `Ошибка при остановке сервиса ${dockerName}, код выхода: ${code}`,
+          reject(
+            new Error(`Остановка ${dockerName} завершилась с кодом ${code}`),
           );
         }
       });
-
-      child.on('error', (error) => {
-        logger.error(`Ошибка при остановке сервиса ${dockerName}: ${error}`);
-      });
-    } catch (error) {
-      logger.error(`Ошибка при остановке сервиса: ${error}`);
-    }
+      child.on('error', (err) => reject(err));
+    });
   }
 
-  async function startService() {
-    try {
-      logger.log('Попытка запустить сервис:', dockerName);
+  function startService(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      logger.log(`Запускаем сервис ${dockerName}...`);
       const child = spawn(
         '/usr/bin/docker',
         ['compose', 'up', '-d', dockerName],
         {
-          cwd: '/root/servers',
+          cwd: '/root/host',
         },
       );
-
       child.on('exit', (code) => {
         if (code === 0) {
-          logger.log(`Сервис ${dockerName} успешно запущен.`);
-          logger.log('Мод обновлен...');
+          logger.log(`Сервис ${dockerName} запущен`);
+          resolve();
         } else {
-          logger.error(
-            `Ошибка при запуске сервиса ${dockerName}, код выхода: ${code}`,
-          );
+          reject(new Error(`Запуск ${dockerName} завершился с кодом ${code}`));
         }
       });
-
-      child.on('error', (error) => {
-        logger.error(`Ошибка при запуске сервиса ${dockerName}: ${error}`);
-      });
-    } catch (error) {
-      logger.error(`Ошибка при запуске сервиса: ${error}`);
-    }
+      child.on('error', (err) => reject(err));
+    });
   }
 
   async function performUpdate() {
-    logger.log('Обновление мода...');
+    if (updating) {
+      logger.log('[AutoUpdateMods] Обновление уже выполняется, пропускаем');
+      return;
+    }
+
+    updating = true;
+    logger.log('[AutoUpdateMods] Запуск обновления...');
     try {
       await stopService();
       if (currentVersion) {
         await saveLastUpdate(currentVersion);
       }
-      clearInterval(updateMessage);
-      newUpdate = false;
+      await startService();
+      logger.log('[AutoUpdateMods] Мод успешно обновлён');
     } catch (error) {
-      logger.error(`Ошибка при обновлении мода:' ${error}`);
+      logger.error(`[AutoUpdateMods] Ошибка при обновлении: ${error}`);
+    } finally {
+      newUpdate = false;
+      updating = false;
+      clearAllTimers();
     }
   }
 
-  function scheduleUpdate() {
-    intervalMessage = setInterval(() => {
-      adminBroadcast(execute, textForceUpdate);
-    }, 10000);
+  const cleanup = () => {
+    clearInterval(checkTimer);
+    clearAllTimers();
+    listener.off(EVENTS.ROUND_ENDED, onRoundEnd);
+    logger.log('[AutoUpdateMods] Плагин остановлен, ресурсы очищены');
+  };
 
-    setTimeout(async () => {
-      clearInterval(intervalMessage);
-      if (newUpdate && currentVersion) {
-        await performUpdate();
-      }
-    }, 60000);
-  }
+  return cleanup;
 };
