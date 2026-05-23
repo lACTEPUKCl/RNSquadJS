@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { TChatMessage } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { adminBroadcast, adminForceTeamChange, adminWarn } from '../core';
@@ -8,6 +9,7 @@ import { getAdmins, getPlayers } from './helpers';
 export const chatCommands: TPluginProps = (state, options) => {
   const { listener, execute } = state;
   const {
+    id,
     adminsEnable,
     reportEnable,
     stvolEnable,
@@ -33,6 +35,7 @@ export const chatCommands: TPluginProps = (state, options) => {
     swapOnlyForVip,
     swapMaxDiff,
     reportNotifyAdmins,
+    reportWebhookUrl,
   } = options;
   type SwapHistoryItem = {
     steamID: string;
@@ -58,23 +61,55 @@ export const chatCommands: TPluginProps = (state, options) => {
   const report = (data: TChatMessage) => {
     if (!reportEnable) return;
     const { steamID, name, message } = data;
+    const reportText = message.trim() || 'Без текста';
+
     sendWarningMessages(steamID, reportMessage);
 
-    if (!reportNotifyAdmins) return;
+    if (reportNotifyAdmins) {
+      const onlineAdmins = getAdmins(state, 'cameraman');
+      const onlinePlayers = getPlayers(state);
+      if (onlineAdmins && onlinePlayers) {
+        const onlineAdminSteamIDs = onlinePlayers
+          .filter((p) => onlineAdmins.includes(p.steamID))
+          .map((p) => p.steamID);
 
-    const onlineAdmins = getAdmins(state, 'cameraman');
-    const onlinePlayers = getPlayers(state);
-    if (onlineAdmins && onlinePlayers) {
-      const onlineAdminSteamIDs = onlinePlayers
-        .filter((p) => onlineAdmins.includes(p.steamID))
-        .map((p) => p.steamID);
-
-      const reportText = message.trim() || 'Без текста';
-
-      for (const adminSteamID of onlineAdminSteamIDs) {
-        adminWarn(execute, adminSteamID, `${name} отправил репорт!`);
-        adminWarn(execute, adminSteamID, reportText);
+        for (const adminSteamID of onlineAdminSteamIDs) {
+          adminWarn(execute, adminSteamID, `${name} отправил репорт!`);
+          adminWarn(execute, adminSteamID, reportText);
+        }
       }
+    }
+
+    if (reportWebhookUrl) {
+      const currentMap = state.currentMap;
+      const now = new Date().toLocaleString('ru-RU', {
+        timeZone: 'Europe/Moscow',
+      });
+
+      axios
+        .post(reportWebhookUrl, {
+          embeds: [
+            {
+              title: 'Новый репорт',
+              color: 0xff4444,
+              fields: [
+                {
+                  name: `Сервер #${id}`,
+                },
+                { name: 'Игрок', value: name, inline: true },
+                { name: 'SteamID', value: steamID, inline: true },
+                {
+                  name: 'Карта',
+                  value: `${currentMap?.level || 'Неизвестно'} (${currentMap?.layer || '—'})`,
+                  inline: true,
+                },
+                { name: 'Текст репорта', value: reportText },
+                { name: 'Время', value: now, inline: true },
+              ],
+            },
+          ],
+        })
+        .catch(() => {});
     }
   };
 
