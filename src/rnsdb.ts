@@ -114,7 +114,8 @@ let reconnectTimer: NodeJS.Timeout | null = null;
 let dbLink = '';
 let databaseName = '';
 
-const cleaningTime = 604800000;
+const WEEKLY_RESET_DAY = 1;
+const WEEKLY_RESET_HOUR = 6;
 
 export async function connectToDatabase(
   dbURL: string,
@@ -157,7 +158,13 @@ async function setReconnectTimer(dbURL: string) {
 async function incBoth(user: { _id: string }, incDoc: Record<string, number>) {
   if (!isConnected) return;
   await collectionMain.updateOne(user, { $inc: incDoc });
-  await collectionTemp.updateOne(user, { $inc: incDoc });
+  const tempResult = await collectionTemp.updateOne(user, { $inc: incDoc });
+  if (tempResult.matchedCount === 0) {
+    const mainUser = await collectionMain.findOne({ _id: user._id });
+    const name = mainUser?.name ?? '';
+    await createUserIfNullableOrUpdateName(user._id, name);
+    await collectionTemp.updateOne(user, { $inc: incDoc });
+  }
 }
 
 function expDeltaForCounter(field: string): number {
@@ -642,23 +649,45 @@ export async function updateCollectionTemp(
 ) {
   const tempStats = await collectionTemp.updateOne(user, doc);
   if (tempStats.modifiedCount !== 1) {
-    await createUserIfNullableOrUpdateName(user._id, '', name);
+    await createUserIfNullableOrUpdateName(user._id, name);
     await collectionTemp.updateOne(user, doc);
   }
 }
 
-export async function creatingTimeStamp() {
-  const date = Date.now();
-  const userTemp = { _id: 'dateTemp' };
-  const dateTemp = { $set: { date } };
+function getLastMondayReset(): number {
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours();
 
+  const daysBack =
+    day === WEEKLY_RESET_DAY && hour >= WEEKLY_RESET_HOUR
+      ? 0
+      : (day - WEEKLY_RESET_DAY + 7) % 7 || 7;
+
+  const lastReset = new Date(now);
+  lastReset.setDate(now.getDate() - daysBack);
+  lastReset.setHours(WEEKLY_RESET_HOUR, 0, 0, 0);
+  return lastReset.getTime();
+}
+
+export async function creatingTimeStamp() {
+  if (!isConnected) return;
+
+  const userTemp = { _id: 'dateTemp' };
   const timeTemp = await collectionMain.findOne({ _id: 'dateTemp' });
-  if (!timeTemp || !timeTemp.date) return;
-  const checkOutOfDate = date - timeTemp.date;
-  if (checkOutOfDate > cleaningTime) {
-    console.log('Статистика очищена');
+  const lastResetTime = (timeTemp as any)?.date ?? 0;
+  const expectedReset = getLastMondayReset();
+
+  if (lastResetTime < expectedReset) {
+    console.log(
+      `Недельная статистика очищена (понедельник ${new Date(expectedReset).toLocaleString('ru-RU')})`,
+    );
     await collectionTemp.deleteMany({});
-    await collectionMain.updateOne(userTemp, dateTemp);
+    await collectionMain.updateOne(
+      userTemp,
+      { $set: { date: Date.now() } },
+      { upsert: true },
+    );
   }
 }
 
