@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  quality:
+    name: Typecheck, Lint, Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+        env:
+          HUSKY: 0
+
+      - name: Typecheck (tsc --noEmit)
+        run: yarn tsc --noEmit
+
+      - name: Lint (eslint)
+        run: yarn eslint --ext .ts src/
+
+      - name: Format check (prettier)
+        run: yarn prettier src/ --check --ignore-unknown
+
+  test:
+    name: Unit & integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+        env:
+          HUSKY: 0
+
+      - name: Run tests (Vitest)
+        run: yarn test

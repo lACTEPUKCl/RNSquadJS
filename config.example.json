@@ -1,71 +1,169 @@
 {
   "1": {
     "host": "127.0.0.1",
-    "password": "2707",
     "port": 21114,
+    "password": "${RCON_PASSWORD}",
     "logFilePath": "C:/squad_server/SquadGame/Saved/Logs/SquadGame.log",
     "adminsFilePath": "C:/squad_server/SquadGame/ServerConfig/Admins.cfg",
     "mapsName": "vanilla.json",
-    "db": "mongodb://name:password@ip:port/",
+    "db": "${MONGO_URI}",
+    "database": "SquadJS",
     "mapsRegExp": "(?<layerName>[a-zA-Z]+)_(?<layerMode>.*) (?<team1>.*) (?<team2>.*)",
+    "ftp": {
+      "username": "${FTP_USER}",
+      "password": "${FTP_PASSWORD}"
+    },
     "plugins": [
+      {
+        "name": "adminSetFogOfWar",
+        "enabled": false,
+        "options": { "value": 1, "delayMs": 0 }
+      },
+      {
+        "name": "seed",
+        "enabled": false,
+        "options": {
+          "playerThreshold": 20,
+          "seedLayers": ["Sumari_Seed_v1", "Logar_Seed_v1", "Mestia_Seed_v1"],
+          "mode": "next",
+          "seedKeyword": "Seed",
+          "countdownMs": 30000,
+          "broadcastEnabled": true,
+          "broadcastIntervalMs": 10000,
+          "broadcastMessage": "Мало игроков — переход на seed-карту через {time} сек.",
+          "cancelMessage": "Игроков снова достаточно, переход на seed отменён."
+        }
+      },
+      {
+        "name": "rnsStats",
+        "enabled": true,
+        "options": {
+          "eloEnabled": true,
+          "eloMinPlayers": 10,
+          "eloDisplayMode": "conservative"
+        }
+      },
+      {
+        "name": "rnsLogs",
+        "enabled": false,
+        "options": {
+          "logPath": "C:/squad_server/SquadGame/Saved/Logs/rnslogs/"
+        }
+      },
+      {
+        "name": "rnsTelemetry",
+        "enabled": false,
+        "options": {
+          "csvPath": "/srv/telemetry",
+          "serverId": "1",
+          "snapshotInterval": 60000,
+          "retentionDays": 30,
+          "rapidKillWindowSec": 10,
+          "rapidKillThreshold": 5,
+          "massTkWindowSec": 120,
+          "massTkThreshold": 3,
+          "knifeSpreeWindowSec": 60,
+          "knifeSpreeThreshold": 3,
+          "friendlyFobDamageThreshold": 500,
+          "friendlyFobWindowSec": 300,
+          "headshotRatioThreshold": 0.9,
+          "headshotRatioMinKills": 15
+        }
+      },
+      {
+        "name": "officialKothDb",
+        "enabled": false,
+        "options": {
+          "kothFolderPath": "C:/squad_server/SquadGame/Saved/KOTH/",
+          "syncEnabled": true,
+          "serverId": 1,
+          "db": {
+            "host": "127.0.0.1",
+            "port": 3306,
+            "database": "koth",
+            "username": "${MARIADB_USER}",
+            "password": "${MARIADB_PASSWORD}"
+          }
+        }
+      },
+      {
+        "name": "broadcast",
+        "enabled": false,
+        "options": {
+          "interval": 180000,
+          "texts": ["Discord: discord.gg/your-server", "Соблюдайте правила"]
+        }
+      },
+      {
+        "name": "knifeBroadcast",
+        "enabled": false,
+        "options": {
+          "knifeWeapons": [
+            "SOCP",
+            "AK74Bayonet",
+            "M9Bayonet",
+            "G3Bayonet",
+            "Bayonet2000",
+            "AKMBayonet",
+            "SA80Bayonet",
+            "QNL-95",
+            "OKC-3S"
+          ],
+          "messageTemplates": [
+            "{attacker} безжалостно почикал {victim} ножом!",
+            "{attacker} мгновенно отправил {victim} в мир иной ножевым ударом!",
+            "{attacker} показал истинное мастерство ножевого боя, зарезав {victim}!",
+            "{attacker} зарезал {victim}, свежий кабанчик!"
+          ]
+        }
+      },
+      {
+        "name": "autorestartServers",
+        "enabled": false,
+        "options": { "emptyGraceMs": 300000, "minUptimeMs": 86400000 }
+      },
+      {
+        "name": "fobExplosionDamage",
+        "enabled": false,
+        "options": {
+          "action": "kick",
+          "reason": "Подрыв союзной FOB",
+          "banLength": "0",
+          "minDamage": 0,
+          "onlyExplosives": true
+        }
+      },
+      {
+        "name": "adminsReloadConfig",
+        "enabled": false,
+        "options": {
+          "filePath": "C:/squad_server/SquadGame/ServerConfig/Admins.cfg",
+          "debounceMs": 1000
+        }
+      },
       {
         "name": "bonuses",
         "enabled": false,
         "options": { "classicBonus": 1, "seedBonus": 2 }
       },
       {
-        "name": "skipmap",
-        "enabled": false,
-        "options": {
-          "voteTick": 30000,
-          "voteDuration": 120000,
-          "voteRepeatDelay": 900000,
-          "onlyForVip": true,
-          "needVotes": 15,
-          "minPlayers": 90
-        }
-      },
-      {
-        "name": "voteMap",
-        "enabled": false,
-        "options": {
-          "voteTick": 30000,
-          "voteDuration": 180000,
-          "onlyForVip": true,
-          "needVotes": 10
-        }
-      },
-      {
-        "name": "randomizerMaps",
-        "enabled": false,
-        "options": {}
-      },
-      {
         "name": "warnPlayers",
         "enabled": false,
         "options": {
-          "connectedMessage": [
-            "Ознакомьтесь с правилами сервера, чтобы избежать неприятных ситуаций.",
-            "Нарушение правил — прямой путь к бану. Соблюдайте правила и наслаждайтесь игрой!"
-          ],
-          "sqCreatedMessage": [
-            "Ознакомьтесь с правилами сервера, чтобы избежать неприятных ситуаций.",
-            "Нарушение правил — прямой путь к бану. Соблюдайте правила и наслаждайтесь игрой!"
-          ],
+          "connectedMessage": ["Ознакомьтесь с правилами сервера."],
+          "sqCreatedMessage": ["Ознакомьтесь с правилами сервера."],
           "roleChangedMessage": [
-            [
-              "Pilot",
-              "Запрещено управление вертолетом без навыков пилотирования!"
-            ],
-            [
-              "Crewman",
-              "Передвижение на тяж. технике в одиночку и без Сквад лидера запрещено!"
-            ]
+            ["Pilot", "Запрещено пилотировать без навыков!"],
+            ["Crewman", "Тяжёлая техника в одиночку запрещена!"]
           ],
-          "messageAttacker": "Убил своего !!! Извинись в чате.",
+          "messageAttacker": "Убил союзника — извинись в чате.",
           "messageVictim": "Вас убил союзный игрок."
         }
+      },
+      {
+        "name": "explosiveDamaged",
+        "enabled": false,
+        "options": {}
       },
       {
         "name": "squadLeaderRole",
@@ -76,10 +174,78 @@
         "name": "autoKickUnassigned",
         "enabled": false,
         "options": {
+          "minPlayersForAfkKick": 98,
           "kickTimeout": 300000,
           "warningInterval": 30000,
           "gracePeriod": 900000,
-          "minPlayersForAfkKick": 98
+          "connectGraceMs": 120000
+        }
+      },
+      {
+        "name": "adminCamBlocker",
+        "enabled": false,
+        "options": {
+          "kickDelay": 30000,
+          "warningInterval": 10000,
+          "warnMessage": "Заход в админ-камеру запрещает игру в отрядах до конца карты. Кик через {time} сек.",
+          "adminSearchKey": "canSeeAdminChat"
+        }
+      },
+      {
+        "name": "levelSync",
+        "enabled": false,
+        "options": {
+          "jsonDir": "C:/squad_server/SquadGame/Saved/KOTH/players/",
+          "cfgPath": "C:/squad_server/SquadGame/ServerConfig/Prefixes.cfg"
+        }
+      },
+      {
+        "name": "autoUpdateMods",
+        "enabled": false,
+        "options": {
+          "modID": "",
+          "steamAPIkey": "${STEAM_API_KEY}",
+          "dockerName": "squad-server",
+          "text": "Сервер перезагрузится после текущей карты для установки обновления.",
+          "textForceUpdate": "Сервер перезагружается для установки обновления.",
+          "intervalBroadcast": 300000,
+          "checkUpdateInterval": 3600000
+        }
+      },
+      {
+        "name": "voteMap",
+        "enabled": false,
+        "options": {
+          "voteTick": 30000,
+          "voteDuration": 180000,
+          "onlyForVip": false,
+          "needVotes": 10,
+          "mapMode": ["RAAS", "AAS"],
+          "minPlayers": 40
+        }
+      },
+      {
+        "name": "voteMapMods",
+        "enabled": false,
+        "options": {
+          "voteTick": 30000,
+          "voteDuration": 180000,
+          "onlyForVip": false,
+          "needVotes": 10,
+          "minPlayers": 40
+        }
+      },
+      {
+        "name": "skipmap",
+        "enabled": false,
+        "options": {
+          "voteTick": 30000,
+          "voteDuration": 120000,
+          "voteRepeatDelay": 900000,
+          "onlyForVip": false,
+          "needVotes": 15,
+          "voteTimeout": 999999999,
+          "minPlayers": 90
         }
       },
       {
@@ -89,79 +255,85 @@
           "adminsEnable": true,
           "reportEnable": true,
           "reportNotifyAdmins": true,
-          "reportWebhookUrl": "",
+          "reportWebhookUrl": "${REPORT_WEBHOOK_URL}",
           "stvolEnable": true,
           "fixEnable": true,
           "discordEnable": true,
           "statsEnable": true,
+          "rollEnable": true,
           "bonusEnable": true,
           "swapEnable": true,
+          "balanceEnable": false,
+          "balanceOffEnable": false,
+          "helpEnable": true,
+          "swapOnlyForVip": false,
+          "swapMaxDiff": 0,
           "swapTimeout": 10800000,
           "statsTimeout": 180000,
           "stvolTimeout": 300000,
-          "adminsMessage": [
-            "На сервере присутствует администратор",
-            "Для связи с администратором перейдите в дискорд канал discord.gg/rn-server"
-          ],
-          "reportMessage": [
-            "Для завершения репорта, создайте тикет в discord.gg/rn-server"
-          ],
-          "stvolTimeOutMessage": ["Разрешено использовать раз в 5 минут!"],
-          "discordMessage": [
-            "Discord сервера - https://discord.gg/rn-server",
-            "Либо в дискорде Добавить сервер -> rn-server"
-          ],
-          "statsTimeOutMessage": ["Разрешено использовать раз в 3 минуты!"],
-          "statsPlayerNotFoundMessage": [
-            "Имя указано неверно, либо игрок отсутствует на сервере!"
-          ],
-          "bonusWarnMessage": [
-            "За час игры 60 бонусов, на Seed картах 120 бонусов",
-            "Для получения Vip статуса за бонусы нажмите на кнопку в дискорде discord.gg/rn-server в канале получить-vip",
-            "Стоимость Vip статуса равна 15 000 баллов"
-          ]
+          "rollTimeout": 1000,
+          "adminsMessage": ["На сервере присутствует администратор"],
+          "reportMessage": ["Создайте тикет в discord.gg/your-server"],
+          "stvolTimeOutMessage": ["Разрешено раз в 5 минут!"],
+          "discordMessage": ["Discord: discord.gg/your-server"],
+          "statsTimeOutMessage": ["Разрешено раз в 3 минуты!"],
+          "statsPlayerNotFoundMessage": ["Игрок не найден на сервере!"],
+          "bonusWarnMessage": ["За час игры 60 бонусов, на Seed 120 бонусов"]
         }
       },
       {
-        "name": "broadcast",
+        "name": "randomizerMaps",
         "enabled": false,
         "options": {
-          "interval": 180000,
-          "texts": ["Текст1", "Текст2", "Текст3", "Текст4", "Текст5"]
+          "mode": "AAS",
+          "symmetricUnitTypes": false,
+          "excludeCountLayers": 4,
+          "excludeCountFactions": 3,
+          "excludeCountUnitTypes": 2,
+          "allowSameAllianceExceptRedfor": false,
+          "disallowMirrorFactions": true,
+          "fallbackLayer": "Narva_AAS_v1",
+          "debug": false
         }
       },
       {
-        "name": "fobExplosionDamage",
-        "enabled": false,
-        "options": {}
-      },
-      {
-        "name": "autorestartServers",
-        "enabled": false,
-        "options": {}
-      },
-      {
-        "name": "autoUpdateMods",
-        "enabled": true,
-        "options": {
-          "modID": "",
-          "steamAPIkey": "",
-          "text": "Уважаемые игроки, сервер будет перезагружен после завершения текущей карты для установки обновления.",
-          "serviceName": "",
-          "updateFilePath": "",
-          "intervalBroadcast": 300000
-        }
-      },
-      {
-        "name": "rnsStats",
-        "enabled": false,
-        "options": {}
-      },
-      {
-        "name": "rnsLogs",
+        "name": "smartBalance",
         "enabled": false,
         "options": {
-          "logPath": "C:/squad_server/SquadGame/Saved/Logs/rnslogs/"
+          "tickSeconds": 60,
+          "teamCap": 50,
+          "partyWindowDays": 14,
+          "partyMinSec": 900,
+          "partyMinMatches": 2,
+          "partyMaxSize": 6,
+          "minClanSideSize": 2,
+          "clanMaxStackPerSide": 6,
+          "skillMinGames": 3,
+          "refreshSkillEachBalance": true,
+          "autoBalance": false,
+          "balanceLeadership": true,
+          "leadTolerance": 150,
+          "leadCmdWeight": 1,
+          "leadSlWeight": 0.6,
+          "applyDelayMs": 300,
+          "learnIntervalMs": 300000,
+          "minPlayersToLearn": 8,
+          "decayDailyFactor": 0.98,
+          "retentionDays": 21,
+          "skillTolerancePct": 0.05,
+          "hardSkillTolerancePct": 0.08,
+          "swapLimitPerRound": 24,
+          "protectCommander": true,
+          "protectSquadLeader": true,
+          "protectAtRoundEnd": false,
+          "prioritizeClans": true,
+          "clanMinLen": 2,
+          "clanMaxLen": 6,
+          "tagMinUnique": 3,
+          "tagMinConfidence": 0.6,
+          "tagMinCohesion": 0.2,
+          "whitelistTags": [],
+          "blacklistTags": []
         }
       }
     ]

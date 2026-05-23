@@ -10,6 +10,13 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "declarationDir": "lib/types",
+    // Постепенное ужесточение (включать по мере чистки кода и прогона tsc):
+    // "noFallthroughCasesInSwitch": true,
+    // "noImplicitOverride": true,
+    // "noUncheckedIndexedAccess": true,
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "exactOptionalPropertyTypes": true,
   },
   "ts-node": {
     "esm": true,

@@ -2,6 +2,8 @@ import { LogsReader, TLogReaderOptions } from 'squad-logs';
 import { Rcon } from 'squad-rcon';
 import { TConfig, TLogs, TRcon } from '../types';
 
+const RCON_CONNECT_TIMEOUT = 120000;
+
 export const initServer = async (config: TConfig) => {
   const { id, host, port, password, ftp, logFilePath, adminsFilePath } = config;
 
@@ -36,7 +38,23 @@ export const initServer = async (config: TConfig) => {
   return Promise.all([
     new Promise<TRcon>(async (res, rej) => {
       try {
-        await rcon.init();
+        // rcon.init() в библиотеке реджектится на ПЕРВОМ 'close' (даже если
+        // это транзиентная ошибка коннекта), при этом внутренний autoReconnect
+        // продолжает дожимать подключение сам. Поэтому не полагаемся на init():
+        // ждём событие 'connected' (шлётся при каждом успешном коннекте), а
+        // реджект init() глушим. Иначе при первой ошибке коннекта initServer
+        // падал, и initSquadJS/initState/плагины не запускались вовсе.
+        await new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error('RCON: не удалось подключиться за 120с')),
+            RCON_CONNECT_TIMEOUT,
+          );
+          rcon.once('connected', () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+          rcon.init().catch(() => undefined);
+        });
 
         res({
           rconEmitter: rcon,

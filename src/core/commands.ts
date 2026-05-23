@@ -16,6 +16,10 @@ export const adminSetNextLayer = async (execute: TExecute, str: string) => {
   await execute(`AdminSetNextLayer ${str}`);
 };
 
+export const adminSetFogOfWar = async (execute: TExecute, mode: number) => {
+  await execute(`AdminSetFogOfWar ${mode}`);
+};
+
 export const adminDisbandSquad = async (
   execute: TExecute,
   teamID: string,
@@ -44,8 +48,9 @@ export const adminBan = async (
   execute: TExecute,
   steamID: string,
   reason: string,
+  length = '0',
 ) => {
-  await execute(`AdminBan ${steamID} "0" ${reason}`);
+  await execute(`AdminBan ${steamID} "${length}" ${reason}`);
 };
 
 export const adminForceTeamChange = async (

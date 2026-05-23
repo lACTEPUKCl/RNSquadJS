@@ -1,9 +1,12 @@
 import chalk from 'chalk';
 import { initServer, initSquadJS } from './core';
+import { registerProcessHandlers } from './core/shutdown';
 import { connectToDatabase } from './rnsdb';
 import { TError } from './types';
 import { getConfigs } from './utils';
 const initial = async () => {
+  registerProcessHandlers();
+
   const configs = getConfigs();
 
   if (configs?.length) {
@@ -20,7 +23,14 @@ const initial = async () => {
           database: config.database,
         });
 
-        await connectToDatabase(config.db, config.database);
+        await connectToDatabase(config.db, config.database, config.id);
+
+        console.log(
+          chalk.yellow('[SquadJS]'),
+          chalk.green(
+            `Сервер ${config.id} запущен (${config.host}:${config.port}), плагинов в конфиге: ${config.plugins.length}.`,
+          ),
+        );
       } catch (error) {
         const err = error as TError;
 

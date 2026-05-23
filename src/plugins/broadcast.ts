@@ -1,19 +1,37 @@
+import { z } from 'zod';
 import { adminBroadcast } from '../core';
-import { TPluginProps } from '../types';
+import { definePlugin } from '../core/plugin';
+import { getPlayers } from './helpers';
 
-export const broadcast: TPluginProps = (state, options) => {
-  const { execute } = state;
-  const { texts, interval } = options;
-  let index = 0;
-  function printText() {
-    if (index < texts.length) {
-      const text = texts[index];
-      adminBroadcast(execute, text);
-      index++;
-    } else {
-      index = 0;
+const optionsSchema = z.object({
+  texts: z.array(z.string()).default([]),
+  interval: z.coerce.number().int().positive().default(180000),
+});
+
+export default definePlugin({
+  name: 'broadcast',
+  description: 'Периодическая рассылка сообщений в эфир сервера.',
+  optionsSchema,
+  setup({ state, options, logger, registerDisposable }) {
+    const { execute } = state;
+    const { texts, interval } = options;
+
+    if (texts.length === 0) {
+      logger.warn('broadcast: список "texts" пуст — рассылка не запущена.');
+      return;
     }
-  }
 
-  setInterval(printText, parseInt(interval));
-};
+    let index = 0;
+    const printText = () => {
+      const players = getPlayers(state);
+      if (!players || players.length === 0) return;
+
+      adminBroadcast(execute, texts[index]);
+
+      index = (index + 1) % texts.length;
+    };
+
+    const timer = setInterval(printText, interval);
+    registerDisposable(() => clearInterval(timer));
+  },
+});

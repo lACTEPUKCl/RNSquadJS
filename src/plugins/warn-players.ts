@@ -1,81 +1,118 @@
 import { TPlayerConnected, TPlayerWounded, TSquadCreated } from 'squad-logs';
+import { z } from 'zod';
 import { EVENTS } from '../constants';
 import { adminWarn } from '../core';
-import { TPlayerRoleChanged, TPluginProps } from '../types';
+import { definePlugin } from '../core/plugin';
+import { TPlayerRoleChanged } from '../types';
 import { getPlayerByEOSID, getPlayerByName } from './helpers';
 
-export const warnPlayers: TPluginProps = (state, options) => {
-  const { listener, execute } = state;
-  let warningTimeout: NodeJS.Timeout;
-  const {
-    connectedMessage,
-    sqCreatedMessage,
-    roleChangedMessage,
-    messageAttacker,
-    messageVictim,
-  } = options;
+const optionsSchema = z.object({
+  connectedMessage: z.array(z.string()).default([]),
+  sqCreatedMessage: z.array(z.string()).default([]),
+  roleChangedMessage: z.array(z.tuple([z.string(), z.string()])).default([]),
+  messageAttacker: z.string().default(''),
+  messageVictim: z.string().default(''),
+});
 
-  const sendWarningMessages = (steamID: string, messages: string) => {
-    for (const message of messages) {
-      adminWarn(execute, steamID, message);
-    }
-  };
+export default definePlugin({
+  name: 'warnPlayers',
+  description: 'Напоминания игрокам (заход, отряд, роль, тимкилл).',
+  optionsSchema,
+  setup({ state, options, registerDisposable }) {
+    const { listener, execute } = state;
+    const {
+      connectedMessage,
+      sqCreatedMessage,
+      roleChangedMessage,
+      messageAttacker,
+      messageVictim,
+    } = options;
 
-  const playerConnected = (data: TPlayerConnected) => {
-    const { steamID } = data;
+    const timers = new Set<NodeJS.Timeout>();
+    const later = (fn: () => void, ms: number) => {
+      const id = setTimeout(() => {
+        timers.delete(id);
+        fn();
+      }, ms);
+      timers.add(id);
+      return id;
+    };
 
-    sendWarningMessages(steamID, connectedMessage);
+    const sendWarningMessages = (steamID: string, messages: string[]) => {
+      for (const message of messages) adminWarn(execute, steamID, message);
+    };
 
-    setTimeout(() => {
+    const playerConnected = (data: TPlayerConnected) => {
+      const { steamID } = data;
+      if (!steamID) return;
       sendWarningMessages(steamID, connectedMessage);
-    }, 60000);
-  };
+      later(() => sendWarningMessages(steamID, connectedMessage), 60000);
+    };
 
-  const squadCreated = (data: TSquadCreated) => {
-    const { steamID } = data;
-    if (warningTimeout) {
-      clearTimeout(warningTimeout);
-    }
+    const reTimers = new Map<string, NodeJS.Timeout>();
+    const scheduleReminder = (steamID: string, fn: () => void) => {
+      const prev = reTimers.get(steamID);
+      if (prev) clearTimeout(prev);
+      const id = setTimeout(() => {
+        reTimers.delete(steamID);
+        fn();
+      }, 60000);
+      reTimers.set(steamID, id);
+    };
 
-    sendWarningMessages(steamID, sqCreatedMessage);
-
-    warningTimeout = setTimeout(() => {
+    const squadCreated = (data: TSquadCreated) => {
+      const { steamID } = data;
+      if (!steamID) return;
       sendWarningMessages(steamID, sqCreatedMessage);
-    }, 60000);
-  };
+      scheduleReminder(steamID, () =>
+        sendWarningMessages(steamID, sqCreatedMessage),
+      );
+    };
 
-  const playerRoleChanged = (data: TPlayerRoleChanged) => {
-    const { role, steamID } = data.player;
+    const playerRoleChanged = (data: TPlayerRoleChanged) => {
+      const { role, steamID } = data.player;
+      if (!steamID) return;
 
-    if (warningTimeout) {
-      clearTimeout(warningTimeout);
-    }
-
-    for (const [checkRole, message] of roleChangedMessage) {
-      if (role.includes(checkRole)) {
-        adminWarn(execute, steamID, message);
-
-        warningTimeout = setTimeout(() => {
+      for (const [checkRole, message] of roleChangedMessage) {
+        if (role.includes(checkRole)) {
           adminWarn(execute, steamID, message);
-        }, 60000);
+          scheduleReminder(steamID, () => adminWarn(execute, steamID, message));
+        }
       }
-    }
-  };
+    };
 
-  const playerWounded = ({ victimName, attackerEOSID }: TPlayerWounded) => {
-    if (!victimName || !attackerEOSID) return;
+    const playerWounded = ({ victimName, attackerEOSID }: TPlayerWounded) => {
+      if (!victimName || !attackerEOSID) return;
 
-    const victim = getPlayerByName(state, victimName);
-    const attacker = getPlayerByEOSID(state, attackerEOSID);
-    if (victim?.name === attacker?.name) return;
-    if (victim && attacker && victim.teamID === attacker.teamID) {
-      adminWarn(execute, victim.steamID, messageVictim + '\n' + attacker.name);
-      adminWarn(execute, attacker.steamID, messageAttacker);
-    }
-  };
+      const victim = getPlayerByName(state, victimName);
+      const attacker = getPlayerByEOSID(state, attackerEOSID);
+      if (!victim || !attacker) return;
+      if (victim.name === attacker.name) return;
 
-  listener.on(EVENTS.PLAYER_CONNECTED, playerConnected);
-  listener.on(EVENTS.SQUAD_CREATED, squadCreated);
-  listener.on(EVENTS.PLAYER_ROLE_CHANGED, playerRoleChanged);
-  listener.on(EVENTS.PLAYER_WOUNDED, playerWounded);
-};
+      if (victim.teamID === attacker.teamID) {
+        adminWarn(
+          execute,
+          victim.steamID,
+          messageVictim + '\n' + attacker.name,
+        );
+        adminWarn(execute, attacker.steamID, messageAttacker);
+      }
+    };
+
+    listener.on(EVENTS.PLAYER_CONNECTED, playerConnected);
+    listener.on(EVENTS.SQUAD_CREATED, squadCreated);
+    listener.on(EVENTS.PLAYER_ROLE_CHANGED, playerRoleChanged);
+    listener.on(EVENTS.PLAYER_WOUNDED, playerWounded);
+
+    registerDisposable(() => {
+      listener.off(EVENTS.PLAYER_CONNECTED, playerConnected);
+      listener.off(EVENTS.SQUAD_CREATED, squadCreated);
+      listener.off(EVENTS.PLAYER_ROLE_CHANGED, playerRoleChanged);
+      listener.off(EVENTS.PLAYER_WOUNDED, playerWounded);
+      for (const t of reTimers.values()) clearTimeout(t);
+      reTimers.clear();
+      for (const t of timers) clearTimeout(t);
+      timers.clear();
+    });
+  },
+});

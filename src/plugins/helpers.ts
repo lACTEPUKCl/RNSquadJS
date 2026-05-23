@@ -17,6 +17,23 @@ export const getPlayerByEOSID = (state: TState, eosID: string) =>
 export const getPlayerByName = (state: TState, name: string) =>
   state.players?.find((player) => player.name.trim() === name.trim()) || null;
 
+export const getPlayer = (
+  state: TState,
+  ids: {
+    steamID?: string | null;
+    eosID?: string | null;
+    playerController?: string | null;
+    name?: string | null;
+  },
+) =>
+  (ids.steamID ? getPlayerBySteamID(state, ids.steamID) : null) ||
+  (ids.eosID ? getPlayerByEOSID(state, ids.eosID) : null) ||
+  (ids.playerController
+    ? getPlayerByController(state, ids.playerController)
+    : null) ||
+  (ids.name ? getPlayerByName(state, ids.name) : null) ||
+  null;
+
 export const getSquadByID = (state: TState, squadID: string, teamID: string) =>
   state.squads?.find(
     (squad) => squad.squadID === squadID && squad.teamID === teamID,

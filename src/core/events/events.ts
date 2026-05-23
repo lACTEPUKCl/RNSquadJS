@@ -14,16 +14,11 @@ export const initEvents = ({ rconEmitter, logsEmitter }: TEvents) => {
   const rconEvents = convertObjToArrayEvents(RconEvents);
   const logsEvents = convertObjToArrayEvents(LogsReaderEvents);
 
-  /* RCON EVENTS */
-
   rconEvents.forEach((event) => {
-    // disabled dublicate, using only Logs SQUAD_CREATED
     if (event !== RconEvents.SQUAD_CREATED) {
       rconEmitter.on(event, (data) => coreEmitter.emit(event, data));
     }
   });
-
-  /* LOGS EVENTS */
 
   logsEvents.forEach((event) => {
     logsEmitter.on(event, (data) => coreEmitter.emit(event, data));

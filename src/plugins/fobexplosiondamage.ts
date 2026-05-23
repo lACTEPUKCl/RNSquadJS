@@ -1,38 +1,85 @@
-import { TDeployableDamaged } from 'squad-logs';
+import { TDeployableDamaged, TFobPlaced } from 'squad-logs';
+import { z } from 'zod';
 import { EVENTS } from '../constants';
-import { adminKick } from '../core';
-import { TPluginProps } from '../types';
-import { getPlayerByName } from './helpers';
+import { adminBan, adminKick, adminWarn } from '../core';
+import { definePlugin } from '../core/plugin';
+import { getPlayer } from './helpers';
 
-export const fobExplosionDamage: TPluginProps = (state) => {
-  const { listener, execute } = state;
-  const deployableDamaged = (data: TDeployableDamaged) => {
-    const { weapon, deployable, name } = data;
-    if (!data.deployable.match(/(?:FOBRadio|Hab)_/i)) return;
-    if (!data.weapon.match(/_Deployable_/i)) return;
-    const player = getPlayerByName(state, name);
-    if (!player) return;
-    const teamsFob = [
-      ['SZ1', 'Russian Ground Forces', 'BP_FOBRadio_RUS'],
-      ['600g', 'Insurgent Forces', 'BP_FobRadio_INS'],
-      ['SZ1', 'Middle Eastern Alliance', 'BP_FOBRadio_MEA'],
-      ['M112', 'Canadian Army', 'BP_FOBRadio_Woodland'],
-      ['CompB', 'Australian Defence Force', 'BP_FOBRadio_Woodland'],
-      ['1lb', 'Irregular Militia Forces', 'BP_FOBRadio_MIL'],
-      ['M112', 'British Army', 'BP_FOBRadio_Woodland'],
-      ['M112', 'United States Marine Corps', 'BP_FOBRadio_Woodland'],
-      ['IED', 'Insurgent Forces', 'BP_FobRadio_INS'],
-      ['IED', 'Irregular Militia Forces', 'BP_FOBRadio_MIL'],
-      ['PLA', "People's Liberation Army", 'BP_FOBRadio_PLA'],
-      ['M112', 'United States Army', 'BP_FOBRadio_Woodland'],
-    ];
+const optionsSchema = z.object({
+  action: z.enum(['kick', 'warn', 'ban']).default('kick'),
+  reason: z.string().default('Подрыв союзной FOB'),
+  banLength: z.string().default('0'),
+  minDamage: z.coerce.number().min(0).default(0),
+  onlyExplosives: z.boolean().default(true),
+});
 
-    teamsFob.forEach((e) => {
-      if (weapon.includes(e[0]) && deployable.includes(e[2])) {
-        adminKick(execute, player.steamID, 'Урон союзной FOB');
+const EXPLOSIVE_WEAPON = /Deployable/i;
+
+export default definePlugin({
+  name: 'fobExplosionDamage',
+  description:
+    'Кик/варн за подрыв своей FOB-рации взрывчаткой/СВУ (владелец по команде).',
+  optionsSchema,
+  setup({ state, options, logger, registerDisposable }) {
+    const { listener, execute } = state;
+    const { action, reason, banLength, minDamage, onlyExplosives } = options;
+
+    let fobTeam = new Map<string, string>();
+    let punished = new Set<string>();
+
+    const onFobPlaced = (data: TFobPlaced) => {
+      if (data.isMain || !data.radioId) return;
+      fobTeam.set(data.radioId, data.teamID);
+    };
+
+    const onDeployableDamaged = (data: TDeployableDamaged) => {
+      const { weapon, deployable, name, steamID, eosID, damage } = data;
+
+      if (!/FOBRadio/i.test(deployable)) return;
+      if (onlyExplosives && !EXPLOSIVE_WEAPON.test(weapon)) return;
+      if (typeof damage === 'number' && damage < minDamage) return;
+
+      const radioId = deployable.match(/_C_(\d+)/)?.[1] ?? '';
+      const ownerTeam = radioId ? fobTeam.get(radioId) : undefined;
+      if (!ownerTeam) return;
+
+      // Имя в событии идёт без клан-тега (instigator "GUZLIK"), а в стейте
+      // игрок хранится с тегом ("[★РНС★] GUZLIK"), поэтому ищем по ID.
+      const player = getPlayer(state, { steamID, eosID, name });
+      const griefer = steamID || player?.steamID || '';
+      if (!griefer || !player?.teamID) return;
+      if (player.teamID !== ownerTeam) return;
+
+      const key = `${griefer}:${deployable}`;
+      if (punished.has(key)) return;
+      punished.add(key);
+
+      logger.log(
+        `fobExplosionDamage: ${name} подорвал свою FOB (команда ${ownerTeam}) из ${weapon} → ${action}`,
+      );
+      if (action === 'ban') {
+        adminBan(execute, griefer, reason, banLength);
+      } else if (action === 'kick') {
+        adminKick(execute, griefer, reason);
+      } else {
+        adminWarn(execute, griefer, reason);
       }
-    });
-  };
+    };
 
-  listener.on(EVENTS.DEPLOYABLE_DAMAGED, deployableDamaged);
-};
+    const onNewGame = () => {
+      fobTeam = new Map<string, string>();
+      punished = new Set<string>();
+    };
+
+    listener.on(EVENTS.FOB_PLACED, onFobPlaced);
+    listener.on(EVENTS.DEPLOYABLE_DAMAGED, onDeployableDamaged);
+    listener.on(EVENTS.NEW_GAME, onNewGame);
+    registerDisposable(() => {
+      listener.off(EVENTS.FOB_PLACED, onFobPlaced);
+      listener.off(EVENTS.DEPLOYABLE_DAMAGED, onDeployableDamaged);
+      listener.off(EVENTS.NEW_GAME, onNewGame);
+      fobTeam.clear();
+      punished.clear();
+    });
+  },
+});

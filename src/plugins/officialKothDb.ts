@@ -48,7 +48,8 @@ type KothPlayerDataCreationAttrs = Optional<
 >;
 
 interface KothPlayerDataInstance
-  extends Model<KothPlayerDataAttrs, KothPlayerDataCreationAttrs>,
+  extends
+    Model<KothPlayerDataAttrs, KothPlayerDataCreationAttrs>,
     KothPlayerDataAttrs {}
 
 const readBufSafe = async (file: string): Promise<Buffer | null> => {
@@ -300,7 +301,7 @@ export const officialKothDb: TPluginProps = (state, options) => {
       }
     };
 
-    let first = await readPlayerJson(steamID);
+    const first = await readPlayerJson(steamID);
     if (!first) {
       logger.warn(`[KothDb] read failed for ${steamID} (file missing/invalid)`);
       return false;
@@ -440,7 +441,7 @@ export const officialKothDb: TPluginProps = (state, options) => {
       const eos = (data.eosID ?? '').trim();
       if (eos) {
         try {
-          const resolvedSteamID = await getSteamIDByEOSID(eos);
+          const resolvedSteamID = await getSteamIDByEOSID(state.id, eos);
           if (resolvedSteamID) {
             steamID = resolvedSteamID;
             logger.log(

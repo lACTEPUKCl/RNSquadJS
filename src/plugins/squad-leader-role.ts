@@ -1,118 +1,125 @@
+import { z } from 'zod';
 import { EVENTS } from '../constants';
 import { adminDisbandSquad, adminWarn } from '../core';
-import {
-  TPlayer,
-  TPlayerLeaderChanged,
-  TPlayerRoleChanged,
-  TPluginProps,
-} from '../types';
+import { definePlugin } from '../core/plugin';
+import { updatePlayers } from '../core/state/updatePlayers';
+import { TPlayer, TPlayerLeaderChanged, TPlayerRoleChanged } from '../types';
 import { getAdmins } from './helpers';
 
-export const squadLeaderRole: TPluginProps = (state, options) => {
-  const { listener, execute, logger } = state;
-  const { timeDisband } = options;
-  let trackedPlayers: Record<string, TPlayer> = {};
+const optionsSchema = z.object({
+  timeDisband: z.coerce.number().int().positive().default(120000),
+});
 
-  const getWarn = async (steamID: string, text: string, seconds?: number) => {
-    if (!seconds) {
-      return adminWarn(execute, steamID, text);
-    }
+export default definePlugin({
+  name: 'squadLeaderRole',
+  description: 'Требование кита SL у лидера отряда, иначе роспуск.',
+  optionsSchema,
+  setup({ state, options, logger, registerDisposable }) {
+    const { listener, execute, id } = state;
+    const { timeDisband } = options;
+    let trackedPlayers: Record<string, TPlayer> = {};
+    const activeTimers = new Set<NodeJS.Timeout>();
 
-    const newText = text.replace(/{{time}}/, seconds.toString());
-    await adminWarn(execute, steamID, newText);
-  };
+    const getWarn = async (steamID: string, text: string, seconds?: number) => {
+      if (!seconds) {
+        return adminWarn(execute, steamID, text);
+      }
+      const newText = text.replace(/{{time}}/, seconds.toString());
+      await adminWarn(execute, steamID, newText);
+    };
 
-  const newGame = () => {
-    trackedPlayers = {};
-  };
+    const newGame = () => {
+      trackedPlayers = {};
+      // Гасим запущенные отсчёты — иначе старый таймер может распустить
+      // отряд уже на новой карте (в т.ч. на seed).
+      for (const t of activeTimers) clearInterval(t);
+      activeTimers.clear();
+    };
 
-  const getIsLeaderRole = (role: string) => {
-    return role.indexOf('SL') !== -1;
-  };
+    const getIsLeaderRole = (role: string) => role.indexOf('SL') !== -1;
 
-  const untrackPlayer = (steamID: string, reason?: string) => {
-    const tracker = trackedPlayers[steamID];
-    delete trackedPlayers[steamID];
+    const untrackPlayer = (steamID: string, reason?: string) => {
+      const tracker = trackedPlayers[steamID];
+      delete trackedPlayers[steamID];
 
-    if (tracker) {
-      logger.log(
-        `unTracker: Name: ${tracker.name} SquadID: ${tracker.squadID} TeamID: ${
-          tracker.teamID
-        } Reason: ${reason || 'null'}`,
-      );
-    }
-  };
+      if (tracker) {
+        logger.log(
+          `unTracker: Name: ${tracker.name} SquadID: ${tracker.squadID} TeamID: ${
+            tracker.teamID
+          } Reason: ${reason || 'null'}`,
+        );
+      }
+    };
 
-  const leaderChanged = async (
-    data: TPlayerRoleChanged | TPlayerLeaderChanged,
-  ) => {
-    const { player, isLeader } = data;
-    const { currentMap } = state;
-    const admins = getAdmins(state, 'canseeadminchat');
-    const isAdmin = admins?.includes(player.steamID);
-    if (currentMap?.layer?.toLowerCase().includes('seed')) return;
-    if (isAdmin) return;
-    const iterationCheck: number = 30000;
-    const messageGetRole: string =
-      'Возьми кит лидера или сквад будет расформирован через {{time}}сек';
-    const messageDisband: string = 'Отряд расформирован';
-    const messageSuccess: string = 'Спасибо что взяли кит!';
+    const leaderChanged = async (
+      data: TPlayerRoleChanged | TPlayerLeaderChanged,
+    ) => {
+      const { player, isLeader } = data;
+      if (!player) return;
+      const { currentMap } = state;
+      const admins = getAdmins(state, 'canseeadminchat');
+      const isAdmin = admins?.includes(player.steamID);
+      if (currentMap?.layer?.toLowerCase().includes('seed')) return;
+      if (isAdmin) return;
 
-    let seconds = parseInt(timeDisband) / 1000;
-    let timer: NodeJS.Timeout | null = null;
+      const iterationCheck = 30000;
+      const messageGetRole =
+        'Возьми кит лидера или сквад будет расформирован через {{time}}сек';
+      const messageDisband = 'Отряд расформирован';
+      const messageSuccess = 'Спасибо что взяли кит!';
 
-    const leaderRole = getIsLeaderRole(player.role);
-    if (trackedPlayers[player.steamID]) return;
-    if (isLeader && leaderRole) return;
-    if (!player) return;
-    if (isLeader && !leaderRole && !trackedPlayers[player.steamID]) {
-      trackedPlayers[player.steamID] = player;
-    }
+      let seconds = timeDisband / 1000;
+      let timer: NodeJS.Timeout | null = null;
 
-    if (isLeader) {
-      if (!leaderRole) {
+      const stopTimer = () => {
+        if (timer) {
+          clearInterval(timer);
+          activeTimers.delete(timer);
+          timer = null;
+        }
+      };
+
+      const leaderRole = getIsLeaderRole(player.role);
+      if (trackedPlayers[player.steamID]) return;
+      if (isLeader && leaderRole) return;
+      if (isLeader && !leaderRole && !trackedPlayers[player.steamID]) {
+        trackedPlayers[player.steamID] = player;
+      }
+
+      if (isLeader && !leaderRole) {
         await getWarn(player.steamID, messageGetRole, seconds);
         logger.log(
           `startTracker: Name: ${player.name} SquadID: ${player.squadID} TeamID: ${player.teamID} Seconds: ${seconds}`,
         );
 
         timer = setInterval(async () => {
-          let updatedPlayer = state.players?.find(
+          const updatedPlayer = state.players?.find(
             (user) => user.steamID === player.steamID,
           );
           seconds = seconds - iterationCheck / 1000;
 
           if (!updatedPlayer) {
-            clearInterval(timer!);
-            timer = null;
-
+            stopTimer();
             untrackPlayer(player.steamID, 'Игрок вышел');
-
             return;
           }
 
           if (!updatedPlayer.isLeader) {
-            clearInterval(timer!);
-            timer = null;
+            stopTimer();
             untrackPlayer(player.steamID, 'Игрок больше не лидер');
-
             return;
           }
 
           if (getIsLeaderRole(updatedPlayer.role)) {
-            clearInterval(timer!);
-            timer = null;
-
+            stopTimer();
             if (messageSuccess) {
               await getWarn(updatedPlayer.steamID, messageSuccess);
             }
-
             untrackPlayer(player.steamID, 'Игрок взял кит');
-
             return;
           }
 
-          if (seconds !== 0) {
+          if (seconds > 0) {
             await getWarn(updatedPlayer.steamID, messageGetRole, seconds);
             logger.log(
               `startTracker: Name: ${player.name} SquadID: ${player.squadID} TeamID: ${player.teamID} Seconds: ${seconds}`,
@@ -120,30 +127,48 @@ export const squadLeaderRole: TPluginProps = (state, options) => {
           }
 
           if (seconds <= 0) {
-            untrackPlayer(player.steamID, 'Отряд распущен');
-            clearInterval(timer!);
-            timer = null;
+            stopTimer();
 
-            await getWarn(updatedPlayer.steamID, messageDisband);
-
-            updatedPlayer = state.players?.find(
+            // Свежий список из RCON перед роспуском: игрок мог взять кит
+            // в последний момент, а кэш state обновляется раз в ~30 сек.
+            await updatePlayers(id);
+            const fresh = state.players?.find(
               (user) => user.steamID === player.steamID,
             );
 
-            if (updatedPlayer && updatedPlayer?.squadID) {
-              await adminDisbandSquad(
-                execute,
-                updatedPlayer.teamID,
-                updatedPlayer.squadID,
-              );
+            if (!fresh || !fresh.isLeader) {
+              untrackPlayer(player.steamID, 'Игрок вышел / не лидер');
+              return;
+            }
+            if (getIsLeaderRole(fresh.role)) {
+              await getWarn(fresh.steamID, messageSuccess);
+              untrackPlayer(player.steamID, 'Игрок взял кит');
+              return;
+            }
+
+            untrackPlayer(player.steamID, 'Отряд распущен');
+            await getWarn(fresh.steamID, messageDisband);
+
+            if (fresh.squadID) {
+              await adminDisbandSquad(execute, fresh.teamID, fresh.squadID);
             }
           }
         }, iterationCheck);
+        activeTimers.add(timer);
       }
-    }
-  };
+    };
 
-  listener.on(EVENTS.NEW_GAME, newGame);
-  listener.on(EVENTS.PLAYER_ROLE_CHANGED, leaderChanged);
-  listener.on(EVENTS.PLAYER_LEADER_CHANGED, leaderChanged);
-};
+    listener.on(EVENTS.NEW_GAME, newGame);
+    listener.on(EVENTS.PLAYER_ROLE_CHANGED, leaderChanged);
+    listener.on(EVENTS.PLAYER_LEADER_CHANGED, leaderChanged);
+
+    registerDisposable(() => {
+      listener.off(EVENTS.NEW_GAME, newGame);
+      listener.off(EVENTS.PLAYER_ROLE_CHANGED, leaderChanged);
+      listener.off(EVENTS.PLAYER_LEADER_CHANGED, leaderChanged);
+      for (const t of activeTimers) clearInterval(t);
+      activeTimers.clear();
+      trackedPlayers = {};
+    });
+  },
+});

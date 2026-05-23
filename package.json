@@ -12,6 +12,10 @@
     "lint:check": "tsc --noEmit && eslint --ext .ts src/ && prettier src/ --check --ignore-unknown",
     "lint:format": "eslint --fix --ext .ts src/ && prettier src/ --write --ignore-unknown",
     "build": "rollup -c rollup.config.js && ts-node src/buildMaps.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "new:plugin": "ts-node scripts/new-plugin.ts",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -21,8 +25,9 @@
     "mariadb": "^3.4.5",
     "mongodb": "^6.5.0",
     "sequelize": "^6.37.7",
-    "squad-logs": "github:lACTEPUKCl/squad-logs",
-    "squad-rcon": "^1.1.8"
+    "squad-logs": "github:lACTEPUKCl/squad-logs#master",
+    "squad-rcon": "^1.1.8",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.5",
@@ -39,6 +44,7 @@
     "rollup-plugin-dts": "^6.1.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.6.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^2.1.8"
   }
 }

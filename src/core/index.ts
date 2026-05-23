@@ -7,6 +7,9 @@ export {
   adminForceTeamChange,
   adminKick,
   adminKillServer,
+  adminReloadServerConfig,
+  adminRemovePlayerFromSquad,
+  adminSetFogOfWar,
   adminSetNextLayer,
   adminWarn,
 } from './commands';
