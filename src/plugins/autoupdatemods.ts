@@ -134,6 +134,7 @@ export default definePlugin({
     }
 
     function scheduleForceUpdate() {
+      if (forceTimeout) return;
       clearForceTimers();
       forceMsgInterval = setInterval(() => {
         adminBroadcast(execute, textForceUpdate);

@@ -1,9 +1,10 @@
+import { TSquadCreated } from 'squad-logs';
 import { TPossessedAdminCamera, TUnPossessedAdminCamera } from 'squad-rcon';
 import { z } from 'zod';
 import { EVENTS } from '../constants';
 import { adminRemovePlayerFromSquad, adminWarn } from '../core/commands';
 import { definePlugin } from '../core/plugin';
-import { TPlayer } from '../types';
+import { TPlayerSquadChanged } from '../types';
 import { getAdmins, getPlayerBySteamID } from './helpers';
 
 const optionsSchema = z.object({
@@ -130,23 +131,32 @@ export default definePlugin({
       logger.log(`[admin-cam] ${data.steamID}: вышел из камеры`);
     };
 
-    const onSquadChanged = (data: TPlayer) => {
-      if (isExcluded(data.steamID)) return;
-      if (!taintedAdmins.has(data.steamID)) return;
+    const handleSquadJoin = (
+      steamID: string | undefined,
+      squadID: string | null | undefined,
+    ) => {
+      if (isExcluded(steamID)) return;
+      if (!steamID || !taintedAdmins.has(steamID)) return;
 
-      if (!data.squadID) {
-        clearTimers(data.steamID);
-        logger.log(`[admin-cam] ${data.steamID}: вышел из отряда`);
+      if (!squadID) {
+        clearTimers(steamID);
+        logger.log(`[admin-cam] ${steamID}: вышел из отряда`);
         return;
       }
 
-      if (!activeTimers.has(data.steamID)) {
+      if (!activeTimers.has(steamID)) {
         logger.log(
-          `[admin-cam] ${data.steamID}: вступил в отряд после камеры — запуск кика`,
+          `[admin-cam] ${steamID}: вступил в отряд после камеры — запуск кика`,
         );
-        startKickSequence(data.steamID);
+        startKickSequence(steamID);
       }
     };
+
+    const onPlayerSquadChanged = (data: TPlayerSquadChanged) =>
+      handleSquadJoin(data.player?.steamID, data.newSquadID);
+
+    const onSquadCreated = (data: TSquadCreated) =>
+      handleSquadJoin(data.steamID, data.squadID);
 
     const onNewGame = () => {
       activeTimers.forEach((_, steamID) => clearTimers(steamID));
@@ -157,15 +167,15 @@ export default definePlugin({
 
     listener.on(EVENTS.POSSESSED_ADMIN_CAMERA, onCameraPossessed);
     listener.on(EVENTS.UNPOSSESSED_ADMIN_CAMERA, onCameraUnpossessed);
-    listener.on(EVENTS.PLAYER_SQUAD_CHANGED, onSquadChanged);
-    listener.on(EVENTS.SQUAD_CREATED, onSquadChanged);
+    listener.on(EVENTS.PLAYER_SQUAD_CHANGED, onPlayerSquadChanged);
+    listener.on(EVENTS.SQUAD_CREATED, onSquadCreated);
     listener.on(EVENTS.NEW_GAME, onNewGame);
 
     registerDisposable(() => {
       listener.off(EVENTS.POSSESSED_ADMIN_CAMERA, onCameraPossessed);
       listener.off(EVENTS.UNPOSSESSED_ADMIN_CAMERA, onCameraUnpossessed);
-      listener.off(EVENTS.PLAYER_SQUAD_CHANGED, onSquadChanged);
-      listener.off(EVENTS.SQUAD_CREATED, onSquadChanged);
+      listener.off(EVENTS.PLAYER_SQUAD_CHANGED, onPlayerSquadChanged);
+      listener.off(EVENTS.SQUAD_CREATED, onSquadCreated);
       listener.off(EVENTS.NEW_GAME, onNewGame);
       activeTimers.forEach((_, steamID) => clearTimers(steamID));
       activeTimers.clear();
