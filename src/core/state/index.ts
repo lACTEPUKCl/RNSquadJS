@@ -48,100 +48,47 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
   for (const key in EVENTS) {
     const event = EVENTS[key as keyof typeof EVENTS];
     coreListener.on(event, async (data) => {
-      if (event === EVENTS.PLAYER_CONNECTED || event === EVENTS.SQUAD_CREATED) {
-        await updatesOnEvents();
+      try {
+        if (
+          event === EVENTS.PLAYER_CONNECTED ||
+          event === EVENTS.SQUAD_CREATED
+        ) {
+          await updatesOnEvents();
 
-        if (event === EVENTS.PLAYER_CONNECTED) {
-          const player = data as TPlayerConnected;
-
-          if (state.players && player) {
-            state.players = state.players.map((p) => {
-              if (p.steamID === player.steamID) {
-                return {
-                  ...p,
-                  playerController: player.playerController,
-                };
-              }
-              return p;
-            });
+          if (event === EVENTS.PLAYER_CONNECTED) {
+            const player = data as TPlayerConnected;
+            const p = state.players?.find((x) => x.steamID === player?.steamID);
+            if (p) p.playerController = player.playerController;
           }
         }
-      }
 
-      if (event === EVENTS.NEW_GAME) {
-        await updateAdmins(id, getAdmins);
-        await updateCurrentMap(id);
-        await updateNextMap(id);
-        await updateServerInfo(id);
-      }
-
-      // if (event === EVENTS.PLAYER_ROLE_CHANGED) {
-      //   const player = data as TPlayerRoleChanged;
-      //   if (state.players && player) {
-      //     state.players = state.players?.map((p) => {
-      //       if (p.steamID === player.steamID) {
-      //         return {
-      //           ...p,
-      //           role: player.newRole,
-      //         };
-      //       }
-      //       return p;
-      //     });
-      //   }
-      // }
-
-      // if (event === EVENTS.PLAYER_LEADER_CHANGED) {
-      //   const player = data as TPlayerLeaderChanged;
-      //   if (state.players && player) {
-      //     state.players = state.players?.map((p) => {
-      //       if (p.steamID === player.steamID) {
-      //         return {
-      //           ...p,
-      //           isLeader: player.isLeader,
-      //         };
-      //       }
-      //       return p;
-      //     });
-      //   }
-      // }
-
-      if (event === EVENTS.TICK_RATE) {
-        const tickRateData = data as TTickRate;
-
-        state.tickRate = tickRateData.tickRate;
-      }
-
-      if (event === EVENTS.PLAYER_POSSESS) {
-        const player = data as TPlayerPossess;
-        if (state.players && player) {
-          state.players = state.players?.map((p) => {
-            if (p.steamID === player.steamID) {
-              return {
-                ...p,
-                possess: player.possessClassname,
-              };
-            }
-            return p;
-          });
+        if (event === EVENTS.NEW_GAME) {
+          await updateAdmins(id, getAdmins);
+          await updateCurrentMap(id);
+          await updateNextMap(id);
+          await updateServerInfo(id);
         }
-      }
 
-      if (event === EVENTS.PLAYER_DAMAGED) {
-        const player = data as TPlayerDamaged;
-        if (state.players && player) {
-          state.players = state.players.map((p) => {
-            if (p.name === player.victimName) {
-              return {
-                ...p,
-                weapon: player.weapon,
-              };
-            }
-            return p;
-          });
+        if (event === EVENTS.TICK_RATE) {
+          state.tickRate = (data as TTickRate).tickRate;
         }
-      }
 
-      listener.emit(event, data);
+        if (event === EVENTS.PLAYER_POSSESS) {
+          const player = data as TPlayerPossess;
+          const p = state.players?.find((x) => x.steamID === player?.steamID);
+          if (p) p.possess = player.possessClassname;
+        }
+
+        if (event === EVENTS.PLAYER_DAMAGED) {
+          const player = data as TPlayerDamaged;
+          const p = state.players?.find((x) => x.name === player?.victimName);
+          if (p) p.weapon = player.weapon;
+        }
+
+        listener.emit(event, data);
+      } catch (err) {
+        state.logger.error(`Ошибка обработки события ${event}: ${String(err)}`);
+      }
     });
   }
 };

@@ -5,6 +5,28 @@ import {
   MongoClient,
   UpdateFilter,
 } from 'mongodb';
+import {
+  aggregateOpponent,
+  applySupportFloor,
+  commanderScore,
+  CommanderWeights,
+  DEFAULT_GLICKO,
+  DEFAULT_IMPACT_WEIGHTS,
+  displayRating,
+  Glicko,
+  ImpactWeights,
+  impactZScores,
+  inflateRd,
+  killValue,
+  performanceToScore,
+  squadLeaderScores,
+  SupportFloorOpts,
+  supportImpact,
+  supportShare,
+  SupportWeights,
+  updateGlicko,
+} from './core/elo';
+import { createLogger } from './logger';
 
 export interface MatchHistoryEntry {
   matchID: string;
@@ -52,9 +74,21 @@ export interface Main {
   };
   weapons: Record<string, number>;
   matchHistory?: MatchHistoryEntry[];
+  rating?: PlayerRating;
+  cmdRating?: PlayerRating;
+  slRating?: PlayerRating;
   date?: number;
   seedRole?: boolean;
   lastActiveAt?: number;
+}
+
+export interface PlayerRating {
+  mu: number;
+  rd: number;
+  sigma: number;
+  games: number;
+  peak: number;
+  lastAt: number;
 }
 
 export interface Info {
@@ -72,7 +106,7 @@ interface SocialEdge {
   a: string;
   b: string;
   coSquadSeconds?: number;
-  coTeamSeconds?: number;
+  matchesTogether?: number;
   lastSeenAt: Date;
   lastDecayAt?: Date;
 }
@@ -95,76 +129,119 @@ interface ControlDoc {
   value: { date: string };
 }
 
-let db: Db;
 const dbNameDefault = 'SquadJS';
 const dbCollectionMain = 'mainstats';
 const dbCollectionTemp = 'tempstats';
 const dbCollectionServerInfo = 'serverinfo';
 
-let collectionMain: Collection<Main>;
-let collectionTemp: Collection<Main>;
-let collectionServerInfo: Collection<Info>;
+interface DbHandle {
+  client: MongoClient;
+  db: Db;
+  url: string;
+  databaseName: string;
+  main: Collection<Main>;
+  temp: Collection<Main>;
+  serverInfo: Collection<Info>;
+  edges?: Collection<SocialEdge>;
+  clanTags?: Collection<ClanTagDoc>;
+  control?: Collection<ControlDoc>;
+}
 
-let collectionEdges: Collection<SocialEdge> | undefined;
-let collectionClanTags: Collection<ClanTagDoc> | undefined;
-let collectionControl: Collection<ControlDoc> | undefined;
+const handlesByKey = new Map<string, DbHandle>();
+const keyByServer = new Map<number, string>();
+const reconnectByServer = new Map<number, NodeJS.Timeout>();
 
-let isConnected = false;
-let reconnectTimer: NodeJS.Timeout | null = null;
-let dbLink = '';
-let databaseName = '';
+const dbLog = createLogger('DB');
 
 const WEEKLY_RESET_DAY = 1;
 const WEEKLY_RESET_HOUR = 6;
 
+const connKey = (url: string, database?: string) => `${url}::${database ?? ''}`;
+
+function handle(serverId: number): DbHandle | undefined {
+  const key = keyByServer.get(serverId);
+  return key ? handlesByKey.get(key) : undefined;
+}
+
+async function ensureIndexes(h: DbHandle): Promise<void> {
+  try {
+    await h.main.createIndex({ eosID: 1 }, { name: 'eosID_1' });
+  } catch (err) {
+    dbLog.warn(`Не удалось создать индекс eosID: ${String(err)}`);
+  }
+}
+
 export async function connectToDatabase(
   dbURL: string,
-  database?: string,
+  database: string | undefined,
+  serverId: number,
 ): Promise<void> {
-  const client = new MongoClient(dbURL);
-  dbLink = dbURL;
-  if (database) databaseName = database;
+  if (!dbURL) return;
 
+  const key = connKey(dbURL, database);
+
+  const existing = handlesByKey.get(key);
+  if (existing) {
+    keyByServer.set(serverId, key);
+    return;
+  }
+
+  const client = new MongoClient(dbURL);
   try {
     await client.connect();
-    db = client.db(database || dbNameDefault);
+    const db = client.db(database || dbNameDefault);
+    const h: DbHandle = {
+      client,
+      db,
+      url: dbURL,
+      databaseName: database ?? '',
+      main: db.collection<Main>(dbCollectionMain),
+      temp: db.collection<Main>(dbCollectionTemp),
+      serverInfo: db.collection<Info>(dbCollectionServerInfo),
+    };
+    handlesByKey.set(key, h);
+    keyByServer.set(serverId, key);
+    await ensureIndexes(h);
 
-    collectionMain = db.collection<Main>(dbCollectionMain);
-    collectionTemp = db.collection<Main>(dbCollectionTemp);
-    collectionServerInfo = db.collection<Info>(dbCollectionServerInfo);
-
-    isConnected = true;
-
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+    const t = reconnectByServer.get(serverId);
+    if (t) {
+      clearTimeout(t);
+      reconnectByServer.delete(serverId);
     }
+    dbLog.log(
+      `Сервер ${serverId}: подключено к MongoDB (${database || dbNameDefault}).`,
+    );
   } catch (err) {
-    console.error('Error connecting to MongoDB:', err);
-    isConnected = false;
-    setReconnectTimer(dbLink);
+    dbLog.error(
+      `Сервер ${serverId}: ошибка подключения к MongoDB: ${String(err)}`,
+    );
+    setReconnectTimer(dbURL, database, serverId);
   }
 }
 
-async function setReconnectTimer(dbURL: string) {
-  if (!reconnectTimer) {
-    reconnectTimer = setTimeout(() => {
-      reconnectTimer = null;
-      connectToDatabase(dbURL, databaseName);
-    }, 30000);
+export async function closeDatabase(): Promise<void> {
+  for (const t of reconnectByServer.values()) clearTimeout(t);
+  reconnectByServer.clear();
+  for (const h of handlesByKey.values()) {
+    await h.client.close().catch(() => {});
   }
+  handlesByKey.clear();
+  keyByServer.clear();
+  dbLog.log('Все соединения с MongoDB закрыты.');
 }
 
-async function incBoth(user: { _id: string }, incDoc: Record<string, number>) {
-  if (!isConnected) return;
-  await collectionMain.updateOne(user, { $inc: incDoc });
-  const tempResult = await collectionTemp.updateOne(user, { $inc: incDoc });
-  if (tempResult.matchedCount === 0) {
-    const mainUser = await collectionMain.findOne({ _id: user._id });
-    const name = mainUser?.name ?? '';
-    await createUserIfNullableOrUpdateName(user._id, name);
-    await collectionTemp.updateOne(user, { $inc: incDoc });
-  }
+function setReconnectTimer(
+  dbURL: string,
+  database: string | undefined,
+  serverId: number,
+) {
+  if (reconnectByServer.has(serverId)) return;
+  dbLog.warn(`Сервер ${serverId}: повторное подключение к MongoDB через 30с…`);
+  const t = setTimeout(() => {
+    reconnectByServer.delete(serverId);
+    connectToDatabase(dbURL, database, serverId);
+  }, 30000);
+  reconnectByServer.set(serverId, t);
 }
 
 function expDeltaForCounter(field: string): number {
@@ -188,35 +265,43 @@ function expDeltaForGame(field: string): number {
   return 0;
 }
 
-export async function writeLastModUpdateDate(modID: string, date: Date) {
-  if (!isConnected) return;
+export async function writeLastModUpdateDate(
+  serverId: number,
+  modID: string,
+  date: Date,
+) {
+  const h = handle(serverId);
+  if (!h) return;
   try {
-    await collectionServerInfo.updateOne(
+    await h.serverInfo.updateOne(
       { _id: modID },
       { $set: { lastUpdate: date.toString() } },
       { upsert: true },
     );
-  } catch {
-    /* no-op */
-  }
+  } catch {}
 }
 
-export async function getSteamIDByEOSID(eosID: string): Promise<string | null> {
-  if (!isConnected) return null;
+export async function getSteamIDByEOSID(
+  serverId: number,
+  eosID: string,
+): Promise<string | null> {
+  const h = handle(serverId);
+  if (!h) return null;
   const trimmed = (eosID ?? '').trim();
   if (!trimmed) return null;
 
-  const doc = await collectionMain.findOne(
+  const doc = await h.main.findOne(
     { eosID: trimmed },
     { projection: { _id: 1 } },
   );
   return doc?._id ?? null;
 }
 
-export async function getModLastUpdateDate(modID: string) {
-  if (!isConnected) return;
+export async function getModLastUpdateDate(serverId: number, modID: string) {
+  const h = handle(serverId);
+  if (!h) return;
   try {
-    const modInfo = await collectionServerInfo.findOne({ _id: modID });
+    const modInfo = await h.serverInfo.findOne({ _id: modID });
     return modInfo?.lastUpdate;
   } catch {
     return undefined;
@@ -224,11 +309,24 @@ export async function getModLastUpdateDate(modID: string) {
 }
 
 export async function createUserIfNullableOrUpdateName(
+  serverId: number,
   steamID: string,
   name: string,
   eosID?: string,
 ): Promise<void> {
-  if (!isConnected) return;
+  const h = handle(serverId);
+  if (!h) return;
+  await createUserOnHandle(h, steamID, name, eosID);
+}
+
+async function createUserOnHandle(
+  h: DbHandle,
+  steamID: string,
+  name: string,
+  eosID?: string,
+): Promise<void> {
+  const collectionMain = h.main;
+  const collectionTemp = h.temp;
 
   const trimmedName = (name ?? '').trim();
   const trimmedEosID = (eosID ?? '').trim();
@@ -257,14 +355,43 @@ export async function createUserIfNullableOrUpdateName(
     },
     weapons: {},
     matchHistory: [],
+    rating: {
+      mu: DEFAULT_GLICKO.mu,
+      rd: DEFAULT_GLICKO.rd,
+      sigma: DEFAULT_GLICKO.sigma,
+      games: 0,
+      peak: 0,
+      lastAt: 0,
+    },
+    cmdRating: {
+      mu: DEFAULT_GLICKO.mu,
+      rd: DEFAULT_GLICKO.rd,
+      sigma: DEFAULT_GLICKO.sigma,
+      games: 0,
+      peak: 0,
+      lastAt: 0,
+    },
+    slRating: {
+      mu: DEFAULT_GLICKO.mu,
+      rd: DEFAULT_GLICKO.rd,
+      sigma: DEFAULT_GLICKO.sigma,
+      games: 0,
+      peak: 0,
+      lastAt: 0,
+    },
     seedRole: false,
     lastActiveAt: undefined,
   };
 
   const [resultMain] = await Promise.all([
-    collectionMain.findOne<{ _id: string; name?: string; eosID?: string }>({
-      _id: steamID,
-    }),
+    collectionMain.findOne<{
+      _id: string;
+      name?: string;
+      eosID?: string;
+      rating?: unknown;
+      cmdRating?: unknown;
+      slRating?: unknown;
+    }>({ _id: steamID }),
     collectionTemp.findOne<{ _id: string }>({ _id: steamID }),
   ]);
 
@@ -291,6 +418,12 @@ export async function createUserIfNullableOrUpdateName(
       updates.eosID = trimmedEosID;
     }
 
+    // Бэкофилл полей рейтинга для старых документов, созданных до их
+    // появления ($setOnInsert их не добавляет к существующим докам).
+    if (!resultMain.rating) updates.rating = baseFields.rating;
+    if (!resultMain.cmdRating) updates.cmdRating = baseFields.cmdRating;
+    if (!resultMain.slRating) updates.slRating = baseFields.slRating;
+
     if (Object.keys(updates).length > 0) {
       await Promise.all([
         collectionMain.updateOne({ _id: steamID }, { $set: updates }),
@@ -306,15 +439,18 @@ export async function createUserIfNullableOrUpdateName(
 }
 
 export async function updateUserBonuses(
+  serverId: number,
   steamID: string,
   count: number,
-  id: number,
 ) {
-  if (!isConnected) return;
+  const h = handle(serverId);
+  if (!h) return;
+  const collectionMain = h.main;
+  const collectionServerInfo = h.serverInfo;
 
   const [userInfo, serverInfo] = await Promise.all([
     collectionMain.findOne({ _id: steamID }),
-    collectionServerInfo.findOne({ _id: id.toString() }),
+    collectionServerInfo.findOne({ _id: serverId.toString() }),
   ]);
 
   if (userInfo && userInfo.seedRole && serverInfo?.seeding) {
@@ -327,57 +463,64 @@ export async function updateUserBonuses(
   );
 }
 
-export async function updateRoles(steamID: string, role: string) {
-  if (!isConnected) return;
+const ROLE_KEYS = [
+  '_sl_',
+  '_slcrewman',
+  '_slpilot',
+  '_pilot',
+  '_medic',
+  '_crewman',
+  '_unarmed',
+  '_ar',
+  '_rifleman',
+  '_marksman',
+  '_lat',
+  '_grenadier',
+  '_hat',
+  '_machinegunner',
+  '_sniper',
+  '_infiltrator',
+  '_raider',
+  '_ambusher',
+  '_engineer',
+  '_sapper',
+  '_saboteur',
+];
+const ENGINEER_KEYS = ['_sapper', '_saboteur'];
 
-  const roles = [
-    '_sl_',
-    '_slcrewman',
-    '_slpilot',
-    '_pilot',
-    '_medic',
-    '_crewman',
-    '_unarmed',
-    '_ar',
-    '_rifleman',
-    '_marksman',
-    '_lat',
-    '_grenadier',
-    '_hat',
-    '_machinegunner',
-    '_sniper',
-    '_infiltrator',
-    '_raider',
-    '_ambusher',
-    '_engineer',
-    '_sapper',
-    '_saboteur',
-  ];
-  const engineer = ['_sapper', '_saboteur'];
-
+export function normalizeRole(role: string): string {
   let normalized = role.toLowerCase();
-  for (const r of roles) {
+  for (const r of ROLE_KEYS) {
     if (normalized.includes(r)) {
-      normalized = engineer.some((el) => normalized.includes(el))
+      normalized = ENGINEER_KEYS.some((el) => normalized.includes(el))
         ? '_engineer'
         : r;
       break;
     }
   }
+  return normalized;
+}
 
-  const rolesFilter = `roles.${normalized}`;
-  await collectionMain.updateOne(
-    { _id: steamID },
-    { $inc: { [rolesFilter]: 1 } },
-  );
+export async function updateRoles(
+  serverId: number,
+  steamID: string,
+  role: string,
+) {
+  const h = handle(serverId);
+  if (!h) return;
+
+  const rolesFilter = `roles.${normalizeRole(role)}`;
+  await h.main.updateOne({ _id: steamID }, { $inc: { [rolesFilter]: 1 } });
 }
 
 export async function updateTimes(
+  serverId: number,
   steamID: string,
   field: string,
   name: string,
 ) {
-  if (!isConnected) return;
+  const h = handle(serverId);
+  if (!h) return;
   const user = { _id: steamID };
 
   const squadFilter = `squad.${field}`;
@@ -386,71 +529,425 @@ export async function updateTimes(
   const dExp = expDeltaForSquadTime(field);
   if (dExp !== 0) incDoc.exp = dExp;
 
-  await collectionMain.updateOne(user, { $inc: incDoc });
-  await updateCollectionTemp(user, { $inc: incDoc }, name);
+  await h.main.updateOne(user, { $inc: incDoc });
+  await updateCollectionTemp(h, user, { $inc: incDoc }, name);
 }
 
-export async function updatePossess(steamID: string, field: string) {
-  if (!isConnected) return;
+export async function updatePossess(
+  serverId: number,
+  steamID: string,
+  field: string,
+) {
+  const h = handle(serverId);
+  if (!h) return;
   if (field.toLowerCase().includes('soldier')) return;
 
   const possessFilter = `possess.${field}`;
-  await collectionMain.updateOne(
-    { _id: steamID },
-    { $inc: { [possessFilter]: 1 } },
-  );
+  await h.main.updateOne({ _id: steamID }, { $inc: { [possessFilter]: 1 } });
 }
 
-export async function getUserDataWithSteamID(steamID: string) {
-  if (!isConnected) return;
-  return await collectionMain.findOne({ _id: steamID });
+export type MinutePlayer = {
+  steamID: string;
+  name: string;
+  possess?: string;
+  role?: string;
+  leader?: boolean;
+  cmd?: boolean;
+};
+
+function tempInsertDefaults(name: string): Record<string, unknown> {
+  return {
+    name: (name ?? '').trim(),
+    eosID: '',
+    kills: 0,
+    death: 0,
+    revives: 0,
+    teamkills: 0,
+    kd: 0,
+    bonuses: 0,
+    possess: {},
+    roles: {},
+    matches: {
+      matches: 0,
+      winrate: 0,
+      won: 0,
+      lose: 0,
+      cmdwon: 0,
+      cmdlose: 0,
+      cmdwinrate: 0,
+    },
+    weapons: {},
+    matchHistory: [],
+    seedRole: false,
+    lastActiveAt: undefined,
+  };
+}
+
+export async function bulkUpdatePlayerMinute(
+  serverId: number,
+  players: MinutePlayer[],
+): Promise<void> {
+  const h = handle(serverId);
+  if (!h || players.length === 0) return;
+  const collectionMain = h.main;
+  const collectionTemp = h.temp;
+
+  const mainOps: AnyBulkWriteOperation<Main>[] = [];
+  const tempOps: AnyBulkWriteOperation<Main>[] = [];
+
+  for (const p of players) {
+    if (!p.steamID) continue;
+
+    const mainInc: Record<string, number> = {};
+    if (p.possess && !p.possess.toLowerCase().includes('soldier')) {
+      const k = `possess.${p.possess}`;
+      mainInc[k] = (mainInc[k] ?? 0) + 1;
+    }
+    if (p.role) {
+      const k = `roles.${normalizeRole(p.role)}`;
+      mainInc[k] = (mainInc[k] ?? 0) + 1;
+    }
+
+    let exp = 1;
+    mainInc['squad.timeplayed'] = (mainInc['squad.timeplayed'] ?? 0) + 1;
+    if (p.leader) {
+      mainInc['squad.leader'] = (mainInc['squad.leader'] ?? 0) + 1;
+      exp += 2;
+    }
+    if (p.cmd) {
+      mainInc['squad.cmd'] = (mainInc['squad.cmd'] ?? 0) + 1;
+      exp += 4;
+    }
+    mainInc['exp'] = (mainInc['exp'] ?? 0) + exp;
+
+    mainOps.push({
+      updateOne: { filter: { _id: p.steamID }, update: { $inc: mainInc } },
+    });
+
+    const tempInc: Record<string, number> = { 'squad.timeplayed': 1, exp };
+    if (p.leader) tempInc['squad.leader'] = 1;
+    if (p.cmd) tempInc['squad.cmd'] = 1;
+
+    tempOps.push({
+      updateOne: {
+        filter: { _id: p.steamID },
+        update: { $inc: tempInc, $setOnInsert: tempInsertDefaults(p.name) },
+        upsert: true,
+      },
+    });
+  }
+
+  await Promise.all([
+    mainOps.length
+      ? collectionMain.bulkWrite(mainOps, { ordered: false })
+      : Promise.resolve(),
+    tempOps.length
+      ? collectionTemp.bulkWrite(tempOps, { ordered: false })
+      : Promise.resolve(),
+  ]);
+}
+
+export interface EloParticipant {
+  steamID: string;
+  teamID: string;
+  squadID?: string;
+  win: boolean;
+  kills: number;
+  death: number;
+  revives: number;
+  teamkills: number;
+  vehicleKills?: number;
+  downs?: number;
+  victims?: string[];
+  downedVictims?: string[];
+  supportSeconds?: number;
+  crewSeconds?: number;
+  crewAssists?: number;
+  wasCommander?: boolean;
+  wasSquadLeader?: boolean;
+}
+
+export interface EloOptions {
+  weights?: ImpactWeights;
+  perfSpread?: number;
+  winNudge?: number;
+  tau?: number;
+  displayMode?: 'conservative' | 'mu';
+  inactivityPeriodDays?: number;
+  supportWeights?: SupportWeights;
+  supportFloor?: SupportFloorOpts;
+  matchSeconds?: number;
+  winnerTickets?: number;
+  loserTickets?: number;
+  team1Fobs?: number;
+  team2Fobs?: number;
+  commanderWeights?: CommanderWeights;
+}
+
+export async function applyMatchElo(
+  serverId: number,
+  participants: EloParticipant[],
+  opts: EloOptions = {},
+): Promise<void> {
+  const h = handle(serverId);
+  if (!h || participants.length < 2) return;
+  const collectionMain = h.main;
+
+  const {
+    weights = {},
+    perfSpread = 0.45,
+    winNudge = 0.05,
+    tau = 0.5,
+    displayMode = 'conservative',
+    inactivityPeriodDays = 30,
+    supportWeights = {},
+    supportFloor = {},
+    matchSeconds = 0,
+    winnerTickets = 0,
+    loserTickets = 0,
+    team1Fobs = 0,
+    team2Fobs = 0,
+    commanderWeights = {},
+  } = opts;
+
+  const ids = participants.map((p) => p.steamID);
+  const docs = await collectionMain
+    .find(
+      { _id: { $in: ids } },
+      { projection: { rating: 1, cmdRating: 1, slRating: 1 } },
+    )
+    .toArray();
+  const ratingById = new Map<string, PlayerRating>();
+  const cmdRatingById = new Map<string, PlayerRating>();
+  const slRatingById = new Map<string, PlayerRating>();
+  for (const d of docs) {
+    const dd = d as unknown as {
+      _id: string;
+      rating?: PlayerRating;
+      cmdRating?: PlayerRating;
+      slRating?: PlayerRating;
+    };
+    if (dd.rating) ratingById.set(dd._id, dd.rating);
+    if (dd.cmdRating) cmdRatingById.set(dd._id, dd.cmdRating);
+    if (dd.slRating) slRatingById.set(dd._id, dd.slRating);
+  }
+
+  const now = Date.now();
+  const toGlicko = (r: PlayerRating | undefined): Glicko => {
+    if (!r) return { ...DEFAULT_GLICKO };
+    const days = r.lastAt ? (now - r.lastAt) / 86_400_000 : 0;
+    return inflateRd(
+      { mu: r.mu, rd: r.rd, sigma: r.sigma },
+      days,
+      inactivityPeriodDays,
+    );
+  };
+  const glickoOf = (steamID: string): Glicko =>
+    toGlicko(ratingById.get(steamID));
+
+  const cur = participants.map((p) => ({ p, g: glickoOf(p.steamID) }));
+
+  const field = aggregateOpponent(cur.map((c) => c.g));
+
+  const W = { ...DEFAULT_IMPACT_WEIGHTS, ...weights };
+  const muOf = (sid: string) => ratingById.get(sid)?.mu ?? DEFAULT_GLICKO.mu;
+  const impactOf = (p: EloParticipant): number => {
+    const wk =
+      p.victims && p.victims.length
+        ? p.victims.reduce((s, v) => s + killValue(muOf(v)), 0)
+        : p.kills;
+    const wd =
+      p.downedVictims && p.downedVictims.length
+        ? p.downedVictims.reduce((s, v) => s + killValue(muOf(v)), 0)
+        : (p.downs ?? 0);
+    const combat =
+      W.kill * wk +
+      W.vehicleKill * (p.vehicleKills ?? 0) +
+      W.down * wd +
+      W.revive * p.revives -
+      W.death * p.death -
+      W.teamkill * p.teamkills;
+
+    return combat + supportImpact(p, supportWeights);
+  };
+
+  const zs = impactZScores(cur.map((c) => impactOf(c.p)));
+
+  const scores = cur.map((c, i) => {
+    const s0 = performanceToScore(zs[i], c.p.win, { perfSpread, winNudge });
+    const share = supportShare(c.p, matchSeconds);
+    return applySupportFloor(s0, c.p.win, share, c.p.teamkills, supportFloor);
+  });
+
+  const ops: AnyBulkWriteOperation<Main>[] = [];
+  const ratingSet = (field: string, sid: string, ng: Glicko, disp: number) => {
+    ops.push({
+      updateOne: {
+        filter: { _id: sid },
+        update: {
+          $set: {
+            [`${field}.mu`]: ng.mu,
+            [`${field}.rd`]: ng.rd,
+            [`${field}.sigma`]: ng.sigma,
+            [`${field}.lastAt`]: now,
+          },
+          $inc: { [`${field}.games`]: 1 },
+          $max: { [`${field}.peak`]: disp },
+        },
+      },
+    });
+  };
+
+  cur.forEach((c, i) => {
+    const ng = updateGlicko(c.g, field.mu, field.rd, scores[i], tau);
+    ratingSet('rating', c.p.steamID, ng, displayRating(ng, displayMode));
+  });
+
+  const teamSquadSum: Record<string, { sum: number; n: number }> = {};
+  cur.forEach((c, i) => {
+    const sq = c.p.squadID;
+    if (!sq || sq === '0') return;
+    const t = c.p.teamID;
+    if (!teamSquadSum[t]) teamSquadSum[t] = { sum: 0, n: 0 };
+    teamSquadSum[t].sum += scores[i];
+    teamSquadSum[t].n += 1;
+  });
+  const teamSquadAvg = (t: string) => {
+    const e = teamSquadSum[t];
+    return e && e.n > 0 ? e.sum / e.n : 0.5;
+  };
+  const teamFobs = (t: string) =>
+    t === '1' ? team1Fobs : t === '2' ? team2Fobs : 0;
+
+  const commanders = cur.filter((c) => c.p.wasCommander);
+  for (const x of commanders) {
+    const me = toGlicko(cmdRatingById.get(x.p.steamID));
+    const others = commanders
+      .filter((y) => y.p.steamID !== x.p.steamID)
+      .map((y) => toGlicko(cmdRatingById.get(y.p.steamID)));
+    const opp = others.length
+      ? aggregateOpponent(others)
+      : { mu: DEFAULT_GLICKO.mu, rd: DEFAULT_GLICKO.rd };
+    const enemyTeam = x.p.teamID === '1' ? '2' : '1';
+    const sc = commanderScore(
+      {
+        win: x.p.win,
+        winnerTickets,
+        loserTickets,
+        myFobs: teamFobs(x.p.teamID),
+        enemyFobs: teamFobs(enemyTeam),
+        mySquadAvg: teamSquadAvg(x.p.teamID),
+        enemySquadAvg: teamSquadAvg(enemyTeam),
+      },
+      commanderWeights,
+    );
+    const ng = updateGlicko(me, opp.mu, opp.rd, sc, tau);
+    ratingSet('cmdRating', x.p.steamID, ng, displayRating(ng, displayMode));
+  }
+
+  const slScores = squadLeaderScores(
+    cur.map((c, i) => ({
+      steamID: c.p.steamID,
+      teamID: c.p.teamID,
+      squadID: c.p.squadID ?? '',
+      score: scores[i],
+      win: c.p.win,
+      wasSquadLeader: !!c.p.wasSquadLeader || !!c.p.wasCommander,
+    })),
+    { perfSpread, winNudge },
+  );
+  if (slScores.size) {
+    const slIds = [...slScores.keys()];
+    const slField = aggregateOpponent(
+      slIds.map((sid) => toGlicko(slRatingById.get(sid))),
+    );
+    for (const sid of slIds) {
+      const me = toGlicko(slRatingById.get(sid));
+      const ng = updateGlicko(
+        me,
+        slField.mu,
+        slField.rd,
+        slScores.get(sid) as number,
+        tau,
+      );
+      ratingSet('slRating', sid, ng, displayRating(ng, displayMode));
+    }
+  }
+
+  if (ops.length) await collectionMain.bulkWrite(ops, { ordered: false });
+}
+
+export async function getUserDataWithSteamID(
+  serverId: number,
+  steamID: string,
+) {
+  const h = handle(serverId);
+  if (!h) return null;
+  return await h.main.findOne({ _id: steamID });
+}
+
+async function incAndRecalcKd(
+  h: DbHandle,
+  coll: Collection<Main>,
+  steamID: string,
+  inc: Record<string, number>,
+  ensure: boolean,
+): Promise<void> {
+  const opts = {
+    returnDocument: 'after' as const,
+    projection: { kills: 1, death: 1 },
+  };
+  let doc = await coll.findOneAndUpdate({ _id: steamID }, { $inc: inc }, opts);
+  if (!doc && ensure) {
+    const mainUser = await h.main.findOne(
+      { _id: steamID },
+      { projection: { name: 1 } },
+    );
+    await createUserOnHandle(h, steamID, mainUser?.name ?? '');
+    doc = await coll.findOneAndUpdate({ _id: steamID }, { $inc: inc }, opts);
+  }
+  if (!doc) return;
+
+  const kills = Number(doc.kills ?? 0);
+  const death = Number(doc.death ?? 0);
+  const kd =
+    death > 0 && Number.isFinite(kills / death)
+      ? Number((kills / death).toFixed(2))
+      : kills;
+  await coll.updateOne({ _id: steamID }, { $set: { kd } });
 }
 
 export async function updateUser(
+  serverId: number,
   steamID: string,
   field: string,
   weapon?: string,
 ) {
-  if (!steamID || !field || !isConnected) return;
+  const h = handle(serverId);
+  if (!steamID || !field || !h) return;
 
-  const user = { _id: steamID };
-
-  await incBoth(user, { [field]: 1 });
-
-  if (field === 'kills' && weapon !== 'null') {
-    const weaponFilter = `weapons.${weapon}`;
-    await incBoth(user, { [weaponFilter]: 1 });
-  }
-
+  const inc: Record<string, number> = { [field]: 1 };
   const dExp = expDeltaForCounter(field);
-  if (dExp !== 0) {
-    await incBoth(user, { exp: dExp });
+  if (dExp !== 0) inc.exp = dExp;
+  if (field === 'kills' && weapon && weapon !== 'null') {
+    inc[`weapons.${weapon}`] = 1;
   }
 
-  const [resultMain, resultTemp] = await Promise.all([
-    collectionMain.findOne(user),
-    collectionTemp.findOne(user),
+  await Promise.all([
+    incAndRecalcKd(h, h.main, steamID, inc, false),
+    incAndRecalcKd(h, h.temp, steamID, inc, true),
   ]);
-
-  if (resultMain) {
-    const kd =
-      resultMain.death && Number.isFinite(resultMain.kills / resultMain.death)
-        ? Number((resultMain.kills / resultMain.death).toFixed(2))
-        : resultMain.kills;
-    await collectionMain.updateOne(user, { $set: { kd } });
-  }
-
-  if (resultTemp) {
-    const kd =
-      resultTemp.death && Number.isFinite(resultTemp.kills / resultTemp.death)
-        ? Number((resultTemp.kills / resultTemp.death).toFixed(2))
-        : resultTemp.kills;
-    await collectionTemp.updateOne(user, { $set: { kd } });
-  }
 }
 
-export async function updateGames(steamID: string, field: string) {
-  if (!isConnected) return;
+export async function updateGames(
+  serverId: number,
+  steamID: string,
+  field: string,
+) {
+  const h = handle(serverId);
+  if (!h) return;
+  const collectionMain = h.main;
+  const collectionTemp = h.temp;
 
   const user = { _id: steamID };
   const matchesFilter = `matches.${field}`;
@@ -468,7 +965,7 @@ export async function updateGames(steamID: string, field: string) {
     field === 'cmdwon' ||
     field === 'cmdlose'
   ) {
-    await updateWinrate(user, field);
+    await updateWinrate(h, user, field);
   }
 }
 
@@ -478,7 +975,13 @@ function getWonLose(u: Main, isCmd: boolean): { won: number; lose: number } {
     : { won: u.matches.won, lose: u.matches.lose };
 }
 
-async function updateWinrate(user: { _id: string }, field: string) {
+async function updateWinrate(
+  h: DbHandle,
+  user: { _id: string },
+  field: string,
+) {
+  const collectionMain = h.main;
+  const collectionTemp = h.temp;
   const isCmd = field.includes('cmd');
 
   const [resultMain, resultTemp] = await Promise.all([
@@ -533,124 +1036,119 @@ async function updateWinrate(user: { _id: string }, field: string) {
   }
 }
 
+function buildHistoryPush(items: string[], cap?: number) {
+  return typeof cap === 'number' && cap >= 0
+    ? { $each: items, $slice: -cap }
+    : { $each: items };
+}
+
+function toHistoryItems(value?: string | string[]): string[] {
+  return (Array.isArray(value) ? value : value == null ? [] : [value]).filter(
+    Boolean,
+  );
+}
+
 export async function serverHistoryLayers(
   serverID: number,
-  rnsHistoryLayers?: string,
+  value?: string | string[],
+  cap?: number,
 ) {
-  if (!rnsHistoryLayers || !isConnected) return;
+  const h = handle(serverID);
+  const items = toHistoryItems(value);
+  if (items.length === 0 || !h) return;
   const _id = serverID.toString();
-  const server = await collectionServerInfo.findOne({ _id });
+  const server = await h.serverInfo.findOne({ _id });
   if (!server) return;
-
-  await collectionServerInfo.updateOne(
+  await h.serverInfo.updateOne(
     { _id },
-    { $push: { rnsHistoryLayers } },
+    { $push: { rnsHistoryLayers: buildHistoryPush(items, cap) } },
   );
 }
 
 export async function getHistoryLayers(serverID: number) {
-  if (!isConnected) return [];
-  const result = await collectionServerInfo.findOne({
-    _id: serverID.toString(),
-  });
+  const h = handle(serverID);
+  if (!h) return [];
+  const result = await h.serverInfo.findOne({ _id: serverID.toString() });
   return result?.rnsHistoryLayers || [];
 }
 
-export async function cleanHistoryLayers(serverID: number) {
-  if (!isConnected) return;
-  await collectionServerInfo.updateOne(
-    { _id: serverID.toString() },
-    { $pop: { rnsHistoryLayers: -1 } },
-  );
-}
-
-export async function serverHistoryFactions(serverID: number, faction: string) {
-  if (!faction || !isConnected) return;
+export async function serverHistoryFactions(
+  serverID: number,
+  value?: string | string[],
+  cap?: number,
+) {
+  const h = handle(serverID);
+  const items = toHistoryItems(value);
+  if (items.length === 0 || !h) return;
   const _id = serverID.toString();
-  const server = await collectionServerInfo.findOne({ _id });
+  const server = await h.serverInfo.findOne({ _id });
   if (!server) return;
-
-  await collectionServerInfo.updateOne(
+  await h.serverInfo.updateOne(
     { _id },
-    { $push: { rnsHistoryFactions: faction } },
+    { $push: { rnsHistoryFactions: buildHistoryPush(items, cap) } },
   );
 }
 
 export async function getHistoryFactions(serverID: number): Promise<string[]> {
-  if (!isConnected) return [];
-  const result = await collectionServerInfo.findOne({
-    _id: serverID.toString(),
-  });
+  const h = handle(serverID);
+  if (!h) return [];
+  const result = await h.serverInfo.findOne({ _id: serverID.toString() });
   return result?.rnsHistoryFactions || [];
-}
-
-export async function cleanHistoryFactions(serverID: number) {
-  if (!isConnected) return;
-  await collectionServerInfo.updateOne(
-    { _id: serverID.toString() },
-    { $pop: { rnsHistoryFactions: -1 } },
-  );
 }
 
 export async function serverHistoryUnitTypes(
   serverID: number,
-  unitType: string,
+  value?: string | string[],
+  cap?: number,
 ) {
-  if (!unitType || !isConnected) return;
+  const h = handle(serverID);
+  const items = toHistoryItems(value);
+  if (items.length === 0 || !h) return;
   const _id = serverID.toString();
-  const server = await collectionServerInfo.findOne({ _id });
+  const server = await h.serverInfo.findOne({ _id });
   if (!server) return;
-
-  await collectionServerInfo.updateOne(
+  await h.serverInfo.updateOne(
     { _id },
-    { $push: { rnsHistoryUnitTypes: unitType } },
+    { $push: { rnsHistoryUnitTypes: buildHistoryPush(items, cap) } },
   );
 }
 
 export async function getHistoryUnitTypes(serverID: number): Promise<string[]> {
-  if (!isConnected) return [];
-  const result = await collectionServerInfo.findOne({
-    _id: serverID.toString(),
-  });
+  const h = handle(serverID);
+  if (!h) return [];
+  const result = await h.serverInfo.findOne({ _id: serverID.toString() });
   return result?.rnsHistoryUnitTypes || [];
 }
 
-export async function cleanHistoryUnitTypes(serverID: number): Promise<void> {
-  if (!isConnected) return;
-  await collectionServerInfo.updateOne(
-    { _id: serverID.toString() },
-    { $pop: { rnsHistoryUnitTypes: -1 } },
-  );
-}
-
 export async function getTimeStampForRestartServer(serverID: number) {
-  if (!isConnected) return;
-  const server = await collectionServerInfo.findOne({
-    _id: serverID.toString(),
-  });
+  const h = handle(serverID);
+  if (!h) return;
+  const server = await h.serverInfo.findOne({ _id: serverID.toString() });
   return server?.timeStampToRestart;
 }
 
 export async function createTimeStampForRestartServer(serverID: number) {
-  if (!isConnected) return;
+  const h = handle(serverID);
+  if (!h) return;
   const date = Date.now();
 
-  await collectionServerInfo.updateOne(
+  await h.serverInfo.updateOne(
     { _id: serverID.toString() },
     { $set: { timeStampToRestart: date } },
     { upsert: true },
   );
 }
 
-export async function updateCollectionTemp(
+async function updateCollectionTemp(
+  h: DbHandle,
   user: { _id: string },
   doc: { $inc: Record<string, number> } | { $set: Record<string, number> },
   name: string,
 ) {
-  const tempStats = await collectionTemp.updateOne(user, doc);
+  const tempStats = await h.temp.updateOne(user, doc);
   if (tempStats.modifiedCount !== 1) {
-    await createUserIfNullableOrUpdateName(user._id, name);
-    await collectionTemp.updateOne(user, doc);
+    await createUserOnHandle(h, user._id, name);
+    await h.temp.updateOne(user, doc);
   }
 }
 
@@ -670,17 +1168,20 @@ function getLastMondayReset(): number {
   return lastReset.getTime();
 }
 
-export async function creatingTimeStamp() {
-  if (!isConnected) return;
+export async function creatingTimeStamp(serverId: number) {
+  const h = handle(serverId);
+  if (!h) return;
+  const collectionMain = h.main;
+  const collectionTemp = h.temp;
 
   const userTemp = { _id: 'dateTemp' };
   const timeTemp = await collectionMain.findOne({ _id: 'dateTemp' });
-  const lastResetTime = (timeTemp as any)?.date ?? 0;
+  const lastResetTime = (timeTemp as { date?: number } | null)?.date ?? 0;
   const expectedReset = getLastMondayReset();
 
   if (lastResetTime < expectedReset) {
-    console.log(
-      `Недельная статистика очищена (понедельник ${new Date(expectedReset).toLocaleString('ru-RU')})`,
+    dbLog.log(
+      `Сервер ${serverId}: недельная статистика очищена (понедельник ${new Date(expectedReset).toLocaleString('ru-RU')})`,
     );
     await collectionTemp.deleteMany({});
     await collectionMain.updateOne(
@@ -692,13 +1193,15 @@ export async function creatingTimeStamp() {
 }
 
 export async function pushMatchHistory(
+  serverId: number,
   steamID: string,
   entry: MatchHistoryEntry,
 ): Promise<void> {
-  if (!isConnected) return;
+  const h = handle(serverId);
+  if (!h) return;
 
   try {
-    await collectionMain.updateOne(
+    await h.main.updateOne(
       { _id: steamID },
       {
         $push: {
@@ -706,22 +1209,27 @@ export async function pushMatchHistory(
             $each: [entry],
             $slice: -5,
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       },
     );
   } catch (error) {
-    console.error('Error pushing match history:', error);
+    dbLog.error(`Ошибка записи истории матчей: ${String(error)}`);
   }
 }
 
 export async function sbEnsureSmartBalance(
+  serverId: number,
   retentionDays: number,
 ): Promise<void> {
-  if (!isConnected || !db) return;
+  const h = handle(serverId);
+  if (!h) return;
 
-  collectionEdges = db.collection<SocialEdge>('social_edges');
-  collectionClanTags = db.collection<ClanTagDoc>('clan_tags');
-  collectionControl = db.collection<ControlDoc>('smart_balance_control');
+  const collectionEdges = h.db.collection<SocialEdge>('social_edges');
+  const collectionClanTags = h.db.collection<ClanTagDoc>('clan_tags');
+  h.edges = collectionEdges;
+  h.clanTags = collectionClanTags;
+  h.control = h.db.collection<ControlDoc>('smart_balance_control');
 
   await collectionEdges
     .createIndex({ a: 1, b: 1 }, { unique: true, name: 'ab_unique' })
@@ -741,20 +1249,18 @@ export async function sbEnsureSmartBalance(
 }
 
 export async function sbUpsertSocialEdges(
-  batch: Readonly<Record<string, { sq?: number; tm?: number; at: Date }>>,
+  serverId: number,
+  batch: Readonly<Record<string, { sq?: number; mt?: number; at: Date }>>,
 ): Promise<void> {
-  if (!isConnected || !collectionEdges) return;
+  const collectionEdges = handle(serverId)?.edges;
+  if (!collectionEdges) return;
   const ops: AnyBulkWriteOperation<SocialEdge>[] = [];
 
   for (const k of Object.keys(batch)) {
     const [a, b] = k.split('|');
-    const incSq = batch[k].sq ?? 0;
-    const incTm = batch[k].tm ?? 0;
-    const incDoc: Partial<
-      Pick<SocialEdge, 'coSquadSeconds' | 'coTeamSeconds'>
-    > = {};
-    if (incSq) incDoc.coSquadSeconds = incSq;
-    if (incTm) incDoc.coTeamSeconds = incTm;
+    const incDoc: Record<string, number> = {};
+    if (batch[k].sq) incDoc.coSquadSeconds = batch[k].sq as number;
+    if (batch[k].mt) incDoc.matchesTogether = batch[k].mt as number;
 
     ops.push({
       updateOne: {
@@ -762,9 +1268,7 @@ export async function sbUpsertSocialEdges(
         update: {
           $setOnInsert: { a, b },
           $set: { lastSeenAt: batch[k].at },
-          ...(Object.keys(incDoc).length
-            ? { $inc: incDoc as Record<string, number> }
-            : {}),
+          ...(Object.keys(incDoc).length ? { $inc: incDoc } : {}),
         },
         upsert: true,
       },
@@ -776,22 +1280,80 @@ export async function sbUpsertSocialEdges(
   }
 }
 
+export function splitDenseParties(
+  comp: readonly string[],
+  weight: (a: string, b: string) => number,
+  maxParty: number,
+): string[][] {
+  if (comp.length < 2) return [];
+  if (comp.length <= maxParty) return [[...comp]];
+
+  const remaining = new Set(comp);
+  const out: string[][] = [];
+
+  while (remaining.size >= 2) {
+    const arr = [...remaining];
+    let seedA = '';
+    let seedB = '';
+    let best = -1;
+    for (let i = 0; i < arr.length; i++)
+      for (let j = i + 1; j < arr.length; j++) {
+        const w = weight(arr[i], arr[j]);
+        if (w > best) {
+          best = w;
+          seedA = arr[i];
+          seedB = arr[j];
+        }
+      }
+    if (best <= 0) break;
+
+    const group = new Set([seedA, seedB]);
+    remaining.delete(seedA);
+    remaining.delete(seedB);
+
+    while (group.size < maxParty) {
+      let bestNode = '';
+      let bestSum = 0;
+      for (const c of remaining) {
+        let s = 0;
+        for (const g of group) s += weight(c, g);
+        if (s > bestSum) {
+          bestSum = s;
+          bestNode = c;
+        }
+      }
+      if (!bestNode || bestSum <= 0) break;
+      group.add(bestNode);
+      remaining.delete(bestNode);
+    }
+    out.push([...group]);
+  }
+  return out;
+}
+
 export async function sbGetActivePartiesOnline(
+  serverId: number,
   onlineIDs: readonly string[],
   windowDays: number,
   minSec: number,
+  minMatches: number,
   maxParty: number,
 ): Promise<string[][]> {
-  if (!isConnected || !collectionEdges || onlineIDs.length === 0) return [];
+  const collectionEdges = handle(serverId)?.edges;
+  if (!collectionEdges || onlineIDs.length === 0) return [];
   const onlineSet = new Set(onlineIDs);
   const cutoff = new Date(Date.now() - windowDays * 86400_000);
 
   const cursor = collectionEdges.find(
     { lastSeenAt: { $gte: cutoff }, coSquadSeconds: { $gte: minSec } },
-    { projection: { a: 1, b: 1, _id: 0 } },
+    {
+      projection: { a: 1, b: 1, coSquadSeconds: 1, matchesTogether: 1, _id: 0 },
+    },
   );
 
   const adj = new Map<string, Set<string>>();
+  const wMap = new Map<string, number>();
+  const wKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
   const ensure = (x: string) => {
     if (!adj.has(x)) adj.set(x, new Set());
   };
@@ -800,11 +1362,15 @@ export async function sbGetActivePartiesOnline(
     const e = await cursor.next();
     if (!e) break;
     if (!onlineSet.has(e.a) || !onlineSet.has(e.b)) continue;
+    if ((e.matchesTogether ?? 0) < minMatches) continue;
     ensure(e.a);
     ensure(e.b);
     adj.get(e.a)!.add(e.b);
     adj.get(e.b)!.add(e.a);
+    wMap.set(wKey(e.a, e.b), e.coSquadSeconds ?? 0);
   }
+
+  const weight = (a: string, b: string) => wMap.get(wKey(a, b)) ?? 0;
 
   const seen = new Set<string>();
   const parties: string[][] = [];
@@ -823,16 +1389,20 @@ export async function sbGetActivePartiesOnline(
         }
       }
     }
-    for (let i = 0; i < comp.length; i += maxParty) {
-      const chunk = comp.slice(i, i + maxParty);
-      if (chunk.length >= 2) parties.push(chunk);
-    }
+    for (const party of splitDenseParties(comp, weight, maxParty))
+      if (party.length >= 2) parties.push(party);
   }
   return parties;
 }
 
-export async function sbDailyDecayEdges(factor: number): Promise<void> {
-  if (!isConnected || !collectionEdges || !collectionControl) return;
+export async function sbDailyDecayEdges(
+  serverId: number,
+  factor: number,
+): Promise<void> {
+  const h = handle(serverId);
+  const collectionEdges = h?.edges;
+  const collectionControl = h?.control;
+  if (!collectionEdges || !collectionControl) return;
 
   const today = new Date();
   const todayISO = new Date(
@@ -846,7 +1416,7 @@ export async function sbDailyDecayEdges(factor: number): Promise<void> {
 
   const cursor = collectionEdges.find(
     {},
-    { projection: { _id: 1, coSquadSeconds: 1, coTeamSeconds: 1 } },
+    { projection: { _id: 1, coSquadSeconds: 1 } },
   );
   const ops: AnyBulkWriteOperation<SocialEdge>[] = [];
 
@@ -854,14 +1424,12 @@ export async function sbDailyDecayEdges(factor: number): Promise<void> {
     const e = await cursor.next();
     if (!e) break;
     const sq = Math.floor((e.coSquadSeconds ?? 0) * factor);
-    const tm = Math.floor((e.coTeamSeconds ?? 0) * factor);
     ops.push({
       updateOne: {
         filter: { _id: e._id },
         update: {
           $set: {
             coSquadSeconds: sq,
-            coTeamSeconds: tm,
             lastDecayAt: new Date(),
           },
         },
@@ -882,6 +1450,7 @@ export async function sbDailyDecayEdges(factor: number): Promise<void> {
 }
 
 export async function sbUpdateClanTagCounters(
+  serverId: number,
   stats: Array<{
     tag: string;
     totalInc: number;
@@ -889,7 +1458,8 @@ export async function sbUpdateClanTagCounters(
     steamIDs: string[];
   }>,
 ): Promise<number> {
-  if (!isConnected || !collectionClanTags || stats.length === 0) return 0;
+  const collectionClanTags = handle(serverId)?.clanTags;
+  if (!collectionClanTags || stats.length === 0) return 0;
 
   const now = new Date();
 
@@ -925,17 +1495,23 @@ export async function sbUpdateClanTagCounters(
   return (res.upsertedCount ?? 0) + (res.modifiedCount ?? 0);
 }
 
-export async function sbGetClanTagDocs(tags: string[]): Promise<ClanTagDoc[]> {
-  if (!isConnected || !collectionClanTags || !tags.length) return [];
+export async function sbGetClanTagDocs(
+  serverId: number,
+  tags: string[],
+): Promise<ClanTagDoc[]> {
+  const collectionClanTags = handle(serverId)?.clanTags;
+  if (!collectionClanTags || !tags.length) return [];
   const arr = await collectionClanTags.find({ tag: { $in: tags } }).toArray();
   return arr;
 }
 
 export async function sbUpdateClanCohesion(
+  serverId: number,
   tag: string,
   cohesion: number,
 ): Promise<void> {
-  if (!isConnected || !collectionClanTags) return;
+  const collectionClanTags = handle(serverId)?.clanTags;
+  if (!collectionClanTags) return;
   await collectionClanTags.updateOne(
     { tag },
     {

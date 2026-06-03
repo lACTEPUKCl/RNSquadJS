@@ -32,8 +32,7 @@ export type TServersState = {
     listener: EventEmitter;
     maps: TMaps;
     plugins: TPlugin[];
-    // boolean for check current voting in plugins
-    // votemap or skipmap
+
     votingActive?: boolean;
     skipmap?: boolean;
     admins?: TAdmin;
@@ -47,7 +46,7 @@ export type TServersState = {
       level: string | null;
       layer: string | null;
     };
-    tickRate?: number; // TODO
+    tickRate?: number;
     serverInfo?: TServerInfo;
   };
 };
@@ -55,7 +54,7 @@ export type TServersState = {
 export type TMap = {
   layerName?: string;
   'Team1 / Team2'?: TTeamFactions;
-  // Либо раздельный:
+
   Team1?: TTeamFactions;
   Team2?: TTeamFactions;
 };

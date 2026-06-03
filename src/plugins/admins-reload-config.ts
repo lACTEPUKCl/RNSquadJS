@@ -1,57 +1,68 @@
 import fs from 'fs';
+import { z } from 'zod';
 import { adminReloadServerConfig } from '../core/commands';
-import { TPluginProps } from '../types';
+import { definePlugin } from '../core/plugin';
 
-export const adminsReloadConfig: TPluginProps = (state, options) => {
-  const { logger, execute, id } = state;
+const optionsSchema = z.object({
+  filePath: z.string().optional(),
+  debounceMs: z.coerce.number().int().positive().default(1000),
+});
 
-  if (!options || !options.filePath) {
-    logger.log(
-      `adminsReloadConfig: не задан options.filePath для сервера ${id} (плагин выключен)`,
-    );
-    return;
-  }
+export default definePlugin({
+  name: 'adminsReloadConfig',
+  description: 'AdminReloadServerConfig при изменении Admins.cfg.',
+  optionsSchema,
+  setup({ state, options, logger, registerDisposable }) {
+    const { execute, id } = state;
+    const { filePath, debounceMs } = options;
 
-  const filePath = options.filePath;
-  const debounceMs =
-    typeof options.debounceMs === 'number' ? options.debounceMs : 1000;
-
-  if (!fs.existsSync(filePath)) {
-    logger.log(
-      `adminsReloadConfig: файл Admins.cfg не найден по пути "${filePath}" для сервера ${id}`,
-    );
-    return;
-  }
-
-  logger.log(
-    `adminsReloadConfig: отслеживаем изменения Admins.cfg для сервера ${id}: ${filePath}`,
-  );
-
-  let timer: NodeJS.Timeout | null = null;
-
-  fs.watchFile(filePath, { interval: 1000 }, (curr, prev) => {
-    if (curr.mtimeMs === prev.mtimeMs) return;
-
-    if (timer) {
-      clearTimeout(timer);
+    if (!filePath) {
+      logger.log(
+        `adminsReloadConfig: не задан options.filePath для сервера ${id} (плагин выключен)`,
+      );
+      return;
     }
 
-    timer = setTimeout(async () => {
-      try {
-        logger.log(
-          `adminsReloadConfig: файл изменён, отправляем AdminReloadServerConfig на сервер ${id}`,
-        );
-        await adminReloadServerConfig(execute);
-        logger.log(
-          `adminsReloadConfig: AdminReloadServerConfig успешно отправлена на сервер ${id}`,
-        );
-      } catch (error) {
-        logger.log(
-          `adminsReloadConfig: ошибка при отправке AdminReloadServerConfig на сервер ${id}: ${String(
-            error,
-          )}`,
-        );
-      }
-    }, debounceMs);
-  });
-};
+    if (!fs.existsSync(filePath)) {
+      logger.log(
+        `adminsReloadConfig: файл Admins.cfg не найден по пути "${filePath}" для сервера ${id}`,
+      );
+      return;
+    }
+
+    logger.log(
+      `adminsReloadConfig: отслеживаем изменения Admins.cfg для сервера ${id}: ${filePath}`,
+    );
+
+    let timer: NodeJS.Timeout | null = null;
+
+    const onChange = (curr: fs.Stats, prev: fs.Stats) => {
+      if (curr.mtimeMs === prev.mtimeMs) return;
+      if (timer) clearTimeout(timer);
+
+      timer = setTimeout(async () => {
+        try {
+          logger.log(
+            `adminsReloadConfig: файл изменён, отправляем AdminReloadServerConfig на сервер ${id}`,
+          );
+          await adminReloadServerConfig(execute);
+          logger.log(
+            `adminsReloadConfig: AdminReloadServerConfig успешно отправлена на сервер ${id}`,
+          );
+        } catch (error) {
+          logger.log(
+            `adminsReloadConfig: ошибка при отправке AdminReloadServerConfig на сервер ${id}: ${String(
+              error,
+            )}`,
+          );
+        }
+      }, debounceMs);
+    };
+
+    fs.watchFile(filePath, { interval: 1000 }, onChange);
+    registerDisposable(() => {
+      fs.unwatchFile(filePath, onChange);
+      if (timer) clearTimeout(timer);
+    });
+  },
+});

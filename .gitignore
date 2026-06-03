@@ -135,3 +135,18 @@ dist
 
 package-lock.json
 config.json
+
+# Сборка (пересоздаётся `yarn build` на проде)
+/lib/
+
+# Локальные скретч-выводы скриптов (seed-elo/show-player и т.п.)
+.melo.*
+.seed.*
+*.err
+
+# Прод-секреты (копия для деплоя)
+.env.prod
+config.prod.json
+
+# Внутренние заметки/доки — не пушим
+docs/

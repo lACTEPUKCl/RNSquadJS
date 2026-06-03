@@ -1,21 +1,10 @@
-// src/plugins/rnsTelemetry.ts
-// ─────────────────────────────────────────────────────────────────────────
-// RNS Telemetry v2 — Максимальный сбор телеметрии + античит + соц.связи
-//
-// Заменяет rnsLogs.ts + squad-log-parser.mjs
-//
-// Для IP-адресов и raw-log данных подключить rnsTelemetryLogParser.ts
-//
-// CSV файлы (21 от event-based + 10 от raw log parser = 31):
-//   {csvPath}/{serverId}/YYYY-MM-DD_*.csv
-// ─────────────────────────────────────────────────────────────────────────
-
 import { appendFileSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import {
   TApplyExplosiveDamage,
   TDeployableDamaged,
+  TFobPlaced,
   TGrenadeSpawned,
   TNewGame,
   TPlayerConnected,
@@ -46,6 +35,7 @@ import {
   TPluginProps,
 } from '../types';
 import {
+  getPlayer,
   getPlayerByController,
   getPlayerByEOSID,
   getPlayerByName,
@@ -53,11 +43,7 @@ import {
   getPlayerBySteamID,
   getSquadByID,
 } from './helpers';
-import { RawLogParser } from './rnsTelemetryLogParser';
-
-// ═══════════════════════════════════════════════════════════════════
-// CSV helpers
-// ═══════════════════════════════════════════════════════════════════
+import { initTelemetryRawEvents } from './rnsTelemetryRawEvents';
 
 function esc(v: unknown): string {
   if (v == null || v === undefined) return '';
@@ -71,17 +57,26 @@ function csvLine(cols: unknown[]): string {
   return cols.map(esc).join(',') + '\n';
 }
 
+const _ensuredDirs = new Set<string>();
+const _initedFiles = new Set<string>();
+
 function ensureDir(d: string): void {
+  if (_ensuredDirs.has(d)) return;
   if (!existsSync(d)) mkdirSync(d, { recursive: true });
+  _ensuredDirs.add(d);
 }
 
 function appendCsv(filePath: string, header: string, cols: unknown[]): void {
   ensureDir(path.dirname(filePath));
-  if (!existsSync(filePath)) {
-    writeFileSync(filePath, header + '\n' + csvLine(cols));
-  } else {
-    appendFileSync(filePath, csvLine(cols));
+
+  if (!_initedFiles.has(filePath)) {
+    _initedFiles.add(filePath);
+    if (!existsSync(filePath)) {
+      writeFileSync(filePath, header + '\n' + csvLine(cols));
+      return;
+    }
   }
+  appendFileSync(filePath, csvLine(cols));
 }
 
 function dateStr(): string {
@@ -91,10 +86,6 @@ function dateStr(): string {
 function nowISO(): string {
   return new Date().toISOString();
 }
-
-// ═══════════════════════════════════════════════════════════════════
-// CSV headers
-// ═══════════════════════════════════════════════════════════════════
 
 const H = {
   tickrate: 'timestamp,server_id,tickrate,map,layer,player_count',
@@ -207,10 +198,6 @@ const H = {
     'details,evidence',
 } as const;
 
-// ═══════════════════════════════════════════════════════════════════
-// Типы
-// ═══════════════════════════════════════════════════════════════════
-
 interface SquadScore {
   teamID: string;
   teamName: string;
@@ -259,10 +246,6 @@ interface SquadMemberSnapshot {
   steamID: string;
   name: string;
 }
-
-// ═══════════════════════════════════════════════════════════════════
-// Классификаторы
-// ═══════════════════════════════════════════════════════════════════
 
 function classifyDeployable(raw: string): string {
   const lc = (raw || '').toLowerCase();
@@ -363,19 +346,6 @@ function classifyPossess(raw: string): string {
   if (lc.includes('soldier') || lc.includes('infantry')) return 'infantry';
   return 'other';
 }
-// TODO: добавить классификатор для оружия, чтобы точнее определять ножевые убийства и дружеский урон по FOB/HAB
-// ['SZ1', 'Russian Ground Forces', 'BP_FOBRadio_RUS'],
-// ['600g', 'Insurgent Forces', 'BP_FobRadio_INS'],
-// ['SZ1', 'Middle Eastern Alliance', 'BP_FOBRadio_MEA'],
-// ['M112', 'Canadian Army', 'BP_FOBRadio_Woodland'],
-// ['CompB', 'Australian Defence Force', 'BP_FOBRadio_Woodland'],
-// ['1lb', 'Irregular Militia Forces', 'BP_FOBRadio_MIL'],
-// ['M112', 'British Army', 'BP_FOBRadio_Woodland'],
-// ['M112', 'United States Marine Corps', 'BP_FOBRadio_Woodland'],
-// ['IED', 'Insurgent Forces', 'BP_FobRadio_INS'],
-// ['IED', 'Irregular Militia Forces', 'BP_FOBRadio_MIL'],
-// ['PLA', "People's Liberation Army", 'BP_FOBRadio_PLA'],
-// ['M112', 'United States Army', 'BP_FOBRadio_Woodland'],
 
 function isFriendlyDeployable(weapon: string, deployable: string): boolean {
   if (!weapon.match(/_Deployable_/i)) return false;
@@ -416,10 +386,6 @@ function isKnifeWeapon(weapon: string): boolean {
   return knifeWeapons.some((k) => wLow.includes(k.toLowerCase()));
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// PLUGIN
-// ═══════════════════════════════════════════════════════════════════
-
 export const rnsTelemetry: TPluginProps = (state, options) => {
   const { logger, listener, id } = state;
   const csvPath = options.csvPath || options.logPath || '/srv/telemetry';
@@ -428,7 +394,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   const retentionDays = Number(options.retentionDays) || 30;
   const cleanupIntervalMs = 60 * 60 * 1000;
 
-  // Античит настройки
   const RAPID_KILL_WINDOW_SEC = Number(options.rapidKillWindowSec) || 10;
   const RAPID_KILL_THRESHOLD = Number(options.rapidKillThreshold) || 5;
   const MASS_TK_WINDOW_SEC = Number(options.massTkWindowSec) || 120;
@@ -441,56 +406,51 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   const HEADSHOT_RATIO_THRESHOLD =
     Number(options.headshotRatioThreshold) || 0.9;
   const HEADSHOT_RATIO_MIN_KILLS = Number(options.headshotRatioMinKills) || 15;
+  const HEADSHOT_DAMAGE_MIN = Number(options.headshotDamageMin) || 100;
+  const HEADSHOT_WEAPON_BLACKLIST = String(
+    options.headshotWeaponBlacklist ||
+      'Projectile|Rocket|BM21|RPG|SPG|C90|2A72|2A42|2A70|2A28|ZTM|KPVT|Kord|DSHK|DShK|NSV|PKT|RHIB|MI8|Mi24|Mi8|Mortar|VOG|40MM|Frag|Grenade|Deployable|Mine|SV98|SVD|BMP|BMD|BTR|BRDM|MTLB|Tigr|Kozak|Arbalet|Kamaz|Kraz|Quadbike|Cannon|Coax|Autocannon|Sniper|M110|SR25|M2_|Browning|Maxim',
+  );
+  const headshotBlacklistRe = new RegExp(HEADSHOT_WEAPON_BLACKLIST, 'i');
 
   const srvDir = path.join(csvPath, serverId);
   ensureDir(srvDir);
 
   logger.log(`[rnsTelemetry] CSV → ${srvDir}, server=${serverId}`);
 
-  // ─── Match state ───
   let matchIsEnded = false;
   let matchStartTime = Date.now();
   let winner = '';
   let matchTickets: MatchTicketInfo[] = [];
   let squadScores = new Map<string, SquadScore>();
 
-  // ─── Player sessions ───
   const activeSessions = new Map<string, PlayerSession>();
 
-  // ─── Anti-cheat trackers ───
   const killHistory = new Map<string, KillEntry[]>();
   const friendlyDeployDmg = new Map<string, FriendlyDeployDmgEntry[]>();
   const playerKillStats = new Map<
     string,
     { kills: number; headshots: number }
   >();
+  const fobTeam = new Map<string, string>();
 
-  // ─── Social: squad memberships ───
   const squadMemberships = new Map<string, Map<string, SquadMemberSnapshot>>();
   let lastSocialFlush = Date.now();
 
-  // ─── Weapon tracking: victimName → weapon из PLAYER_DAMAGED ───
   const lastDamageWeapon = new Map<string, string>();
 
-  // ─── IP tracking (заполняется из RawLogParser) ───
+  const lastDamageAttacker = new Map<string, TPlayer>();
+
   const playerIPs = new Map<string, string>();
 
-  // ─── Raw Log Parser ───
-  const logParser = options.logFilePath
-    ? new RawLogParser({
-        logFilePath: options.logFilePath,
-        serverId,
-        appendCsv,
-        file,
-        playerIPs,
-        currentMap: () => state.currentMap?.level || '',
-        logger,
-      })
-    : null;
-
-  // ═══════════════════════════════════════════════════════════════
-  // Helpers
-  // ═══════════════════════════════════════════════════════════════
+  initTelemetryRawEvents({
+    listener,
+    appendCsv,
+    file,
+    serverId,
+    playerIPs,
+    getMap: () => state.currentMap?.level || '',
+  });
 
   function mapInfo() {
     return {
@@ -563,17 +523,15 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     killHistory.clear();
     friendlyDeployDmg.clear();
     playerKillStats.clear();
+    fobTeam.clear();
     squadMemberships.clear();
     lastDamageWeapon.clear();
+    lastDamageAttacker.clear();
   }
 
   function getPlayerIP(steamID: string): string {
     return playerIPs.get(steamID) || '';
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // Anti-cheat
-  // ═══════════════════════════════════════════════════════════════
 
   function addAlert(
     alertType: string,
@@ -721,10 +679,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // Social links
-  // ═══════════════════════════════════════════════════════════════
-
   function trackSquadMembership(player: TPlayer) {
     if (!player.squadID || !player.teamID || !player.steamID) return;
     const key = `${player.teamID}:${player.squadID}`;
@@ -771,10 +725,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     }
     lastSocialFlush = Date.now();
   }
-
-  // ═══════════════════════════════════════════════════════════════
-  // Event handlers
-  // ═══════════════════════════════════════════════════════════════
 
   function onTickRate(data: TTickRate) {
     const { map, layer } = mapInfo();
@@ -851,7 +801,7 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       state.players?.length || 0,
     ]);
 
-    writeSquadScoresSnapshot('match_end');
+    writeSquadScoresSnapshot();
     writeSquadCompositionSnapshot('match_end');
     flushSocialLinks();
   }
@@ -952,6 +902,10 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const { attackerEOSID, victimName, damage } = data;
     const dExtra = data as Record<string, unknown>;
     const weapon = (dExtra.weapon as string) || '';
+
+    if (victimName && weapon) {
+      lastDamageWeapon.set(victimName, weapon);
+    }
     const victim = getPlayerByName(state, victimName);
     const attacker = getPlayerByEOSID(state, attackerEOSID);
     const ap = pi(attacker);
@@ -1020,9 +974,12 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const ap = pi(attacker);
     const vp = pi(victim);
 
-    // Запоминаем оружие для использования в onPlayerDied
     if (victimName && weapon) {
       lastDamageWeapon.set(victimName, weapon);
+    }
+
+    if (victimName && attacker) {
+      lastDamageAttacker.set(victimName, { ...attacker });
     }
 
     appendCsv(file('damage_dealt'), H.damage_dealt, [
@@ -1051,11 +1008,16 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const { attackerEOSID, victimName, damage, attackerSteamID } = data;
     const dExtra = data as Record<string, unknown>;
     const dieWeapon = (dExtra.weapon as string) || '';
-    // Оружие из PLAYER_DAMAGED, fallback на weapon из Die события
+
     const weapon = lastDamageWeapon.get(victimName) || dieWeapon;
     lastDamageWeapon.delete(victimName);
     const victim = getPlayerByName(state, victimName);
-    const attacker = getPlayerByEOSID(state, attackerEOSID);
+
+    const attacker =
+      getPlayerByEOSID(state, attackerEOSID) ||
+      lastDamageAttacker.get(victimName) ||
+      null;
+    lastDamageAttacker.delete(victimName);
     const ap = pi(attacker);
     const vp = pi(victim);
     const isTK = !!(
@@ -1092,7 +1054,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       isTK,
     ]);
 
-    // ── Античит ──
     const killerSteam = ap.steam || attackerSteamID || '';
     if (killerSteam) {
       const now = Date.now();
@@ -1105,19 +1066,20 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
         killHistory.get(killerSteam)!.filter((k) => k.ts > now - 120000),
       );
 
-      if (!playerKillStats.has(killerSteam))
-        playerKillStats.set(killerSteam, { kills: 0, headshots: 0 });
-      const stats = playerKillStats.get(killerSteam)!;
-      stats.kills++;
-      if (Number(damage) >= 100 && !isTK) stats.headshots++;
+      if (!headshotBlacklistRe.test(weapon)) {
+        if (!playerKillStats.has(killerSteam))
+          playerKillStats.set(killerSteam, { kills: 0, headshots: 0 });
+        const hsStats = playerKillStats.get(killerSteam)!;
+        hsStats.kills++;
+        if (Number(damage) >= HEADSHOT_DAMAGE_MIN && !isTK) hsStats.headshots++;
+        if (hsStats.kills % 5 === 0) checkHeadshotRatio(killerSteam, ap);
+      }
 
       checkRapidKills(killerSteam, ap);
       checkMassTeamkills(killerSteam, ap);
       checkKnifeSpree(killerSteam, weapon, ap);
-      if (stats.kills % 5 === 0) checkHeadshotRatio(killerSteam, ap);
     }
 
-    // ── Squad scores ──
     if (attacker && !isTK) {
       const aS = getOrCreateSquadScore(attacker.teamID, attacker.squadID);
       if (aS) {
@@ -1146,8 +1108,10 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     const rp = pi(reviver);
     const vp = pi(victim);
 
-    // Игрока подняли — оружие урона больше не актуально
-    if (data.victimName) lastDamageWeapon.delete(data.victimName);
+    if (data.victimName) {
+      lastDamageWeapon.delete(data.victimName);
+      lastDamageAttacker.delete(data.victimName);
+    }
 
     appendCsv(file('revives'), H.revives, [
       nowISO(),
@@ -1278,14 +1242,27 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     ]);
   }
 
+  function onFobPlaced(data: TFobPlaced) {
+    if (data.isMain || !data.radioId) return;
+    fobTeam.set(data.radioId, data.teamID);
+  }
+
   function onDeployableDamaged(data: TDeployableDamaged) {
     if (matchIsEnded) return;
     const { map, layer } = mapInfo();
-    const { deployable, damage, weapon, name } = data;
-    const player = getPlayerByName(state, name);
+    const { deployable, damage, weapon, name, steamID, eosID } = data;
+    const player = getPlayer(state, { steamID, eosID, name });
     const p = pi(player);
     const deployableType = classifyDeployable(deployable);
-    const isFriendly = isFriendlyDeployable(weapon, deployable);
+
+    const radioId = deployable.match(/_C_(\d+)/)?.[1] ?? '';
+    let isFriendly: boolean;
+    if (/FOBRadio/i.test(deployable) && radioId && fobTeam.has(radioId)) {
+      isFriendly =
+        /_Deployable_/i.test(weapon) && fobTeam.get(radioId) === p.team;
+    } else {
+      isFriendly = isFriendlyDeployable(weapon, deployable);
+    }
 
     appendCsv(file('deployables'), H.deployables, [
       nowISO(),
@@ -1518,10 +1495,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // Periodic snapshots
-  // ═══════════════════════════════════════════════════════════════
-
   function writeSquadCompositionSnapshot(snapshotType: string) {
     const { map, layer } = mapInfo();
     const ts = nowISO();
@@ -1558,7 +1531,7 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     }
   }
 
-  function writeSquadScoresSnapshot(snapshotType: string) {
+  function writeSquadScoresSnapshot() {
     const { map, layer } = mapInfo();
     const ts = nowISO();
     for (const [, score] of squadScores) {
@@ -1580,17 +1553,14 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     }
   }
 
-  // ── Periodic timer ──
   setInterval(() => {
     if (matchIsEnded) return;
     if (!state.players || state.players.length === 0) return;
     writeSquadCompositionSnapshot('periodic');
-    writeSquadScoresSnapshot('periodic');
-    if (logParser) logParser.parse();
+    writeSquadScoresSnapshot();
     if (Date.now() - lastSocialFlush >= 300000) flushSocialLinks();
   }, snapshotIntervalMs);
 
-  // ── Cleanup ──
   setInterval(() => {
     (async () => {
       try {
@@ -1613,10 +1583,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     })();
   }, cleanupIntervalMs);
 
-  // ═══════════════════════════════════════════════════════════════
-  // Subscribe ALL events
-  // ═══════════════════════════════════════════════════════════════
-
   listener.on(EVENTS.TICK_RATE, onTickRate);
   listener.on(EVENTS.NEW_GAME, onNewGame);
   listener.on(EVENTS.ROUND_TICKETS, onRoundTickets);
@@ -1631,6 +1597,7 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   listener.on(EVENTS.PLAYER_ROLE_CHANGED, onRoleChanged);
   listener.on(EVENTS.PLAYER_POSSESS, onPlayerPossess);
   listener.on(EVENTS.VEHICLE_DAMAGED, onVehicleDamaged);
+  listener.on(EVENTS.FOB_PLACED, onFobPlaced);
   listener.on(EVENTS.DEPLOYABLE_DAMAGED, onDeployableDamaged);
   listener.on(EVENTS.EXPLOSIVE_DAMAGED, onExplosiveDamaged);
   listener.on(EVENTS.GRENADE_SPAWNED, onGrenadeSpawned);

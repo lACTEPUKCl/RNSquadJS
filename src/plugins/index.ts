@@ -1,69 +1,39 @@
+import {
+  adaptLegacyPlugin,
+  PluginManager,
+  RegisteredPlugin,
+} from '../core/plugin';
 import { getServersState } from '../serversState';
-import { adminCamBlocker } from './admin-cam-blocker';
-import { adminsReloadConfig } from './admins-reload-config';
-import { explosiveDamaged } from './apply-explosive-damaged';
-import { autoKickUnassigned } from './auto-kick-unassigned';
-import { autorestartServers } from './autorestart-servers';
-import { autoUpdateMods } from './autoupdatemods';
-import { bonuses } from './bonuses';
-import { broadcast } from './broadcast';
-import { chatCommands } from './chat-commands';
-import { fobExplosionDamage } from './fobexplosiondamage';
-import { knifeBroadcast } from './knife-broadcast';
-import { levelSync } from './koth-lvl-sync';
-import { officialKothDb } from './officialKothDb';
-import { randomizerMaps } from './randomizer-maps';
-import { rnsStats } from './rns-stats';
-import { rnsLogs } from './rnsLogs';
-import { rnsTelemetry } from './rnsTelemetry';
-import { skipmap } from './skipmap';
-import { smartBalance } from './smart-balance';
-import { squadLeaderRole } from './squad-leader-role';
-import { voteMap } from './votemap';
-import { voteMapMods } from './votemapmods';
-import { warnPlayers } from './warn-players';
-const plugins = [
-  skipmap,
-  voteMap,
-  randomizerMaps,
-  warnPlayers,
-  rnsTelemetry,
-  smartBalance,
-  squadLeaderRole,
-  autoKickUnassigned,
-  chatCommands,
-  fobExplosionDamage,
-  autorestartServers,
-  rnsStats,
-  bonuses,
-  rnsLogs,
-  broadcast,
-  voteMapMods,
-  autoUpdateMods,
-  explosiveDamaged,
-  knifeBroadcast,
-  adminCamBlocker,
-  levelSync,
-  officialKothDb,
-  adminsReloadConfig,
-];
+import { legacyManifest, nativeManifest } from './registry';
 
-export const initPlugins = async (id: number) => {
+const pluginManagers = new Map<number, PluginManager>();
+
+export const getPluginManager = (id: number): PluginManager | undefined =>
+  pluginManagers.get(id);
+
+export const initPlugins = async (id: number): Promise<PluginManager> => {
   const state = getServersState(id);
+  const manager = new PluginManager(state, state.logger);
 
-  plugins.forEach((fn) => {
-    state.logger.log(`Initializing plugin: ${fn.name}`);
-
-    const plugin = state.plugins.find((p) => p.name === fn.name);
-
-    if (plugin && plugin.enabled) {
-      state.logger.log(`Initialized plugin: ${fn.name}`);
-
-      fn(state, plugin.options);
-    } else {
-      state.logger.warn(`Disabled plugin: ${fn.name}`);
-    }
+  const legacy: RegisteredPlugin[] = legacyManifest.map(({ name, plugin }) => {
+    const cfg = state.plugins.find((p) => p.name === name);
+    return {
+      descriptor: adaptLegacyPlugin(name, plugin),
+      enabled: Boolean(cfg && cfg.enabled),
+      rawOptions: (cfg?.options ?? {}) as Record<string, unknown>,
+    };
   });
 
-  return new Promise((res) => res(true));
+  const native: RegisteredPlugin[] = nativeManifest.map((descriptor) => {
+    const cfg = state.plugins.find((p) => p.name === descriptor.name);
+    return {
+      descriptor,
+      enabled: Boolean(cfg && cfg.enabled),
+      rawOptions: (cfg?.options ?? {}) as Record<string, unknown>,
+    };
+  });
+
+  await manager.init([...legacy, ...native]);
+  pluginManagers.set(id, manager);
+  return manager;
 };
