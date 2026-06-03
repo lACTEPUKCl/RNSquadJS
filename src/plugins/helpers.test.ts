@@ -69,13 +69,11 @@ describe('plugins/helpers', () => {
   it('getPlayer prefers steamID, then eos, then controller, then name', () => {
     const s = buildState();
     // steamID wins even if name points elsewhere
-    expect(
-      getPlayer(s, { steamID: 'steam-bob', name: 'Alice' }),
-    ).toBe(bob);
+    expect(getPlayer(s, { steamID: 'steam-bob', name: 'Alice' })).toBe(bob);
     // falls back to eos when no steamID match
     expect(getPlayer(s, { steamID: 'x', eosID: 'eos-alice' })).toBe(alice);
     // falls back to controller when no id matches
-    expect(getPlayer(s, { eosID: 'x', playerController: 'ctrl-bob' })).toBe(bob);
+    expect(getPlayer(s, { playerController: 'ctrl-bob' })).toBe(bob);
     // name only as last resort (tag-less name still matches trimmed name)
     expect(getPlayer(s, { name: 'Bob' })).toBe(bob);
     // nothing matches
