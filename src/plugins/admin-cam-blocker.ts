@@ -130,11 +130,7 @@ export default definePlugin({
 
       logger.log(`[admin-cam] ${data.steamID}: вышел из камеры`);
     };
-
-    // PLAYER_SQUAD_CHANGED приходит как { player, oldSquadID, newSquadID },
-    // а SQUAD_CREATED — плоско { steamID, squadID, ... }. Нормализуем оба к
-    // паре (steamID, squadID), иначе data.steamID был undefined и хендлер
-    // всегда выходил на isExcluded.
+    
     const handleSquadJoin = (
       steamID: string | undefined,
       squadID: string | null | undefined,
