@@ -130,7 +130,7 @@ export default definePlugin({
 
       logger.log(`[admin-cam] ${data.steamID}: вышел из камеры`);
     };
-    
+
     const handleSquadJoin = (
       steamID: string | undefined,
       squadID: string | null | undefined,
