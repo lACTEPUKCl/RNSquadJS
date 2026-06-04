@@ -30,13 +30,16 @@ export default definePlugin({
 
     const newGame = () => {
       trackedPlayers = {};
-      // Гасим запущенные отсчёты — иначе старый таймер может распустить
-      // отряд уже на новой карте (в т.ч. на seed).
       for (const t of activeTimers) clearInterval(t);
       activeTimers.clear();
     };
 
-    const getIsLeaderRole = (role: string) => role.indexOf('SL') !== -1;
+    // Лидерским считаем ТОЛЬКО SL-киты: FACTION_SL_NN, FACTION_SLPilot_NN,
+    // FACTION_SLCrewman_NN. Обычные Pilot/Crewman лидеру НЕ засчитываем — он должен
+    // брать SL-пилота/SL-мехвода, чтобы сохранять функции лидера. Регистронезависимо
+    // (старый indexOf('SL') мог промахнуться при ином регистре). Якорь (?:^|_)
+    // отсекает посторонние "sl" вроде ASLAV.
+    const getIsLeaderRole = (role: string) => /(?:^|_)sl/i.test(role || '');
 
     const untrackPlayer = (steamID: string, reason?: string) => {
       const tracker = trackedPlayers[steamID];
@@ -128,9 +131,6 @@ export default definePlugin({
 
           if (seconds <= 0) {
             stopTimer();
-
-            // Свежий список из RCON перед роспуском: игрок мог взять кит
-            // в последний момент, а кэш state обновляется раз в ~30 сек.
             await updatePlayers(id);
             const fresh = state.players?.find(
               (user) => user.steamID === player.steamID,
