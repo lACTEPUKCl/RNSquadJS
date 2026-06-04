@@ -44,6 +44,69 @@ export interface MatchHistoryEntry {
   team2: { subfaction: string | null; tickets: number | null };
 }
 
+export type IncidentType =
+  | 'rapid_kills'
+  | 'mass_tk'
+  | 'fob_grief'
+  | 'headshot'
+  | 'knife_spree';
+export type IncidentSeverity = 'high' | 'medium' | 'low';
+export type IncidentStatus =
+  | 'new'
+  | 'reviewing'
+  | 'banned'
+  | 'false'
+  | 'reviewed';
+
+export interface IncidentKill {
+  ts: number;
+  victim: string;
+  victimSteamID?: string;
+  weapon: string;
+  weaponClass: string;
+  damage?: number;
+  hs?: boolean;
+  teamkill?: boolean;
+  note?: string;
+}
+
+export interface IncidentCounts {
+  kills: number;
+  teamkills: number;
+  fobDestroyed: number;
+  headshots: number;
+  knifeKills: number;
+}
+
+export interface IncidentDoc {
+  _id: string;
+  serverId: number;
+  server: string;
+  steamID: string;
+  name: string;
+  eosID?: string;
+  type: IncidentType;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  openedAt: number;
+  lastEventAt: number;
+  closedAt?: number | null;
+  layer?: string | null;
+  level?: string | null;
+  flags: string[];
+  killlog: IncidentKill[];
+  counts: IncidentCounts;
+  claimedBy?: { adminId: string; name: string; at: number } | null;
+  viewedBy?: { adminId: string; name: string; at: number }[];
+  comments?: { adminId: string; name: string; at: number; text: string }[];
+  resolution?: {
+    by: string;
+    at: number;
+    decision: string;
+    note?: string;
+  } | null;
+}
+
 export interface Main {
   _id: string;
   name: string;
@@ -145,6 +208,7 @@ interface DbHandle {
   edges?: Collection<SocialEdge>;
   clanTags?: Collection<ClanTagDoc>;
   control?: Collection<ControlDoc>;
+  incidents?: Collection<IncidentDoc>;
 }
 
 const handlesByKey = new Map<string, DbHandle>();
@@ -168,6 +232,18 @@ async function ensureIndexes(h: DbHandle): Promise<void> {
     await h.main.createIndex({ eosID: 1 }, { name: 'eosID_1' });
   } catch (err) {
     dbLog.warn(`Не удалось создать индекс eosID: ${String(err)}`);
+  }
+  try {
+    await h.incidents?.createIndex(
+      { status: 1, lastEventAt: -1 },
+      { name: 'status_lastEventAt' },
+    );
+    await h.incidents?.createIndex(
+      { steamID: 1, openedAt: -1 },
+      { name: 'steamID_openedAt' },
+    );
+  } catch (err) {
+    dbLog.warn(`Не удалось создать индексы incidents: ${String(err)}`);
   }
 }
 
@@ -198,6 +274,7 @@ export async function connectToDatabase(
       main: db.collection<Main>(dbCollectionMain),
       temp: db.collection<Main>(dbCollectionTemp),
       serverInfo: db.collection<Info>(dbCollectionServerInfo),
+      incidents: db.collection<IncidentDoc>('incidents'),
     };
     handlesByKey.set(key, h);
     keyByServer.set(serverId, key);
@@ -1215,6 +1292,66 @@ export async function pushMatchHistory(
     );
   } catch (error) {
     dbLog.error(`Ошибка записи истории матчей: ${String(error)}`);
+  }
+}
+
+export async function incidentOpen(
+  serverId: number,
+  doc: IncidentDoc,
+): Promise<void> {
+  const h = handle(serverId);
+  if (!h?.incidents) return;
+  const { _id, ...rest } = doc;
+  try {
+    await h.incidents.updateOne(
+      { _id },
+      { $setOnInsert: rest },
+      { upsert: true },
+    );
+  } catch (error) {
+    dbLog.error(`incidentOpen: ${String(error)}`);
+  }
+}
+
+export async function incidentAppend(
+  serverId: number,
+  id: string,
+  opts: {
+    kills?: IncidentKill[];
+    countsInc?: Partial<IncidentCounts>;
+    severity?: IncidentSeverity;
+    addFlags?: string[];
+    lastEventAt: number;
+    cap?: number;
+  },
+): Promise<void> {
+  const h = handle(serverId);
+  if (!h?.incidents) return;
+
+  const set: Record<string, unknown> = { lastEventAt: opts.lastEventAt };
+  if (opts.severity) set.severity = opts.severity;
+
+  const inc: Record<string, number> = {};
+  for (const [k, v] of Object.entries(opts.countsInc ?? {})) {
+    if (v) inc[`counts.${k}`] = v;
+  }
+
+  const update: UpdateFilter<IncidentDoc> = { $set: set };
+  if (Object.keys(inc).length) update.$inc = inc;
+  if (opts.addFlags?.length) {
+    update.$addToSet = { flags: { $each: opts.addFlags } };
+  }
+  if (opts.kills?.length) {
+    update.$push = {
+      killlog: { $each: opts.kills, $slice: -(opts.cap ?? 200) },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  }
+
+  try {
+    await h.incidents.updateOne({ _id: id }, update);
+  } catch (error) {
+    dbLog.error(`incidentAppend: ${String(error)}`);
   }
 }
 

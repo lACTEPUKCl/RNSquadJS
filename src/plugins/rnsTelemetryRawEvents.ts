@@ -1,7 +1,6 @@
 import {
   TAdminAction,
   TAdminBroadcast,
-  TEacAction,
   TFobPlaced,
   TMatchResult,
   TNextLayerSet,
@@ -240,18 +239,6 @@ export function initTelemetryRawEvents(opts: {
       data.tickets,
       (data.layer || '').trim(),
       (data.level || '').trim(),
-    ]);
-  });
-
-  listener.on(EVENTS.EAC_ACTION, (data: TEacAction) => {
-    appendCsv(file('eac_events'), RAW_HEADERS.eac_events, [
-      isoFromLogTime(data.time),
-      serverId,
-      'action_required',
-      data.client,
-      data.action,
-      data.actionReason,
-      (data.details || '').trim(),
     ]);
   });
 
