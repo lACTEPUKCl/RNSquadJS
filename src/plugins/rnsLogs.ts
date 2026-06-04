@@ -3,7 +3,6 @@ import path from 'path';
 import {
   TAdminAction,
   TDeployableDamaged,
-  TEacAction,
   TFobPlaced,
   TGrenadeSpawned,
   TNewGame,
@@ -483,19 +482,6 @@ export const rnsLogs: TPluginProps = (state, options) => {
     });
   }
 
-  async function onEacAction(data: TEacAction) {
-    if (matchIsEnded) return;
-    push({
-      currentTime: now(),
-      action: 'EacAction',
-      описание: `Анти-чит (EAC): ${data.action} — игрок ${data.client} (${data.actionReason})`,
-      client: data.client,
-      eacAction: data.action,
-      reason: data.actionReason,
-      details: (data.details || '').trim(),
-    });
-  }
-
   async function onAdminAction(data: TAdminAction) {
     if (matchIsEnded) return;
     let описание = `Действие админа: ${data.action}`;
@@ -607,7 +593,6 @@ export const rnsLogs: TPluginProps = (state, options) => {
   listener.on(EVENTS.FOB_PLACED, onFobPlaced);
   listener.on(EVENTS.RALLY_PLACED, onRallyPlaced);
   listener.on(EVENTS.PLAYER_RESPAWN, onPlayerRespawn);
-  listener.on(EVENTS.EAC_ACTION, onEacAction);
   listener.on(EVENTS.ADMIN_ACTION, onAdminAction);
   listener.on(EVENTS.NEXT_LAYER_SET, onNextLayerSet);
   listener.on(EVENTS.ROUND_TICKETS, onRoundTickets);

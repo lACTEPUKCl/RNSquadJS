@@ -12,6 +12,7 @@ import {
   TPlayerDied,
   TPlayerDisconnected,
   TPlayerPossess,
+  TPlayerRespawn,
   TPlayerRevived,
   TPlayerSuicide,
   TPlayerWounded,
@@ -43,6 +44,8 @@ import {
   getPlayerBySteamID,
   getSquadByID,
 } from './helpers';
+import { incidentAppend, incidentOpen } from '../rnsdb';
+import { createIncidentEngine } from './incidents/engine';
 import { initTelemetryRawEvents } from './rnsTelemetryRawEvents';
 
 function esc(v: unknown): string {
@@ -94,7 +97,7 @@ const H = {
     'timestamp,server_id,map,layer,' +
     'killer_name,killer_steam,killer_eosid,killer_team,killer_squad_id,killer_squad_name,killer_role,killer_weapon,killer_possess,' +
     'victim_name,victim_steam,victim_eosid,victim_team,victim_squad_id,victim_squad_name,victim_role,victim_weapon,victim_possess,' +
-    'damage,is_teamkill',
+    'damage,is_teamkill,is_headshot',
 
   wounds:
     'timestamp,server_id,map,layer,' +
@@ -191,11 +194,6 @@ const H = {
     'timestamp,server_id,map,layer,' +
     'steam_id_1,name_1,steam_id_2,name_2,' +
     'relation_type,squad_id,squad_name,team_id,duration_sec',
-
-  alerts:
-    'timestamp,server_id,map,layer,alert_type,severity,' +
-    'player_name,player_steam,player_eosid,player_team,player_squad_id,' +
-    'details,evidence',
 } as const;
 
 interface SquadScore {
@@ -225,21 +223,6 @@ interface PlayerSession {
   joinTime: number;
   map: string;
   layer: string;
-}
-
-interface KillEntry {
-  ts: number;
-  victimName: string;
-  weapon: string;
-  isTK: boolean;
-}
-
-interface FriendlyDeployDmgEntry {
-  ts: number;
-  deployable: string;
-  deployableType: string;
-  damage: number;
-  weapon: string;
 }
 
 interface SquadMemberSnapshot {
@@ -370,22 +353,6 @@ function isFriendlyDeployable(weapon: string, deployable: string): boolean {
   return false;
 }
 
-function isKnifeWeapon(weapon: string): boolean {
-  const knifeWeapons = [
-    'SOCP',
-    'AK74Bayonet',
-    'M9Bayonet',
-    'G3Bayonet',
-    'Bayonet2000',
-    'AKMBayonet',
-    'SA80Bayonet',
-    'QNL-95',
-    'OKC-3S',
-  ];
-  const wLow = (weapon || '').toLowerCase();
-  return knifeWeapons.some((k) => wLow.includes(k.toLowerCase()));
-}
-
 export const rnsTelemetry: TPluginProps = (state, options) => {
   const { logger, listener, id } = state;
   const csvPath = options.csvPath || options.logPath || '/srv/telemetry';
@@ -394,18 +361,6 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   const retentionDays = Number(options.retentionDays) || 30;
   const cleanupIntervalMs = 60 * 60 * 1000;
 
-  const RAPID_KILL_WINDOW_SEC = Number(options.rapidKillWindowSec) || 10;
-  const RAPID_KILL_THRESHOLD = Number(options.rapidKillThreshold) || 5;
-  const MASS_TK_WINDOW_SEC = Number(options.massTkWindowSec) || 120;
-  const MASS_TK_THRESHOLD = Number(options.massTkThreshold) || 3;
-  const KNIFE_SPREE_WINDOW_SEC = Number(options.knifeSpreeWindowSec) || 60;
-  const KNIFE_SPREE_THRESHOLD = Number(options.knifeSpreeThreshold) || 3;
-  const FRIENDLY_FOB_DAMAGE_THRESHOLD =
-    Number(options.friendlyFobDamageThreshold) || 500;
-  const FRIENDLY_FOB_WINDOW_SEC = Number(options.friendlyFobWindowSec) || 300;
-  const HEADSHOT_RATIO_THRESHOLD =
-    Number(options.headshotRatioThreshold) || 0.9;
-  const HEADSHOT_RATIO_MIN_KILLS = Number(options.headshotRatioMinKills) || 15;
   const HEADSHOT_DAMAGE_MIN = Number(options.headshotDamageMin) || 100;
   const HEADSHOT_WEAPON_BLACKLIST = String(
     options.headshotWeaponBlacklist ||
@@ -426,13 +381,13 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
 
   const activeSessions = new Map<string, PlayerSession>();
 
-  const killHistory = new Map<string, KillEntry[]>();
-  const friendlyDeployDmg = new Map<string, FriendlyDeployDmgEntry[]>();
-  const playerKillStats = new Map<
-    string,
-    { kills: number; headshots: number }
-  >();
   const fobTeam = new Map<string, string>();
+
+  const incidents = createIncidentEngine({
+    open: (d) => void incidentOpen(id, d),
+    append: (i, o) => void incidentAppend(id, i, o),
+  });
+  incidents.setContext({ serverId: id, server: serverId });
 
   const squadMemberships = new Map<string, Map<string, SquadMemberSnapshot>>();
   let lastSocialFlush = Date.now();
@@ -440,6 +395,11 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
   const lastDamageWeapon = new Map<string, string>();
 
   const lastDamageAttacker = new Map<string, TPlayer>();
+
+  /* Жертвы с «висящим» ранением: уже посчитаны как тейкдаун на PLAYER_WOUNDED.
+     Их последующий PLAYER_DIED не считаем повторно. Воскрешение снимает флаг —
+     тогда добивание поднятого придёт как die без wound и будет засчитано. */
+  const pendingWound = new Set<string>();
 
   const playerIPs = new Map<string, string>();
 
@@ -520,163 +480,15 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     winner = '';
     matchTickets = [];
     squadScores = new Map();
-    killHistory.clear();
-    friendlyDeployDmg.clear();
-    playerKillStats.clear();
     fobTeam.clear();
     squadMemberships.clear();
     lastDamageWeapon.clear();
     lastDamageAttacker.clear();
+    pendingWound.clear();
   }
 
   function getPlayerIP(steamID: string): string {
     return playerIPs.get(steamID) || '';
-  }
-
-  function addAlert(
-    alertType: string,
-    severity: 'low' | 'medium' | 'high' | 'critical',
-    player: {
-      name: string;
-      steam: string;
-      eosid: string;
-      team: string;
-      squadID: string;
-    },
-    details: string,
-    evidence: string,
-  ) {
-    const { map, layer } = mapInfo();
-    appendCsv(file('alerts'), H.alerts, [
-      nowISO(),
-      serverId,
-      map,
-      layer,
-      alertType,
-      severity,
-      player.name,
-      player.steam,
-      player.eosid,
-      player.team,
-      player.squadID,
-      details,
-      evidence,
-    ]);
-    logger.warn(
-      `[rnsTelemetry][ALERT] ${severity} ${alertType}: ${player.name} (${player.steam}) — ${details}`,
-    );
-  }
-
-  function checkRapidKills(steamID: string, p: ReturnType<typeof pi>) {
-    const history = killHistory.get(steamID);
-    if (!history || history.length < RAPID_KILL_THRESHOLD) return;
-    const now = Date.now();
-    const recent = history.filter(
-      (k) => k.ts >= now - RAPID_KILL_WINDOW_SEC * 1000 && !k.isTK,
-    );
-    if (recent.length >= RAPID_KILL_THRESHOLD) {
-      addAlert(
-        'rapid_kills',
-        'high',
-        p,
-        `${recent.length} килов за ${RAPID_KILL_WINDOW_SEC}с`,
-        `weapons=[${[...new Set(recent.map((k) => k.weapon))].join(',')}] victims=[${recent.map((k) => k.victimName).join(',')}]`,
-      );
-      killHistory.set(
-        steamID,
-        history.filter((k) => k.ts >= now),
-      );
-    }
-  }
-
-  function checkMassTeamkills(steamID: string, p: ReturnType<typeof pi>) {
-    const history = killHistory.get(steamID);
-    if (!history) return;
-    const now = Date.now();
-    const recentTK = history.filter(
-      (k) => k.ts >= now - MASS_TK_WINDOW_SEC * 1000 && k.isTK,
-    );
-    if (recentTK.length >= MASS_TK_THRESHOLD) {
-      addAlert(
-        'mass_teamkill',
-        'critical',
-        p,
-        `${recentTK.length} тимкилов за ${MASS_TK_WINDOW_SEC}с`,
-        `victims=[${recentTK.map((k) => k.victimName).join(',')}]`,
-      );
-      killHistory.set(
-        steamID,
-        history.filter((k) => k.ts >= now),
-      );
-    }
-  }
-
-  function checkKnifeSpree(
-    steamID: string,
-    weapon: string,
-    p: ReturnType<typeof pi>,
-  ) {
-    if (!isKnifeWeapon(weapon)) return;
-    const history = killHistory.get(steamID);
-    if (!history) return;
-    const now = Date.now();
-    const knifeKills = history.filter(
-      (k) =>
-        k.ts >= now - KNIFE_SPREE_WINDOW_SEC * 1000 &&
-        isKnifeWeapon(k.weapon) &&
-        !k.isTK,
-    );
-    if (knifeKills.length >= KNIFE_SPREE_THRESHOLD) {
-      addAlert(
-        'knife_spree',
-        'medium',
-        p,
-        `${knifeKills.length} ножевых килов за ${KNIFE_SPREE_WINDOW_SEC}с`,
-        `victims=[${knifeKills.map((k) => k.victimName).join(',')}]`,
-      );
-    }
-  }
-
-  function checkFriendlyDeployDamage(
-    steamID: string,
-    p: ReturnType<typeof pi>,
-  ) {
-    const entries = friendlyDeployDmg.get(steamID);
-    if (!entries) return;
-    const now = Date.now();
-    const recent = entries.filter(
-      (e) => e.ts >= now - FRIENDLY_FOB_WINDOW_SEC * 1000,
-    );
-    const totalDmg = recent.reduce((s, e) => s + e.damage, 0);
-    const fobHab = recent.filter(
-      (e) => e.deployableType === 'fob' || e.deployableType === 'hab',
-    );
-    if (totalDmg >= FRIENDLY_FOB_DAMAGE_THRESHOLD && fobHab.length > 0) {
-      addAlert(
-        'friendly_fob_damage',
-        'critical',
-        p,
-        `${Math.round(totalDmg)} урона по союзным FOB/HAB за ${FRIENDLY_FOB_WINDOW_SEC}с`,
-        `targets=[${recent.map((e) => `${e.deployableType}(${Math.round(e.damage)})`).join(',')}]`,
-      );
-      friendlyDeployDmg.set(steamID, []);
-    }
-  }
-
-  function checkHeadshotRatio(steamID: string, p: ReturnType<typeof pi>) {
-    const stats = playerKillStats.get(steamID);
-    if (!stats || stats.kills < HEADSHOT_RATIO_MIN_KILLS) return;
-    const ratio = stats.headshots / stats.kills;
-    if (ratio >= HEADSHOT_RATIO_THRESHOLD) {
-      addAlert(
-        'suspicious_headshot_ratio',
-        'high',
-        p,
-        `HS ratio ${(ratio * 100).toFixed(0)}% (${stats.headshots}/${stats.kills})`,
-        `headshots=${stats.headshots},kills=${stats.kills}`,
-      );
-      playerKillStats.set(steamID, { kills: stats.kills, headshots: 0 });
-    }
   }
 
   function trackSquadMembership(player: TPlayer) {
@@ -742,6 +554,12 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     matchIsEnded = false;
     setTimeout(() => {
       const { map, layer } = mapInfo();
+      incidents.setContext({
+        serverId: id,
+        server: serverId,
+        layer,
+        level: state.currentMap?.level ?? null,
+      });
       appendCsv(file('matches'), H.matches, [
         nowISO(),
         serverId,
@@ -804,6 +622,7 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     writeSquadScoresSnapshot();
     writeSquadCompositionSnapshot('match_end');
     flushSocialLinks();
+    incidents.onRoundEnd();
   }
 
   function onPlayerConnected(data: TPlayerConnected) {
@@ -961,6 +780,32 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
         weapon,
       ]);
     }
+
+    /* Тейкдаун считаем здесь — в момент ранения (реальный темп «уронил»).
+       die того же игрока не двоим (см. pendingWound в onPlayerDied). */
+    const killerSteam = ap.steam;
+    if (killerSteam) {
+      const hs =
+        !headshotBlacklistRe.test(weapon) &&
+        Number(damage) >= HEADSHOT_DAMAGE_MIN &&
+        !isTK;
+      incidents.onKill({
+        ts: Date.now(),
+        attacker: {
+          steamID: killerSteam,
+          name: ap.name,
+          eosID: ap.eosid,
+          teamID: ap.team,
+        },
+        victimName: vp.name,
+        victimSteamID: vp.steam || undefined,
+        victimTeamID: vp.team || undefined,
+        weapon,
+        damage: Number(damage) || undefined,
+        hs,
+      });
+    }
+    if (victimName) pendingWound.add(victimName);
   }
 
   function onPlayerDamaged(data: TPlayerDamaged) {
@@ -1026,6 +871,10 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       attacker.teamID === victim.teamID &&
       attacker.name !== victim.name
     );
+    const hs =
+      !headshotBlacklistRe.test(weapon) &&
+      Number(damage) >= HEADSHOT_DAMAGE_MIN &&
+      !isTK;
 
     appendCsv(file('kills'), H.kills, [
       nowISO(),
@@ -1052,33 +901,31 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       vp.possess,
       damage,
       isTK,
+      hs,
     ]);
 
+    /* Тейкдаун уже посчитан на PLAYER_WOUNDED. Здесь считаем только добивание:
+       жертва без «висящего» ранения — её воскресили и добили либо она умерла
+       сразу без wound. Иначе wound→die одного игрока дал бы двойной счёт. */
     const killerSteam = ap.steam || attackerSteamID || '';
-    if (killerSteam) {
-      const now = Date.now();
-      if (!killHistory.has(killerSteam)) killHistory.set(killerSteam, []);
-      killHistory
-        .get(killerSteam)!
-        .push({ ts: now, victimName: vp.name, weapon, isTK });
-      killHistory.set(
-        killerSteam,
-        killHistory.get(killerSteam)!.filter((k) => k.ts > now - 120000),
-      );
-
-      if (!headshotBlacklistRe.test(weapon)) {
-        if (!playerKillStats.has(killerSteam))
-          playerKillStats.set(killerSteam, { kills: 0, headshots: 0 });
-        const hsStats = playerKillStats.get(killerSteam)!;
-        hsStats.kills++;
-        if (Number(damage) >= HEADSHOT_DAMAGE_MIN && !isTK) hsStats.headshots++;
-        if (hsStats.kills % 5 === 0) checkHeadshotRatio(killerSteam, ap);
-      }
-
-      checkRapidKills(killerSteam, ap);
-      checkMassTeamkills(killerSteam, ap);
-      checkKnifeSpree(killerSteam, weapon, ap);
+    if (killerSteam && !pendingWound.has(victimName)) {
+      incidents.onKill({
+        ts: Date.now(),
+        attacker: {
+          steamID: killerSteam,
+          name: ap.name,
+          eosID: ap.eosid,
+          teamID: ap.team,
+        },
+        victimName: vp.name,
+        victimSteamID: vp.steam || undefined,
+        victimTeamID: vp.team || undefined,
+        weapon,
+        damage: Number(damage) || undefined,
+        hs,
+      });
     }
+    pendingWound.delete(victimName);
 
     if (attacker && !isTK) {
       const aS = getOrCreateSquadScore(attacker.teamID, attacker.squadID);
@@ -1111,6 +958,9 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     if (data.victimName) {
       lastDamageWeapon.delete(data.victimName);
       lastDamageAttacker.delete(data.victimName);
+      /* Воскрешён — снимаем флаг: добивание после подъёма придёт как die
+         без wound и будет засчитано как отдельный тейкдаун. */
+      pendingWound.delete(data.victimName);
     }
 
     appendCsv(file('revives'), H.revives, [
@@ -1281,21 +1131,17 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       isFriendly,
     ]);
 
-    if (isFriendly && p.steam) {
-      if (!friendlyDeployDmg.has(p.steam)) friendlyDeployDmg.set(p.steam, []);
-      friendlyDeployDmg.get(p.steam)!.push({
-        ts: Date.now(),
-        deployable,
-        deployableType,
-        damage: Number(damage) || 0,
-        weapon,
-      });
-      const cutoff = Date.now() - FRIENDLY_FOB_WINDOW_SEC * 1000;
-      friendlyDeployDmg.set(
-        p.steam,
-        friendlyDeployDmg.get(p.steam)!.filter((e) => e.ts > cutoff),
+    const isOwnFobByExplosive =
+      /FOBRadio/i.test(deployable) &&
+      !!radioId &&
+      fobTeam.get(radioId) === p.team &&
+      /_Deployable_/i.test(weapon);
+    if (isOwnFobByExplosive && p.steam) {
+      incidents.onFobGrief(
+        { steamID: p.steam, name: p.name || name, eosID: p.eosid, teamID: p.team },
+        Date.now(),
+        { weapon, damage: Number(damage) || 0 },
       );
-      checkFriendlyDeployDamage(p.steam, p);
     }
   }
 
@@ -1583,7 +1429,16 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
     })();
   }, cleanupIntervalMs);
 
+  function onPlayerRespawnInc(data: TPlayerRespawn) {
+    if (matchIsEnded) return;
+    const player = getPlayerByController(state, data.playerController);
+    if (!player?.steamID) return;
+    const hab = /ForwardBase|Hab|FOB/i.test(data.spawn || '');
+    incidents.onRespawn(player.steamID, Date.now(), hab);
+  }
+
   listener.on(EVENTS.TICK_RATE, onTickRate);
+  listener.on(EVENTS.PLAYER_RESPAWN, onPlayerRespawnInc);
   listener.on(EVENTS.NEW_GAME, onNewGame);
   listener.on(EVENTS.ROUND_TICKETS, onRoundTickets);
   listener.on(EVENTS.ROUND_ENDED, onRoundEnded);
