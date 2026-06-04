@@ -52,6 +52,29 @@ describe('incidents/engine', () => {
     expect(appended.length).toBeGreaterThan(0);
   });
 
+  it('rapid_kills: при открытии в кейс попадает всё окно-доказательство', () => {
+    const { eng, openedOf } = setup();
+    for (let i = 0; i < 10; i++) {
+      eng.onKill(kill(1000 + i * 1000, 'BP_AK74M', '2', { hs: i < 4 }));
+    }
+    const doc = openedOf('rapid_kills')[0];
+    expect(doc.killlog).toHaveLength(10);
+    expect(doc.counts.kills).toBe(10);
+    expect(doc.counts.headshots).toBe(4);
+  });
+
+  it('knife_spree: при открытии в кейс попадает вся ножевая серия', () => {
+    const { eng, openedOf } = setup();
+    for (let i = 0; i < 4; i++) {
+      eng.onKill(
+        kill(1000 + i * 2000, 'BP_Bayonet', '2', { victimSteamID: 'v' + i }),
+      );
+    }
+    const doc = openedOf('knife_spree')[0];
+    expect(doc.killlog).toHaveLength(4);
+    expect(doc.counts.knifeKills).toBe(4);
+  });
+
   it('нож по союзнику — кейс mass_tk со 2-го', () => {
     const { eng, openedOf } = setup();
     eng.onKill(kill(1000, 'BP_Bayonet', '1', { victimSteamID: 'x' }));
@@ -64,7 +87,9 @@ describe('incidents/engine', () => {
     const { eng, openedOf } = setup();
     eng.onKill(kill(1000, 'BP_Mortarround4', '1', { victimSteamID: 'x' }));
     eng.onKill(kill(2000, 'BP_Landmine', '1', { victimSteamID: 'y' }));
-    eng.onKill(kill(3000, 'BP_Fragmentation_DamageType', '1', { victimSteamID: 'z' }));
+    eng.onKill(
+      kill(3000, 'BP_Fragmentation_DamageType', '1', { victimSteamID: 'z' }),
+    );
     expect(openedOf('mass_tk')).toHaveLength(0);
   });
 
@@ -80,7 +105,9 @@ describe('incidents/engine', () => {
   it('ножевая серия 4 врага (не свежий спавн) — knife_spree', () => {
     const { eng, openedOf } = setup();
     for (let i = 0; i < 4; i++) {
-      eng.onKill(kill(1000 + i * 2000, 'BP_Bayonet', '2', { victimSteamID: 'v' + i }));
+      eng.onKill(
+        kill(1000 + i * 2000, 'BP_Bayonet', '2', { victimSteamID: 'v' + i }),
+      );
     }
     expect(openedOf('knife_spree')).toHaveLength(1);
   });
@@ -105,7 +132,10 @@ describe('incidents/engine', () => {
 
   it('подрыв своей FOB — fob_grief сразу', () => {
     const { eng, openedOf } = setup();
-    eng.onFobGrief(ATT, 5000, { weapon: 'BP_Deployable_SZ1_Explosives_Timed', damage: 750 });
+    eng.onFobGrief(ATT, 5000, {
+      weapon: 'BP_Deployable_SZ1_Explosives_Timed',
+      damage: 750,
+    });
     expect(openedOf('fob_grief')).toHaveLength(1);
   });
 });

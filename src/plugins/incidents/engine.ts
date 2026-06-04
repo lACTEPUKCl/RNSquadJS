@@ -87,6 +87,12 @@ interface KillRec {
   cls: WeaponClass;
   isTK: boolean;
   fresh: boolean;
+  kill: IncidentKill;
+}
+
+interface OpenSeed {
+  kills: IncidentKill[];
+  counts: Partial<Record<CountKey, number>>;
 }
 
 interface PlayerState {
@@ -149,6 +155,7 @@ export function createIncidentEngine(
     kill: IncidentKill | null,
     countsInc: Partial<Record<CountKey, number>>,
     flags: string[],
+    openSeed?: OpenSeed,
   ) => {
     const s = st(p.steamID);
     const existingId = s.openCases[type];
@@ -165,8 +172,16 @@ export function createIncidentEngine(
       s.lastCaseAt[type] = ts;
       return;
     }
+    // При открытии кейса сохраняем все события окна, обосновавшие срабатывание,
+    // чтобы модератор мог отдельно отсмотреть доказательства, а не один последний килл.
+    const seedKills = openSeed?.kills?.length
+      ? openSeed.kills.slice(-opt.killlogCap)
+      : kill
+        ? [kill]
+        : [];
+    const seedCounts = openSeed?.counts ?? countsInc;
     const counts = zeroCounts();
-    for (const [k, v] of Object.entries(countsInc)) {
+    for (const [k, v] of Object.entries(seedCounts)) {
       if (v) (counts as unknown as Record<string, number>)[k] = v;
     }
     const _id = `${ctx.serverId}_${p.steamID}_${type}_${ts}`;
@@ -186,7 +201,7 @@ export function createIncidentEngine(
       layer: ctx.layer ?? null,
       level: ctx.level ?? null,
       flags: [...flags],
-      killlog: kill ? [kill] : [],
+      killlog: seedKills,
       counts,
       claimedBy: null,
       viewedBy: [],
@@ -220,23 +235,56 @@ export function createIncidentEngine(
     if (s.openCases.rapid_kills) {
       fire(k.attacker, 'rapid_kills', 'high', k.ts, kill, incHs, []);
     } else if (cls === 'infantry') {
-      const recent = s.kills.filter(
-        (r) => !r.isTK && r.cls === 'infantry' && r.ts >= k.ts - opt.rapidWindowMs,
-      ).length;
-      if (recent >= opt.rapidCount) {
-        fire(k.attacker, 'rapid_kills', 'high', k.ts, kill, incHs, []);
+      const windowKills = s.kills.filter(
+        (r) =>
+          !r.isTK && r.cls === 'infantry' && r.ts >= k.ts - opt.rapidWindowMs,
+      );
+      if (windowKills.length >= opt.rapidCount) {
+        const evidence = windowKills.map((r) => r.kill);
+        fire(k.attacker, 'rapid_kills', 'high', k.ts, kill, incHs, [], {
+          kills: evidence,
+          counts: {
+            kills: evidence.length,
+            headshots: evidence.reduce((n, x) => n + (x.hs ? 1 : 0), 0),
+          },
+        });
       }
     }
 
     if (cls === 'knife' && !isFreshSpawn(k.victimSteamID, k.ts)) {
       if (s.openCases.knife_spree) {
-        fire(k.attacker, 'knife_spree', 'medium', k.ts, kill, { kills: 1, knifeKills: 1 }, []);
+        fire(
+          k.attacker,
+          'knife_spree',
+          'medium',
+          k.ts,
+          kill,
+          { kills: 1, knifeKills: 1 },
+          [],
+        );
       } else {
-        const knives = s.kills.filter(
-          (r) => !r.isTK && r.cls === 'knife' && !r.fresh && r.ts >= k.ts - opt.knifeWindowMs,
-        ).length;
-        if (knives >= opt.knifeSpreeCount) {
-          fire(k.attacker, 'knife_spree', 'medium', k.ts, kill, { kills: 1, knifeKills: 1 }, []);
+        const windowKnives = s.kills.filter(
+          (r) =>
+            !r.isTK &&
+            r.cls === 'knife' &&
+            !r.fresh &&
+            r.ts >= k.ts - opt.knifeWindowMs,
+        );
+        if (windowKnives.length >= opt.knifeSpreeCount) {
+          const evidence = windowKnives.map((r) => r.kill);
+          fire(
+            k.attacker,
+            'knife_spree',
+            'medium',
+            k.ts,
+            kill,
+            { kills: 1, knifeKills: 1 },
+            [],
+            {
+              kills: evidence,
+              counts: { kills: evidence.length, knifeKills: evidence.length },
+            },
+          );
         }
       }
     }
@@ -256,14 +304,30 @@ export function createIncidentEngine(
         : 'тимкилл';
 
     if (s.openCases.mass_tk) {
-      fire(k.attacker, 'mass_tk', 'high', k.ts, kill, { teamkills: 1, knifeKills: isKnife ? 1 : 0 }, []);
+      fire(
+        k.attacker,
+        'mass_tk',
+        'high',
+        k.ts,
+        kill,
+        { teamkills: 1, knifeKills: isKnife ? 1 : 0 },
+        [],
+      );
       return;
     }
 
     if (isKnife) {
       s.knifeTk += 1;
       if (s.knifeTk >= opt.knifeTkTrigger) {
-        fire(k.attacker, 'mass_tk', 'high', k.ts, kill, { teamkills: 1, knifeKills: 1 }, ['нож по своим']);
+        fire(
+          k.attacker,
+          'mass_tk',
+          'high',
+          k.ts,
+          kill,
+          { teamkills: 1, knifeKills: 1 },
+          ['нож по своим'],
+        );
       }
       return;
     }
@@ -271,10 +335,16 @@ export function createIncidentEngine(
     const direct = s.kills.filter(
       (r) => r.isTK && (r.cls === 'infantry' || r.cls === 'vehicle'),
     );
-    const burst = direct.filter((r) => r.ts >= k.ts - opt.burstTkWindowMs).length;
-    const windowed = direct.filter((r) => r.ts >= k.ts - opt.directTkWindowMs).length;
+    const burst = direct.filter(
+      (r) => r.ts >= k.ts - opt.burstTkWindowMs,
+    ).length;
+    const windowed = direct.filter(
+      (r) => r.ts >= k.ts - opt.directTkWindowMs,
+    ).length;
     if (burst >= opt.burstTkCount) {
-      fire(k.attacker, 'mass_tk', 'high', k.ts, kill, { teamkills: 1 }, ['расстрел группы/техники']);
+      fire(k.attacker, 'mass_tk', 'high', k.ts, kill, { teamkills: 1 }, [
+        'расстрел группы/техники',
+      ]);
     } else if (windowed >= opt.directTkTrigger) {
       fire(k.attacker, 'mass_tk', 'high', k.ts, kill, { teamkills: 1 }, []);
     }
@@ -294,9 +364,8 @@ export function createIncidentEngine(
       opt.directTkWindowMs,
       opt.knifeWindowMs,
     );
-    const fresh = cls === 'knife' && !isTK && isFreshSpawn(k.victimSteamID, k.ts);
-    s.kills.push({ ts: k.ts, cls, isTK, fresh });
-    s.kills = s.kills.filter((r) => r.ts >= k.ts - maxWin);
+    const fresh =
+      cls === 'knife' && !isTK && isFreshSpawn(k.victimSteamID, k.ts);
 
     const kill: IncidentKill = {
       ts: k.ts,
@@ -308,6 +377,9 @@ export function createIncidentEngine(
       hs: k.hs,
       teamkill: isTK,
     };
+
+    s.kills.push({ ts: k.ts, cls, isTK, fresh, kill });
+    s.kills = s.kills.filter((r) => r.ts >= k.ts - maxWin);
 
     if (isTK) {
       if (cls === 'explosive') return;
@@ -343,6 +415,7 @@ export function createIncidentEngine(
   };
 
   const onRoundEnd = () => {
+    // Матч закончился — обнуляем окна и респауны, кейсы закрываются отдельно.
     states.clear();
     respawns.clear();
   };

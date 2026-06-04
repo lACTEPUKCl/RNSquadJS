@@ -99,7 +99,12 @@ export interface IncidentDoc {
   claimedBy?: { adminId: string; name: string; at: number } | null;
   viewedBy?: { adminId: string; name: string; at: number }[];
   comments?: { adminId: string; name: string; at: number; text: string }[];
-  resolution?: { by: string; at: number; decision: string; note?: string } | null;
+  resolution?: {
+    by: string;
+    at: number;
+    decision: string;
+    note?: string;
+  } | null;
 }
 
 export interface Main {

@@ -27,6 +27,7 @@ import {
   TUnPossessedAdminCamera,
 } from 'squad-rcon';
 import { EVENTS } from '../constants';
+import { incidentAppend, incidentOpen } from '../rnsdb';
 import {
   TPlayer,
   TPlayerLeaderChanged,
@@ -44,8 +45,7 @@ import {
   getPlayerBySteamID,
   getSquadByID,
 } from './helpers';
-import { incidentAppend, incidentOpen } from '../rnsdb';
-import { createIncidentEngine } from './incidents/engine';
+import { createIncidentEngine, type EngineOptions } from './incidents/engine';
 import { initTelemetryRawEvents } from './rnsTelemetryRawEvents';
 
 function esc(v: unknown): string {
@@ -383,10 +383,48 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
 
   const fobTeam = new Map<string, string>();
 
-  const incidents = createIncidentEngine({
-    open: (d) => void incidentOpen(id, d),
-    append: (i, o) => void incidentAppend(id, i, o),
-  });
+  // Пробрасываем настраиваемые пороги детектора из конфига плагина в движок.
+  // Без этого server-specific тюнинг (rapidKillThreshold и т.п.) молча игнорируется.
+  const num = (v: unknown): number | undefined => {
+    if (v === undefined || v === null || v === '') return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  };
+  const engineOptions: Partial<EngineOptions> = {};
+  const setOpt = <K extends keyof EngineOptions>(
+    key: K,
+    value: number | undefined,
+  ) => {
+    if (value !== undefined) engineOptions[key] = value as EngineOptions[K];
+  };
+  setOpt('rapidCount', num(options.rapidKillThreshold));
+  const rapidWinSec = num(options.rapidKillWindowSec);
+  setOpt(
+    'rapidWindowMs',
+    rapidWinSec !== undefined ? rapidWinSec * 1000 : undefined,
+  );
+  setOpt('directTkTrigger', num(options.massTkThreshold));
+  const massTkWinSec = num(options.massTkWindowSec);
+  setOpt(
+    'directTkWindowMs',
+    massTkWinSec !== undefined ? massTkWinSec * 1000 : undefined,
+  );
+  setOpt('knifeSpreeCount', num(options.knifeSpreeThreshold));
+  const knifeWinSec = num(options.knifeSpreeWindowSec);
+  setOpt(
+    'knifeWindowMs',
+    knifeWinSec !== undefined ? knifeWinSec * 1000 : undefined,
+  );
+  setOpt('hsRatio', num(options.headshotRatioThreshold));
+  setOpt('hsMinKills', num(options.headshotRatioMinKills));
+
+  const incidents = createIncidentEngine(
+    {
+      open: (d) => void incidentOpen(id, d),
+      append: (i, o) => void incidentAppend(id, i, o),
+    },
+    engineOptions,
+  );
   incidents.setContext({ serverId: id, server: serverId });
 
   const squadMemberships = new Map<string, Map<string, SquadMemberSnapshot>>();
@@ -1138,7 +1176,12 @@ export const rnsTelemetry: TPluginProps = (state, options) => {
       /_Deployable_/i.test(weapon);
     if (isOwnFobByExplosive && p.steam) {
       incidents.onFobGrief(
-        { steamID: p.steam, name: p.name || name, eosID: p.eosid, teamID: p.team },
+        {
+          steamID: p.steam,
+          name: p.name || name,
+          eosID: p.eosid,
+          teamID: p.team,
+        },
         Date.now(),
         { weapon, damage: Number(damage) || 0 },
       );
