@@ -34,8 +34,12 @@ export default definePlugin({
       activeTimers.clear();
     };
 
-    const getIsLeaderRole = (role: string) =>
-      /(?:^|_)(?:sl|pilot|crewman)/i.test(role || '');
+    // Лидерским считаем ТОЛЬКО SL-киты: FACTION_SL_NN, FACTION_SLPilot_NN,
+    // FACTION_SLCrewman_NN. Обычные Pilot/Crewman лидеру НЕ засчитываем — он должен
+    // брать SL-пилота/SL-мехвода, чтобы сохранять функции лидера. Регистронезависимо
+    // (старый indexOf('SL') мог промахнуться при ином регистре). Якорь (?:^|_)
+    // отсекает посторонние "sl" вроде ASLAV.
+    const getIsLeaderRole = (role: string) => /(?:^|_)sl/i.test(role || '');
 
     const untrackPlayer = (steamID: string, reason?: string) => {
       const tracker = trackedPlayers[steamID];
