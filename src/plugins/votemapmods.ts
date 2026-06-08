@@ -180,8 +180,6 @@ export default definePlugin({
         }
         votes[message].push(steamID);
         adminWarn(execute, steamID, 'Твой голос принят!');
-
-        if (tally().currentVotes >= needVotes) concludeSuccess();
       }
     };
 
