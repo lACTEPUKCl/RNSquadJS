@@ -23,6 +23,7 @@ const optionsSchema = z.object({
   swapEnable: z.boolean().default(false),
   balanceEnable: z.boolean().default(false),
   balanceOffEnable: z.boolean().default(false),
+  invEnable: z.boolean().default(false),
   helpEnable: z.boolean().default(true),
   swapOnlyForVip: z.boolean().default(false),
   swapMaxDiff: z.coerce.number().default(0),
@@ -30,6 +31,7 @@ const optionsSchema = z.object({
   statsTimeout: z.coerce.number().int().nonnegative().default(180000),
   stvolTimeout: z.coerce.number().int().nonnegative().default(300000),
   rollTimeout: z.coerce.number().int().nonnegative().default(1000),
+  invTimeout: z.coerce.number().int().nonnegative().default(60000),
   adminsMessage: msgArr(),
   reportMessage: msgArr(),
   stvolTimeOutMessage: msgArr(),
@@ -63,11 +65,13 @@ export default definePlugin({
       swapEnable,
       balanceEnable,
       balanceOffEnable,
+      invEnable,
       helpEnable,
       swapTimeout,
       statsTimeout,
       stvolTimeout,
       rollTimeout,
+      invTimeout,
       adminsMessage,
       reportMessage,
       stvolTimeOutMessage,
@@ -83,6 +87,7 @@ export default definePlugin({
     let stvolPlayers: string[] = [];
     let rollPlayers: string[] = [];
     let timeoutPlayers: string[] = [];
+    let invTimeoutPlayers: string[] = [];
     const swapHistory: SwapHistoryItem[] = [];
 
     const timers = new Set<NodeJS.Timeout>();
@@ -206,6 +211,7 @@ export default definePlugin({
       if (discordEnable) cmds.push('!discord — ссылка на Discord');
       if (fixEnable) cmds.push('!fix — починить застрявшего бойца');
       if (swapEnable) cmds.push('!swap — сменить команду');
+      if (invEnable) cmds.push('!inv <номер отряда> — попроситься в отряд');
       if (adminsEnable) cmds.push('!admins — связь с админами');
 
       if (cmds.length === 0) {
@@ -336,6 +342,67 @@ export default definePlugin({
       });
     };
 
+    const inv = (data: TChatMessage) => {
+      if (!invEnable) return;
+      const { steamID, name, message } = data;
+
+      const squadNumber = message.trim().match(/\d+/)?.[0];
+      if (!squadNumber) {
+        adminWarn(execute, steamID, 'Укажите номер отряда: !inv <номер>');
+        return;
+      }
+
+      const list = getPlayers(state);
+      const requester = list?.find((p) => p.steamID === steamID);
+      if (!list || !requester) return;
+
+      if (invTimeoutPlayers.includes(steamID)) {
+        adminWarn(
+          execute,
+          steamID,
+          'Запрос можно отправлять не чаще раза в минуту.',
+        );
+        return;
+      }
+
+      if (requester.squadID === squadNumber) {
+        adminWarn(execute, steamID, 'Вы уже состоите в этом отряде.');
+        return;
+      }
+
+      const leader = list.find(
+        (p) =>
+          p.teamID === requester.teamID &&
+          p.squadID === squadNumber &&
+          p.isLeader,
+      );
+
+      if (!leader) {
+        adminWarn(
+          execute,
+          steamID,
+          `Отряд ${squadNumber} не найден или у него нет лидера.`,
+        );
+        return;
+      }
+
+      adminWarn(
+        execute,
+        leader.steamID,
+        `Игрок ${name} просится к вам в отряд ${squadNumber}. Примите его, если есть место.`,
+      );
+      adminWarn(
+        execute,
+        steamID,
+        `Запрос отправлен лидеру отряда ${squadNumber}.`,
+      );
+
+      invTimeoutPlayers.push(steamID);
+      later(() => {
+        invTimeoutPlayers = invTimeoutPlayers.filter((p) => p !== steamID);
+      }, invTimeout);
+    };
+
     const isAdminSteam = (steamID: string): boolean => {
       const set = new Set<string>([
         ...(getAdmins(state, 'forceteamchange') || []),
@@ -396,6 +463,7 @@ export default definePlugin({
       [EVENTS.CHAT_COMMAND_SW, swap],
       [EVENTS.CHAT_COMMAND_BALANCE, balanceOn],
       [EVENTS.CHAT_COMMAND_BALANCE_OFF, balanceOff],
+      [EVENTS.CHAT_COMMAND_INV, inv],
     ];
 
     for (const [event, handler] of subscriptions) {
