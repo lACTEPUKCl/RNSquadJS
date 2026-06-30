@@ -381,7 +381,7 @@ export default definePlugin({
         adminWarn(
           execute,
           steamID,
-          `Отряд ${squadNumber} не найден или у него нет лидера.`,
+          `Отряд ${squadNumber} не найден.`,
         );
         return;
       }
@@ -389,7 +389,7 @@ export default definePlugin({
       adminWarn(
         execute,
         leader.steamID,
-        `Игрок ${name} просится к вам в отряд ${squadNumber}. Примите его, если есть место.`,
+        `Игрок ${name} просится к вам в отряд.`,
       );
       adminWarn(
         execute,
