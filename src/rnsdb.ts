@@ -288,6 +288,7 @@ export async function connectToDatabase(
     dbLog.log(
       `Сервер ${serverId}: подключено к MongoDB (${database || dbNameDefault}).`,
     );
+    ensureAutoseedersWatcher();
   } catch (err) {
     dbLog.error(
       `Сервер ${serverId}: ошибка подключения к MongoDB: ${String(err)}`,
@@ -299,6 +300,11 @@ export async function connectToDatabase(
 export async function closeDatabase(): Promise<void> {
   for (const t of reconnectByServer.values()) clearTimeout(t);
   reconnectByServer.clear();
+  if (autoseedersTimer) {
+    clearInterval(autoseedersTimer);
+    autoseedersTimer = undefined;
+  }
+  activeAutoseeders.clear();
   for (const h of handlesByKey.values()) {
     await h.client.close().catch(() => {});
   }
@@ -319,6 +325,60 @@ function setReconnectTimer(
     connectToDatabase(dbURL, database, serverId);
   }, 30000);
   reconnectByServer.set(serverId, t);
+}
+
+// Кэш активных автосидеров сайта (коллекция autoseeders в базе SquadJS).
+// Обновляется периодически, чтобы не ходить в Mongo на каждый минутный
+// тик начисления бонусов. Запись считается валидной, если active: true и
+// updatedAt свежее AUTOSEEDERS_STALE_MS (сайт сам снимает active, свежесть —
+// страховка от зависших записей).
+const AUTOSEEDERS_STALE_MS = 5 * 60 * 1000;
+const AUTOSEEDERS_REFRESH_MS = 45 * 1000;
+const activeAutoseeders = new Set<string>();
+let autoseedersTimer: NodeJS.Timeout | undefined;
+let autoseedersWarned = false;
+
+async function refreshActiveAutoseeders(): Promise<void> {
+  const handles = [...handlesByKey.values()];
+  if (!handles.length) return;
+
+  const cutoff = Date.now() - AUTOSEEDERS_STALE_MS;
+  const next = new Set<string>();
+
+  try {
+    for (const h of handles) {
+      const docs = await h.db
+        .collection<{ _id: string; updatedAt?: Date | string | number }>(
+          'autoseeders',
+        )
+        .find({ active: true }, { projection: { _id: 1, updatedAt: 1 } })
+        .toArray();
+
+      for (const d of docs) {
+        const ts = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+        if (Number.isFinite(ts) && ts >= cutoff) next.add(d._id);
+      }
+    }
+
+    activeAutoseeders.clear();
+    for (const id of next) activeAutoseeders.add(id);
+    autoseedersWarned = false;
+  } catch (err) {
+    activeAutoseeders.clear();
+    if (!autoseedersWarned) {
+      dbLog.warn(`Не удалось прочитать autoseeders: ${String(err)}`);
+      autoseedersWarned = true;
+    }
+  }
+}
+
+function ensureAutoseedersWatcher(): void {
+  if (autoseedersTimer) return;
+  refreshActiveAutoseeders();
+  autoseedersTimer = setInterval(
+    refreshActiveAutoseeders,
+    AUTOSEEDERS_REFRESH_MS,
+  );
 }
 
 function expDeltaForCounter(field: string): number {
@@ -530,7 +590,10 @@ export async function updateUserBonuses(
     collectionServerInfo.findOne({ _id: serverId.toString() }),
   ]);
 
-  if (userInfo && userInfo.seedRole && serverInfo?.seeding) {
+  if (
+    ((userInfo && userInfo.seedRole) || activeAutoseeders.has(steamID)) &&
+    serverInfo?.seeding
+  ) {
     count = 5;
   }
 
