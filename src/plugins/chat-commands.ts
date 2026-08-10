@@ -378,11 +378,7 @@ export default definePlugin({
       );
 
       if (!leader) {
-        adminWarn(
-          execute,
-          steamID,
-          `Отряд ${squadNumber} не найден.`,
-        );
+        adminWarn(execute, steamID, `Отряд ${squadNumber} не найден.`);
         return;
       }
 
