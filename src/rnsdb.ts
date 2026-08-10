@@ -288,6 +288,7 @@ export async function connectToDatabase(
     dbLog.log(
       `Сервер ${serverId}: подключено к MongoDB (${database || dbNameDefault}).`,
     );
+    ensureSeedersWatcher();
   } catch (err) {
     dbLog.error(
       `Сервер ${serverId}: ошибка подключения к MongoDB: ${String(err)}`,
@@ -299,6 +300,11 @@ export async function connectToDatabase(
 export async function closeDatabase(): Promise<void> {
   for (const t of reconnectByServer.values()) clearTimeout(t);
   reconnectByServer.clear();
+  if (seedersTimer) {
+    clearInterval(seedersTimer);
+    seedersTimer = undefined;
+  }
+  activeSeeders.clear();
   for (const h of handlesByKey.values()) {
     await h.client.close().catch(() => {});
   }
@@ -319,6 +325,57 @@ function setReconnectTimer(
     connectToDatabase(dbURL, database, serverId);
   }, 30000);
   reconnectByServer.set(serverId, t);
+}
+
+// Кэш активных сидеров с сайта (коллекция seeders в базе SquadJS).
+// Обновляется периодически, чтобы не ходить в Mongo на каждый минутный
+// тик начисления бонусов. Запись считается валидной, если active: true и
+// updatedAt свежее SEEDERS_STALE_MS (сайт сам снимает active, свежесть —
+// страховка от зависших записей).
+const SEEDERS_STALE_MS = 5 * 60 * 1000;
+const SEEDERS_REFRESH_MS = 45 * 1000;
+const activeSeeders = new Set<string>();
+let seedersTimer: NodeJS.Timeout | undefined;
+let seedersWarned = false;
+
+async function refreshActiveSeeders(): Promise<void> {
+  const handles = [...handlesByKey.values()];
+  if (!handles.length) return;
+
+  const cutoff = Date.now() - SEEDERS_STALE_MS;
+  const next = new Set<string>();
+
+  try {
+    for (const h of handles) {
+      const docs = await h.db
+        .collection<{ _id: string; updatedAt?: Date | string | number }>(
+          'seeders',
+        )
+        .find({ active: true }, { projection: { _id: 1, updatedAt: 1 } })
+        .toArray();
+
+      for (const d of docs) {
+        const ts = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+        if (Number.isFinite(ts) && ts >= cutoff) next.add(d._id);
+      }
+    }
+
+    activeSeeders.clear();
+    for (const id of next) activeSeeders.add(id);
+    seedersWarned = false;
+  } catch (err) {
+    activeSeeders.clear();
+    if (!seedersWarned) {
+      dbLog.warn(`Не удалось прочитать seeders: ${String(err)}`);
+      seedersWarned = true;
+    }
+  }
+}
+
+function ensureSeedersWatcher(): void {
+  if (seedersTimer) return;
+  refreshActiveSeeders();
+  seedersTimer = setInterval(refreshActiveSeeders, SEEDERS_REFRESH_MS);
 }
 
 function expDeltaForCounter(field: string): number {
@@ -530,7 +587,10 @@ export async function updateUserBonuses(
     collectionServerInfo.findOne({ _id: serverId.toString() }),
   ]);
 
-  if (userInfo && userInfo.seedRole && serverInfo?.seeding) {
+  if (
+    ((userInfo && userInfo.seedRole) || activeSeeders.has(steamID)) &&
+    serverInfo?.seeding
+  ) {
     count = 5;
   }
 
