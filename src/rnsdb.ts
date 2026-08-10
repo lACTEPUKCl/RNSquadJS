@@ -288,7 +288,7 @@ export async function connectToDatabase(
     dbLog.log(
       `Сервер ${serverId}: подключено к MongoDB (${database || dbNameDefault}).`,
     );
-    ensureAutoseedersWatcher();
+    ensureSeedersWatcher();
   } catch (err) {
     dbLog.error(
       `Сервер ${serverId}: ошибка подключения к MongoDB: ${String(err)}`,
@@ -300,11 +300,11 @@ export async function connectToDatabase(
 export async function closeDatabase(): Promise<void> {
   for (const t of reconnectByServer.values()) clearTimeout(t);
   reconnectByServer.clear();
-  if (autoseedersTimer) {
-    clearInterval(autoseedersTimer);
-    autoseedersTimer = undefined;
+  if (seedersTimer) {
+    clearInterval(seedersTimer);
+    seedersTimer = undefined;
   }
-  activeAutoseeders.clear();
+  activeSeeders.clear();
   for (const h of handlesByKey.values()) {
     await h.client.close().catch(() => {});
   }
@@ -327,29 +327,29 @@ function setReconnectTimer(
   reconnectByServer.set(serverId, t);
 }
 
-// Кэш активных автосидеров сайта (коллекция autoseeders в базе SquadJS).
+// Кэш активных сидеров с сайта (коллекция seeders в базе SquadJS).
 // Обновляется периодически, чтобы не ходить в Mongo на каждый минутный
 // тик начисления бонусов. Запись считается валидной, если active: true и
-// updatedAt свежее AUTOSEEDERS_STALE_MS (сайт сам снимает active, свежесть —
+// updatedAt свежее SEEDERS_STALE_MS (сайт сам снимает active, свежесть —
 // страховка от зависших записей).
-const AUTOSEEDERS_STALE_MS = 5 * 60 * 1000;
-const AUTOSEEDERS_REFRESH_MS = 45 * 1000;
-const activeAutoseeders = new Set<string>();
-let autoseedersTimer: NodeJS.Timeout | undefined;
-let autoseedersWarned = false;
+const SEEDERS_STALE_MS = 5 * 60 * 1000;
+const SEEDERS_REFRESH_MS = 45 * 1000;
+const activeSeeders = new Set<string>();
+let seedersTimer: NodeJS.Timeout | undefined;
+let seedersWarned = false;
 
-async function refreshActiveAutoseeders(): Promise<void> {
+async function refreshActiveSeeders(): Promise<void> {
   const handles = [...handlesByKey.values()];
   if (!handles.length) return;
 
-  const cutoff = Date.now() - AUTOSEEDERS_STALE_MS;
+  const cutoff = Date.now() - SEEDERS_STALE_MS;
   const next = new Set<string>();
 
   try {
     for (const h of handles) {
       const docs = await h.db
         .collection<{ _id: string; updatedAt?: Date | string | number }>(
-          'autoseeders',
+          'seeders',
         )
         .find({ active: true }, { projection: { _id: 1, updatedAt: 1 } })
         .toArray();
@@ -360,25 +360,22 @@ async function refreshActiveAutoseeders(): Promise<void> {
       }
     }
 
-    activeAutoseeders.clear();
-    for (const id of next) activeAutoseeders.add(id);
-    autoseedersWarned = false;
+    activeSeeders.clear();
+    for (const id of next) activeSeeders.add(id);
+    seedersWarned = false;
   } catch (err) {
-    activeAutoseeders.clear();
-    if (!autoseedersWarned) {
-      dbLog.warn(`Не удалось прочитать autoseeders: ${String(err)}`);
-      autoseedersWarned = true;
+    activeSeeders.clear();
+    if (!seedersWarned) {
+      dbLog.warn(`Не удалось прочитать seeders: ${String(err)}`);
+      seedersWarned = true;
     }
   }
 }
 
-function ensureAutoseedersWatcher(): void {
-  if (autoseedersTimer) return;
-  refreshActiveAutoseeders();
-  autoseedersTimer = setInterval(
-    refreshActiveAutoseeders,
-    AUTOSEEDERS_REFRESH_MS,
-  );
+function ensureSeedersWatcher(): void {
+  if (seedersTimer) return;
+  refreshActiveSeeders();
+  seedersTimer = setInterval(refreshActiveSeeders, SEEDERS_REFRESH_MS);
 }
 
 function expDeltaForCounter(field: string): number {
@@ -591,7 +588,7 @@ export async function updateUserBonuses(
   ]);
 
   if (
-    ((userInfo && userInfo.seedRole) || activeAutoseeders.has(steamID)) &&
+    ((userInfo && userInfo.seedRole) || activeSeeders.has(steamID)) &&
     serverInfo?.seeding
   ) {
     count = 5;
