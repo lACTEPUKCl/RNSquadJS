@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { randomUUID } from 'crypto';
 import {
   TAdminAction,
   TDeployableDamaged,
@@ -40,6 +41,8 @@ import {
 } from './helpers';
 
 interface LogData {
+  eventId: string;
+  recordedAt: number;
   currentTime: string;
   action: string;
   описание: string;
@@ -56,7 +59,9 @@ export const rnsLogs: TPluginProps = (state, options) => {
   const logStateChanges = opt.logStateChanges === true;
 
   let logData: LogData[] = [];
-  const writeInterval = 6000;
+  // NDJSON is append-only: a flush writes only the new records instead of
+  // reading and rewriting the whole match file.
+  const writeInterval = 500;
   const cleanLogsInterval = 24 * 60 * 60 * 1000;
   let matchIsEnded = false;
 
@@ -73,7 +78,16 @@ export const rnsLogs: TPluginProps = (state, options) => {
   const nm = (p?: TPlayer | null) => (p?.name ? p.name : 'неизвестный');
   const wp = (w?: string | null) => (w ? w : 'неизвестное оружие');
 
-  const push = (entry: LogData) => logData.push(entry);
+  const push = <T extends Pick<LogData, 'currentTime' | 'action' | 'описание'>>(
+    entry: T,
+  ) =>
+    logData.push({
+      ...entry,
+      eventId: randomUUID(),
+      recordedAt: Date.now(),
+    });
+
+  let writeChain: Promise<void> = Promise.resolve();
 
   async function ensureLogDir() {
     try {
@@ -108,31 +122,31 @@ export const rnsLogs: TPluginProps = (state, options) => {
     }
   }
 
-  async function writeLogToFile(tempData: LogData[]) {
+  async function appendLogToFile(tempData: LogData[], layerOverride?: string) {
     try {
       if (!tempData || tempData.length === 0) return;
-      const { currentMap } = state;
-      const layer = currentMap?.layer || 'Undefined';
-      const logFilePath = path.join(logPath, `${layer}.json`);
-      let logs: LogData[] = [];
-      try {
-        const data = await fs.readFile(logFilePath, 'utf-8');
-        const parsed = JSON.parse(data);
-        logs = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        logs = [];
-      }
-      logs = logs.concat(tempData);
-      await fs.writeFile(logFilePath, JSON.stringify(logs, null, 2));
+      const layer = layerOverride || state.currentMap?.layer || 'Undefined';
+      const logFilePath = path.join(logPath, `${layer}.ndjson`);
+      const payload = `${tempData.map((entry) => JSON.stringify(entry)).join('\n')}\n`;
+      await fs.appendFile(logFilePath, payload, 'utf8');
     } catch (error) {
       logger.error('[RnsLogs] Error writing log file');
     }
   }
 
+  function queueLogWrite(tempData: LogData[], layerOverride?: string) {
+    if (!tempData.length) return writeChain;
+    writeChain = writeChain
+      .catch(() => undefined)
+      .then(() => appendLogToFile(tempData, layerOverride));
+    return writeChain;
+  }
+
   setInterval(() => {
     if (logData.length > 0) {
-      void writeLogToFile(logData);
+      const batch = logData;
       logData = [];
+      void queueLogWrite(batch);
     }
   }, writeInterval);
 
@@ -142,9 +156,9 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   async function renameFileLog(data: { time: string; layer: string }) {
     const { time, layer } = data;
-    const currentFilePath = path.join(logPath, `${layer}.json`);
+    const currentFilePath = path.join(logPath, `${layer}.ndjson`);
     const safeNewName = `${time}_${layer}`.replace(/[:*?"<>|]/g, '.');
-    const newFilePath = path.join(logPath, `${safeNewName}.json`);
+    const newFilePath = path.join(logPath, `${safeNewName}.ndjson`);
     try {
       await fs.rename(currentFilePath, newFilePath);
     } catch (err) {
@@ -196,8 +210,9 @@ export const rnsLogs: TPluginProps = (state, options) => {
       action: 'RoundEnd',
       описание: 'Раунд завершён',
     });
-    await writeLogToFile(logData);
+    const batch = logData;
     logData = [];
+    await queueLogWrite(batch, currentMap?.layer || 'Undefined');
     await renameFileLog({
       time: currentTime,
       layer: currentMap?.layer || 'Undefined',
