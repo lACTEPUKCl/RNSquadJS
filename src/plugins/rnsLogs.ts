@@ -319,6 +319,10 @@ export const rnsLogs: TPluginProps = (state, options) => {
       action: 'RoleChanged',
       описание: `${player.name} сменил роль: ${oldRole} → ${newRole}`,
       name: player.name,
+      steamID: player.steamID,
+      eosID: player.eosID,
+      teamID: player.teamID,
+      squadID: player.squadID,
       oldRole,
       newRole,
     });

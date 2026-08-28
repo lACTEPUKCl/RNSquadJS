@@ -36,4 +36,5 @@ export const EVENTS = {
 };
 
 export const UPDATERS_REJECT_TIMEOUT = 10000;
+export const PLAYERS_UPDATE_TIMEOUT = 1000;
 export const UPDATE_TIMEOUT = 30000;

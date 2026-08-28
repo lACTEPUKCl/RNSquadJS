@@ -3,14 +3,13 @@ import { EVENTS, UPDATERS_REJECT_TIMEOUT } from '../../constants';
 import { getServersState } from '../../serversState';
 
 export const updatePlayers = async (id: number) => {
-  const { execute, coreListener, logger } = getServersState(id);
-
-  logger.log('Updating players');
+  const { execute, coreListener } = getServersState(id);
 
   execute(EVENTS.LIST_PLAYERS);
 
   return new Promise((res) => {
-    coreListener.once(EVENTS.LIST_PLAYERS, (data: TPlayer[]) => {
+    const onPlayers = (data: TPlayer[]) => {
+      clearTimeout(timeout);
       const state = getServersState(id);
       state.players = data.map((player) => {
         const playerFound = state.players?.find(
@@ -58,11 +57,14 @@ export const updatePlayers = async (id: number) => {
       });
 
       coreListener.emit(EVENTS.UPDATED_PLAYERS, state.players);
-
-      logger.log('Updated players');
       res(true);
-    });
+    };
 
-    setTimeout(() => res(true), UPDATERS_REJECT_TIMEOUT);
+    coreListener.once(EVENTS.LIST_PLAYERS, onPlayers);
+
+    const timeout = setTimeout(() => {
+      coreListener.off(EVENTS.LIST_PLAYERS, onPlayers);
+      res(true);
+    }, UPDATERS_REJECT_TIMEOUT);
   });
 };

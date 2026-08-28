@@ -4,7 +4,7 @@ import {
   TPlayerPossess,
   TTickRate,
 } from 'squad-logs';
-import { UPDATE_TIMEOUT } from '../../constants';
+import { PLAYERS_UPDATE_TIMEOUT, UPDATE_TIMEOUT } from '../../constants';
 import { getServersState } from '../../serversState';
 import { TGetAdmins } from '../../types';
 import { EVENTS } from './../../constants';
@@ -26,23 +26,37 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
   const state = getServersState(id);
   const { coreListener, listener } = state;
 
-  let updateTimeout: NodeJS.Timeout;
-  let canRunUpdateInterval = true;
-  setInterval(async () => {
-    if (!canRunUpdateInterval) return;
-    await updatePlayers(id);
-    await updateSquads(id);
-  }, UPDATE_TIMEOUT);
+  let playersUpdateInFlight = false;
+  let squadsUpdateInFlight = false;
+
+  const refreshPlayers = async () => {
+    if (playersUpdateInFlight) return;
+    playersUpdateInFlight = true;
+    try {
+      await updatePlayers(id);
+    } finally {
+      playersUpdateInFlight = false;
+    }
+  };
+
+  const refreshSquads = async () => {
+    if (squadsUpdateInFlight) return;
+    squadsUpdateInFlight = true;
+    try {
+      await updateSquads(id);
+    } finally {
+      squadsUpdateInFlight = false;
+    }
+  };
+
+  // Squad does not emit a dedicated role/kit-change event. ListPlayers is the
+  // smallest RCON query that exposes a player's current role, so keep this
+  // lightweight poll fast and leave the heavier squad refresh on its old pace.
+  setInterval(() => void refreshPlayers(), PLAYERS_UPDATE_TIMEOUT);
+  setInterval(() => void refreshSquads(), UPDATE_TIMEOUT);
 
   const updatesOnEvents = async () => {
-    canRunUpdateInterval = false;
-    clearTimeout(updateTimeout);
-    await updatePlayers(id);
-    await updateSquads(id);
-    updateTimeout = setTimeout(
-      () => (canRunUpdateInterval = true),
-      UPDATE_TIMEOUT,
-    );
+    await Promise.all([refreshPlayers(), refreshSquads()]);
   };
 
   for (const key in EVENTS) {
