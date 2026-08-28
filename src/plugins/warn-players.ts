@@ -10,6 +10,9 @@ const optionsSchema = z.object({
   connectedMessage: z.array(z.string()).default([]),
   sqCreatedMessage: z.array(z.string()).default([]),
   roleChangedMessage: z.array(z.tuple([z.string(), z.string()])).default([]),
+  // Pilot restrictions are enforced by the site's exact EOS/flag automation.
+  // Keep legacy configs compatible without sending a second generic warning.
+  disabledRoleWarnings: z.array(z.string()).default(['Pilot']),
   messageAttacker: z.string().default(''),
   messageVictim: z.string().default(''),
 });
@@ -24,6 +27,7 @@ export default definePlugin({
       connectedMessage,
       sqCreatedMessage,
       roleChangedMessage,
+      disabledRoleWarnings,
       messageAttacker,
       messageVictim,
     } = options;
@@ -74,6 +78,14 @@ export default definePlugin({
       if (!steamID) return;
 
       for (const [checkRole, message] of roleChangedMessage) {
+        if (
+          disabledRoleWarnings.some(
+            (disabled) =>
+              disabled.trim().toLowerCase() === checkRole.trim().toLowerCase(),
+          )
+        ) {
+          continue;
+        }
         if (role.includes(checkRole)) {
           adminWarn(execute, steamID, message);
           scheduleReminder(steamID, () => adminWarn(execute, steamID, message));
