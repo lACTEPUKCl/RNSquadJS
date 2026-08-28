@@ -47,7 +47,10 @@
         "name": "rnsLogs",
         "enabled": false,
         "options": {
-          "logPath": "C:/squad_server/SquadGame/Saved/Logs/rnslogs/"
+          "logPath": "C:/squad_server/SquadGame/Saved/Logs/rnslogs/",
+          "activityBridgeUrl": "wss://rnserver.ru/activity-bridge",
+          "activityBridgeToken": "${RNS_ACTIVITY_BRIDGE_TOKEN}",
+          "activityServerKey": "vanila-1"
         }
       },
       {

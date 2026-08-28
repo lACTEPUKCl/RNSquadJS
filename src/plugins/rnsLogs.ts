@@ -33,6 +33,7 @@ import {
 } from 'squad-rcon';
 import { EVENTS } from '../constants';
 import { TPlayer, TPlayerRoleChanged, TPluginProps } from '../types';
+import { createActivityBridgeClient } from './activityBridgeClient';
 import {
   getPlayer,
   getPlayerByEOSID,
@@ -57,6 +58,22 @@ export const rnsLogs: TPluginProps = (state, options) => {
   const logRespawns = opt.logRespawns === true;
   const logGrenades = opt.logGrenades === true;
   const logStateChanges = opt.logStateChanges === true;
+  const defaultServerKey =
+    state.id <= 4 ? `vanila-${state.id}` : `mod-${state.id - 4}`;
+  const activityBridge = createActivityBridgeClient({
+    url: String(
+      opt.activityBridgeUrl || process.env.RNS_ACTIVITY_BRIDGE_URL || '',
+    ),
+    token: String(
+      opt.activityBridgeToken || process.env.RNS_ACTIVITY_BRIDGE_TOKEN || '',
+    ),
+    serverKey: String(
+      opt.activityServerKey ||
+        process.env.RNS_ACTIVITY_SERVER_KEY ||
+        defaultServerKey,
+    ),
+    logger,
+  });
 
   let logData: LogData[] = [];
   // NDJSON is append-only: a flush writes only the new records instead of
@@ -80,12 +97,19 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   const push = <T extends Pick<LogData, 'currentTime' | 'action' | 'описание'>>(
     entry: T,
-  ) =>
-    logData.push({
+  ) => {
+    const event = {
       ...entry,
       eventId: randomUUID(),
       recordedAt: Date.now(),
-    });
+      seq: ++activitySeq,
+      protocol: 1,
+    };
+    logData.push(event);
+    activityBridge.enqueue(event);
+  };
+
+  let activitySeq = 0;
 
   let writeChain: Promise<void> = Promise.resolve();
 
