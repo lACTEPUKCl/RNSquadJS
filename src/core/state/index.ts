@@ -4,7 +4,7 @@ import {
   TPlayerPossess,
   TTickRate,
 } from 'squad-logs';
-import { PLAYERS_UPDATE_TIMEOUT, UPDATE_TIMEOUT } from '../../constants';
+import { UPDATE_TIMEOUT } from '../../constants';
 import { getServersState } from '../../serversState';
 import { TGetAdmins } from '../../types';
 import { EVENTS } from './../../constants';
@@ -49,11 +49,13 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
     }
   };
 
-  // Squad does not emit a dedicated role/kit-change event. ListPlayers is the
-  // smallest RCON query that exposes a player's current role, so keep this
-  // lightweight poll fast and leave the heavier squad refresh on its old pace.
-  setInterval(() => void refreshPlayers(), PLAYERS_UPDATE_TIMEOUT);
-  setInterval(() => void refreshSquads(), UPDATE_TIMEOUT);
+  // Exact role changes are consumed from the memory Reader by the site. Keep
+  // RCON state as a low-frequency feed/fail-safe instead of polling every
+  // configured server once per second.
+  setInterval(
+    () => void Promise.all([refreshPlayers(), refreshSquads()]),
+    UPDATE_TIMEOUT,
+  );
 
   const updatesOnEvents = async () => {
     await Promise.all([refreshPlayers(), refreshSquads()]);
