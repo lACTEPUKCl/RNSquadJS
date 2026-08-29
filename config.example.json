@@ -205,7 +205,7 @@
         "name": "autoUpdateMods",
         "enabled": false,
         "options": {
-          "modID": "",
+          "modIDs": [],
           "steamAPIkey": "${STEAM_API_KEY}",
           "dockerName": "squad-server",
           "text": "Сервер перезагрузится после текущей карты для установки обновления.",

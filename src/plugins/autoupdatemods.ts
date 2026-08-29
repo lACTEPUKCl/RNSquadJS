@@ -8,23 +8,46 @@ import { getModLastUpdateDate, writeLastModUpdateDate } from '../rnsdb';
 import { getPlayers } from './helpers';
 
 const optionsSchema = z.object({
+  // modID is kept for backwards compatibility with existing configs.
   modID: z.string().optional(),
+  modIDs: z.union([z.string(), z.array(z.string())]).optional(),
   steamAPIkey: z.string().optional(),
   dockerName: z.string().optional(),
   text: z.string().default(''),
   textForceUpdate: z.string().default(''),
-  intervalBroadcast: z.coerce.number().int().positive().default(10000),
+  intervalBroadcast: z.coerce.number().int().positive().default(300000),
   checkUpdateInterval: z.coerce.number().int().positive().default(3600000),
 });
 
+export function normalizeModIds(
+  modID?: string,
+  modIDs?: string | string[],
+): string[] {
+  const values = [
+    modID ?? '',
+    ...(Array.isArray(modIDs) ? modIDs : [modIDs ?? '']),
+  ];
+
+  return [
+    ...new Set(
+      values
+        .flatMap((value) => value.split(/[\s,;]+/))
+        .map((value) => value.trim())
+        .filter((value) => /^\d+$/.test(value)),
+    ),
+  ];
+}
+
 export default definePlugin({
   name: 'autoUpdateMods',
-  description: 'Авто-обновление мода Workshop с перезапуском docker-сервиса.',
+  description:
+    'Автообновление Workshop-модов: пустой сервер обновляется сразу, занятый — после раунда.',
   optionsSchema,
   setup({ state, options, logger, registerDisposable }) {
     const { listener, execute } = state;
     const {
       modID,
+      modIDs,
       steamAPIkey,
       text,
       dockerName,
@@ -32,76 +55,29 @@ export default definePlugin({
       textForceUpdate,
       checkUpdateInterval,
     } = options;
+    const trackedModIds = normalizeModIds(modID, modIDs);
 
-    if (!modID || !steamAPIkey || !dockerName) {
+    if (!trackedModIds.length || !steamAPIkey || !dockerName) {
       logger.error(
-        '[AutoUpdateMods] modID, steamAPIkey или dockerName не указаны в конфиге, плагин не запущен',
+        '[AutoUpdateMods] modID/modIDs, steamAPIkey или dockerName не указаны, плагин не запущен',
       );
       return;
     }
 
-    const dockerService: string = dockerName;
-    const modIdSafe: string = modID;
-
     logger.log(
-      `[AutoUpdateMods] Плагин запущен. modID=${modID}, интервал проверки=${checkUpdateInterval}мс`,
+      `[AutoUpdateMods] Плагин запущен. modIDs=${trackedModIds.join(',')}, интервал проверки=${checkUpdateInterval}мс`,
     );
 
-    let newUpdate = false;
+    const pendingUpdates = new Map<string, Date>();
     let updating = false;
-    let currentVersion: Date | null = null;
+    let checking = false;
     let updateMsgInterval: NodeJS.Timeout | null = null;
-    let forceMsgInterval: NodeJS.Timeout | null = null;
-    let forceTimeout: NodeJS.Timeout | null = null;
 
     const onRoundEnd = () => {
-      if (newUpdate && !updating && currentVersion) {
-        performUpdate();
+      if (pendingUpdates.size > 0 && !updating) {
+        void performUpdate();
       }
     };
-
-    const checkTimer = setInterval(async () => {
-      try {
-        logger.log('[AutoUpdateMods] Проверка обновлений...');
-        const freshVersion = await getWorkshopItemDetails();
-        if (!freshVersion) {
-          logger.warn(
-            '[AutoUpdateMods] Не удалось получить версию из Steam API',
-          );
-          return;
-        }
-
-        currentVersion = freshVersion;
-        const lastSavedUpdate = await getLastSavedUpdate(modID);
-
-        logger.log(
-          `[AutoUpdateMods] Steam версия: ${currentVersion.toISOString()}, сохранённая: ${
-            lastSavedUpdate?.toISOString() ?? 'нет'
-          }`,
-        );
-
-        if (!lastSavedUpdate || currentVersion > lastSavedUpdate) {
-          const players = getPlayers(state);
-          logger.log(
-            `[AutoUpdateMods] Доступно обновление: ${currentVersion.toLocaleString()}, игроков: ${
-              players?.length ?? 0
-            }`,
-          );
-
-          newUpdate = true;
-
-          if (players && players.length < 50) {
-            clearMsgInterval();
-            scheduleForceUpdate();
-          } else {
-            clearForceTimers();
-            startMsgInterval();
-          }
-        }
-      } catch (error) {
-        logger.error(`[AutoUpdateMods] Ошибка в цикле проверки: ${error}`);
-      }
-    }, checkUpdateInterval);
 
     function clearMsgInterval() {
       if (updateMsgInterval) {
@@ -110,67 +86,55 @@ export default definePlugin({
       }
     }
 
-    function clearForceTimers() {
-      if (forceMsgInterval) {
-        clearInterval(forceMsgInterval);
-        forceMsgInterval = null;
-      }
-      if (forceTimeout) {
-        clearTimeout(forceTimeout);
-        forceTimeout = null;
-      }
-    }
-
-    function clearAllTimers() {
-      clearMsgInterval();
-      clearForceTimers();
-    }
-
     function startMsgInterval() {
-      clearMsgInterval();
+      if (updateMsgInterval || !text) return;
+      adminBroadcast(execute, text);
       updateMsgInterval = setInterval(() => {
         adminBroadcast(execute, text);
       }, intervalBroadcast);
     }
 
-    function scheduleForceUpdate() {
-      if (forceTimeout) return;
-      clearForceTimers();
-      forceMsgInterval = setInterval(() => {
-        adminBroadcast(execute, textForceUpdate);
-      }, 10000);
-
-      forceTimeout = setTimeout(async () => {
-        clearForceTimers();
-        if (newUpdate && !updating && currentVersion) {
-          await performUpdate();
-        }
-      }, 60000);
-    }
-
-    async function getWorkshopItemDetails(): Promise<Date | null> {
+    async function getWorkshopItemDetails(
+      ids: string[],
+    ): Promise<Map<string, Date>> {
       try {
+        const params = new URLSearchParams({
+          key: steamAPIkey ?? '',
+          itemcount: String(ids.length),
+        });
+        ids.forEach((id, index) => {
+          params.set(`publishedfileids[${index}]`, id);
+        });
+
         const response = await axios.post(
           'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/',
-          `key=${steamAPIkey}&itemcount=1&publishedfileids[0]=${modID}`,
+          params.toString(),
           {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             timeout: 15000,
           },
         );
-        const item = response.data?.response?.publishedfiledetails?.[0];
-        if (!item?.time_updated) {
-          logger.error(
-            `[AutoUpdateMods] Некорректный ответ Steam API: ${JSON.stringify(
-              response.data?.response,
-            )}`,
-          );
-          return null;
+        const items = response.data?.response?.publishedfiledetails;
+        if (!Array.isArray(items)) {
+          logger.error('[AutoUpdateMods] Steam API не вернул список модов');
+          return new Map();
         }
-        return new Date(item.time_updated * 1000);
+
+        const versions = new Map<string, Date>();
+        for (const item of items) {
+          const id = String(item?.publishedfileid ?? '');
+          if (!id || !item?.time_updated) {
+            logger.warn(
+              `[AutoUpdateMods] Для Workshop ${id || 'unknown'} не получена дата обновления`,
+            );
+            continue;
+          }
+          versions.set(id, new Date(Number(item.time_updated) * 1000));
+        }
+        return versions;
       } catch (error) {
         logger.error(`[AutoUpdateMods] Ошибка Steam API: ${error}`);
-        return null;
+        return new Map();
       }
     }
 
@@ -180,97 +144,152 @@ export default definePlugin({
         return saved ? new Date(saved) : null;
       } catch (error) {
         logger.error(
-          `[AutoUpdateMods] Ошибка чтения даты обновления: ${error}`,
+          `[AutoUpdateMods] Ошибка чтения даты Workshop ${id}: ${error}`,
         );
         return null;
       }
     }
 
-    async function saveLastUpdate(version: Date) {
+    async function saveLastUpdate(id: string, version: Date) {
+      await writeLastModUpdateDate(state.id, id, version);
+    }
+
+    async function checkForUpdates() {
+      if (checking || updating) return;
+      checking = true;
       try {
-        await writeLastModUpdateDate(state.id, modIdSafe, version);
-      } catch (error) {
-        logger.error(
-          `[AutoUpdateMods] Ошибка сохранения даты обновления: ${error}`,
+        logger.log('[AutoUpdateMods] Проверка обновлений...');
+        const freshVersions = await getWorkshopItemDetails(trackedModIds);
+
+        for (const [id, freshVersion] of freshVersions) {
+          const lastSavedUpdate = await getLastSavedUpdate(id);
+          if (!lastSavedUpdate) {
+            // Enabling the plugin must not restart an already up-to-date server.
+            await saveLastUpdate(id, freshVersion);
+            logger.log(
+              `[AutoUpdateMods] Workshop ${id}: сохранена начальная версия ${freshVersion.toISOString()}`,
+            );
+            continue;
+          }
+
+          logger.log(
+            `[AutoUpdateMods] Workshop ${id}: Steam=${freshVersion.toISOString()}, сохранено=${lastSavedUpdate.toISOString()}`,
+          );
+          if (freshVersion > lastSavedUpdate) {
+            pendingUpdates.set(id, freshVersion);
+          }
+        }
+
+        if (pendingUpdates.size === 0) return;
+
+        const players = getPlayers(state) ?? [];
+        logger.log(
+          `[AutoUpdateMods] Ожидают установки: ${[...pendingUpdates.keys()].join(',')}; игроков=${players.length}`,
         );
+        if (players.length === 0) {
+          await performUpdate();
+        } else {
+          startMsgInterval();
+        }
+      } catch (error) {
+        logger.error(`[AutoUpdateMods] Ошибка проверки: ${error}`);
+      } finally {
+        checking = false;
       }
     }
 
-    function stopService(): Promise<void> {
+    function runCompose(args: string[]): Promise<void> {
       return new Promise((resolve, reject) => {
-        logger.log(`Останавливаем сервис ${dockerService}...`);
         const child = spawn(
           '/usr/bin/docker',
-          ['compose', 'down', dockerService],
+          ['compose', '--profile', 'manual-cutover', ...args],
           { cwd: '/root/host' },
         );
+        let stderr = '';
+        child.stderr?.on('data', (chunk) => {
+          stderr += String(chunk);
+        });
         child.on('exit', (code) => {
           if (code === 0) {
-            logger.log(`Сервис ${dockerService} остановлен`);
             resolve();
           } else {
             reject(
               new Error(
-                `Остановка ${dockerService} завершилась с кодом ${code}`,
+                `docker compose ${args.join(' ')}: код ${code}; ${stderr.trim()}`,
               ),
             );
           }
         });
-        child.on('error', (err) => reject(err));
+        child.on('error', reject);
       });
     }
 
-    function startService(): Promise<void> {
-      return new Promise((resolve, reject) => {
-        logger.log(`Запускаем сервис ${dockerService}...`);
-        const child = spawn(
-          '/usr/bin/docker',
-          ['compose', 'up', '-d', dockerService],
-          { cwd: '/root/host' },
-        );
-        child.on('exit', (code) => {
-          if (code === 0) {
-            logger.log(`Сервис ${dockerService} запущен`);
-            resolve();
-          } else {
-            reject(
-              new Error(`Запуск ${dockerService} завершился с кодом ${code}`),
-            );
-          }
-        });
-        child.on('error', (err) => reject(err));
-      });
+    async function stopService() {
+      logger.log(`[AutoUpdateMods] Останавливаем ${dockerName}...`);
+      await runCompose(['stop', dockerName as string]);
+    }
+
+    async function startService() {
+      logger.log(`[AutoUpdateMods] Запускаем ${dockerName}...`);
+      await runCompose(['up', '-d', dockerName as string]);
     }
 
     async function performUpdate() {
-      if (updating) {
-        logger.log('[AutoUpdateMods] Обновление уже выполняется, пропускаем');
-        return;
-      }
+      if (updating || pendingUpdates.size === 0) return;
 
       updating = true;
-      logger.log('[AutoUpdateMods] Запуск обновления...');
+      clearMsgInterval();
+      if (textForceUpdate && (getPlayers(state)?.length ?? 0) > 0) {
+        adminBroadcast(execute, textForceUpdate);
+      }
+
+      const versionsToSave = new Map(pendingUpdates);
+      let serviceStopped = false;
+      logger.log(
+        `[AutoUpdateMods] Устанавливаем Workshop: ${[...versionsToSave.keys()].join(',')}`,
+      );
       try {
         await stopService();
-        if (currentVersion) {
-          await saveLastUpdate(currentVersion);
-        }
+        serviceStopped = true;
         await startService();
-        logger.log('[AutoUpdateMods] Мод успешно обновлён');
+        serviceStopped = false;
+
+        for (const [id, version] of versionsToSave) {
+          await saveLastUpdate(id, version);
+          pendingUpdates.delete(id);
+        }
+        logger.log('[AutoUpdateMods] Моды успешно обновлены');
       } catch (error) {
         logger.error(`[AutoUpdateMods] Ошибка при обновлении: ${error}`);
+        if (serviceStopped) {
+          try {
+            await startService();
+            logger.warn(
+              '[AutoUpdateMods] Сервис снова запущен после ошибки обновления',
+            );
+          } catch (recoveryError) {
+            logger.error(
+              `[AutoUpdateMods] Не удалось восстановить сервис: ${recoveryError}`,
+            );
+          }
+        }
       } finally {
-        newUpdate = false;
         updating = false;
-        clearAllTimers();
+        if (pendingUpdates.size > 0 && (getPlayers(state)?.length ?? 0) > 0) {
+          startMsgInterval();
+        }
       }
     }
 
     listener.on(EVENTS.ROUND_ENDED, onRoundEnd);
+    const checkTimer = setInterval(() => {
+      void checkForUpdates();
+    }, checkUpdateInterval);
+    void checkForUpdates();
 
     registerDisposable(() => {
       clearInterval(checkTimer);
-      clearAllTimers();
+      clearMsgInterval();
       listener.off(EVENTS.ROUND_ENDED, onRoundEnd);
       logger.log('[AutoUpdateMods] Плагин остановлен, ресурсы очищены');
     });

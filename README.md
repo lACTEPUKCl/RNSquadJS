@@ -104,7 +104,7 @@ Enable a plugin by adding it to a server's `plugins` array with
 | `autoKickUnassigned` | Kicks players with no squad after warnings (grace period on join).      |
 | `adminCamBlocker`    | Kicks from squad players who entered admin cam and rejoined.            |
 | `levelSync`          | Writes KOTH levels into a prefix `.cfg`.                                |
-| `autoUpdateMods`     | Auto-updates Workshop mods and restarts the docker service.             |
+| `autoUpdateMods`     | Tracks all Workshop mods; updates empty servers immediately or occupied servers after the round. |
 | `voteMap`            | Vote to switch to a vanilla map.                                        |
 | `voteMapMods`        | Vote to switch to a modded map.                                         |
 | `skipmap`            | Vote to skip the current map.                                           |
