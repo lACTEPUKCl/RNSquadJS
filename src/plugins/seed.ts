@@ -54,7 +54,20 @@ export default definePlugin({
     let switching = false;
     let handledThisRound = false;
 
-    const playerCount = () => state.players?.length ?? 0;
+    // A map load/reconnect is not evidence that the server is empty.
+    const graceMs = 120000;
+    const lowPopulationMs = 60000;
+    const staleMs = 45000;
+    let graceUntil = Date.now() + graceMs;
+    let betweenRounds = false;
+    let lowSince: number | null = null;
+    let lastSample: number | null = null;
+    let lastCountedSample: number | null = null;
+    let samples = 0;
+    let awaitingConfirmation = false;
+    let disconnected = false;
+
+    const playerCount = () => state.players?.length ?? Number.NaN;
     const layerIsSeed = (layer: string | null | undefined) =>
       (layer ?? '').toLowerCase().includes(seedKeyword.toLowerCase());
     const pickSeed = () =>
@@ -109,13 +122,16 @@ export default definePlugin({
       );
       announce();
       if (countdownMs <= 0) {
-        void applySwitch();
+        awaitingConfirmation = true;
         return;
       }
       if (broadcastEnabled && broadcastIntervalMs < countdownMs) {
         broadcastTimer = setInterval(announce, broadcastIntervalMs);
       }
-      countdownTimer = setTimeout(() => void applySwitch(), countdownMs);
+      // Only a NEW player response after the countdown may authorize a change.
+      countdownTimer = setTimeout(() => {
+        awaitingConfirmation = true;
+      }, countdownMs);
     };
 
     const cancelSwitch = () => {
@@ -125,30 +141,94 @@ export default definePlugin({
       logger.log('[seed] переход отменён — игроков снова достаточно.');
     };
 
+    const reset = () => {
+      if (switching)
+        logger.log('[seed] переход отменён — данные не подтверждены.');
+      clearTimers();
+      switching = false;
+      awaitingConfirmation = false;
+      lowSince = null;
+      lastSample = null;
+      lastCountedSample = null;
+      samples = 0;
+    };
+
     const evaluate = () => {
+      const now = Date.now();
+      if (disconnected || betweenRounds || now < graceUntil) return;
+      if (lastSample !== null && now - lastSample > staleMs) reset();
+      if (!Number.isFinite(playerCount()) || !state.currentMap?.layer) {
+        reset();
+        return;
+      }
       const low = playerCount() < playerThreshold;
+      if (!low) {
+        if (switching) cancelSwitch();
+        reset();
+        return;
+      }
+      if (
+        layerIsSeed(state.currentMap.layer) ||
+        (mode === 'next' && layerIsSeed(state.nextMap?.layer))
+      ) {
+        reset();
+        return;
+      }
+      // Ignore duplicate updates from concurrent refresh callers.
+      if (lastCountedSample === null || now - lastCountedSample >= 5000) {
+        samples++;
+        lastCountedSample = now;
+      }
+      lastSample = now;
+      if (lowSince === null) lowSince = now;
       if (switching) {
-        if (!low) cancelSwitch();
+        if (awaitingConfirmation && now >= switchAt) void applySwitch();
         return;
       }
       if (handledThisRound) return;
       if (layerIsSeed(state.currentMap?.layer)) return;
       if (mode === 'next' && layerIsSeed(state.nextMap?.layer)) return;
-      if (low) startSwitch();
+      if (samples >= 3 && now - lowSince >= lowPopulationMs) startSwitch();
     };
 
     const onNewGame = () => {
       handledThisRound = false;
-      clearTimers();
-      switching = false;
-      evaluate();
+      betweenRounds = false;
+      graceUntil = Date.now() + graceMs;
+      reset();
     };
+    const onRoundEnd = () => {
+      betweenRounds = true;
+      reset();
+    };
+    const onClose = () => {
+      disconnected = true;
+      reset();
+    };
+    const onConnected = () => {
+      disconnected = false;
+      graceUntil = Date.now() + graceMs;
+      reset();
+    };
+    state.rcon.rconEmitter.on('close', onClose);
+    state.rcon.rconEmitter.on('connected', onConnected);
+    // Use the raw lifecycle event: forwarding NEW_GAME waits for RCON queries.
+    state.coreListener.on(EVENTS.NEW_GAME, onNewGame);
+    state.coreListener.on(EVENTS.ROUND_ENDED, onRoundEnd);
+    const watchdog = setInterval(() => {
+      if (lastSample !== null && Date.now() - lastSample > staleMs) reset();
+    }, 1000);
 
     listener.on(EVENTS.UPDATED_PLAYERS, evaluate);
     listener.on(EVENTS.NEW_GAME, onNewGame);
     registerDisposable(() => {
       listener.off(EVENTS.UPDATED_PLAYERS, evaluate);
       listener.off(EVENTS.NEW_GAME, onNewGame);
+      state.coreListener.off(EVENTS.NEW_GAME, onNewGame);
+      state.coreListener.off(EVENTS.ROUND_ENDED, onRoundEnd);
+      state.rcon.rconEmitter.off('close', onClose);
+      state.rcon.rconEmitter.off('connected', onConnected);
+      clearInterval(watchdog);
       clearTimers();
     });
   },
