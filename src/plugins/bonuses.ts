@@ -21,6 +21,8 @@ export default definePlugin({
   setup({ state, options, registerDisposable }) {
     const { listener } = state;
     const { classicBonus, seedBonus } = options;
+    let rosterUpdatedAt = 0;
+    const disconnected = new Set<string>();
     let playersBonusesCurrentTime: Array<{
       steamID: string;
       timer: NodeJS.Timeout;
@@ -29,6 +31,7 @@ export default definePlugin({
     const playerConnected = async (data: TPlayerConnected) => {
       const { steamID, eosID } = data;
       if (!steamID) return;
+      disconnected.delete(steamID);
 
       const user = getPlayerByEOSID(state, eosID);
       const name = user?.name || '';
@@ -37,6 +40,7 @@ export default definePlugin({
     };
 
     const updatedPlayers = () => {
+      rosterUpdatedAt = Date.now();
       const { players, id } = state;
       if (!players) return;
 
@@ -51,14 +55,20 @@ export default definePlugin({
         playersBonusesCurrentTime.push({
           steamID,
           timer: setInterval(async () => {
+            // Do not award on a stale captured player after disconnect.
+            if (disconnected.has(steamID) || Date.now() - rosterUpdatedAt > 90000 || !getPlayerBySteamID(state, steamID)) return;
+            try {
             const isSeed = state.currentMap?.layer
               ?.toLowerCase()
               .includes('seed');
             if (isSeed) {
-              await updateUserBonuses(id, steamID, seedBonus);
+              await updateUserBonuses(id, steamID, seedBonus, true);
               await updateTimes(id, steamID, 'seed', user.name);
             } else {
               await updateUserBonuses(id, steamID, classicBonus);
+            }
+            } catch (error) {
+              console.error('[bonuses] accrual failed', id, steamID, String(error));
             }
           }, 60000),
         });
@@ -75,10 +85,16 @@ export default definePlugin({
     };
 
     listener.on(EVENTS.PLAYER_CONNECTED, playerConnected);
+    const onDisconnected = (data: { steamID?: string; eosID?: string }) => {
+      const steamID = data.steamID || (data.eosID && getPlayerByEOSID(state, data.eosID)?.steamID);
+      if (steamID) disconnected.add(steamID);
+    };
+    listener.on(EVENTS.PLAYER_DISCONNECTED, onDisconnected);
     listener.on(EVENTS.UPDATED_PLAYERS, updatedPlayers);
 
     registerDisposable(() => {
       listener.off(EVENTS.PLAYER_CONNECTED, playerConnected);
+      listener.off(EVENTS.PLAYER_DISCONNECTED, onDisconnected);
       listener.off(EVENTS.UPDATED_PLAYERS, updatedPlayers);
       for (const p of playersBonusesCurrentTime) clearInterval(p.timer);
       playersBonusesCurrentTime = [];

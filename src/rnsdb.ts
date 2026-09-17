@@ -1,3 +1,4 @@
+import { bonusRate } from './bonus-policy';
 import {
   AnyBulkWriteOperation,
   Collection,
@@ -576,12 +577,30 @@ export async function updateUserBonuses(
   serverId: number,
   steamID: string,
   count: number,
+  isSeed = false,
 ) {
   const h = handle(serverId);
   if (!h) return;
   const collectionMain = h.main;
   const collectionServerInfo = h.serverInfo;
 
+  if (h.db.databaseName === 'SquadJS') {
+    const seeders = h.db.collection<{ _id: string; active?: boolean; serverKey?: string; updatedAt?: Date }>('seeders');
+    const [user, participant, target] = await Promise.all([
+      collectionMain.findOne({ _id: steamID }),
+      seeders.findOne({ _id: steamID }),
+      seeders.findOne({ _id: '__target' }),
+    ]);
+    const rate = bonusRate({ isSeed, seedRole: !!user?.seedRole, participant, target, serverKey: `vanila-${serverId}` });
+    // Atomic minute guard also prevents duplicate payment by overlapping workers.
+    const minute = Math.floor(Date.now() / 60000);
+    await h.db.collection('mainstats').updateOne(
+      { _id: steamID as any, $or: [{ bonusMinute: { $lt: minute } }, { bonusMinute: { $exists: false } }] },
+      { $inc: { bonuses: rate, seedBonusPaid: rate === 5 ? rate : 0 },
+        $set: { bonusMinute: minute, lastBonus: { rate, serverId, at: new Date() } } },
+    );
+    return;
+  }
   const [userInfo, serverInfo] = await Promise.all([
     collectionMain.findOne({ _id: steamID }),
     collectionServerInfo.findOne({ _id: serverId.toString() }),
