@@ -68,8 +68,15 @@ export default definePlugin({
     let disconnected = false;
 
     const playerCount = () => state.players?.length ?? Number.NaN;
-    const layerIsSeed = (layer: string | null | undefined) =>
-      (layer ?? '').toLowerCase().includes(seedKeyword.toLowerCase());
+    const layerIsSeed = (layer: string | null | undefined) => {
+      const name = (layer ?? '').trim().toLowerCase();
+      const keyword = seedKeyword.trim().toLowerCase();
+      return (
+        !!name &&
+        (seedLayers.some((seed) => seed.trim().toLowerCase() === name) ||
+          (!!keyword && name.includes(keyword)))
+      );
+    };
     const pickSeed = () =>
       seedLayers[Math.floor(Math.random() * seedLayers.length)];
 

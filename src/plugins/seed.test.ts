@@ -3,7 +3,7 @@ import { EVENTS } from '../constants';
 import { createFakeState, makePlayer } from '../test/fakes';
 import seed from './seed';
 
-const setup = (mode = 'now') => {
+const setup = (mode = 'now', seedLayers = ['Sumari_Seed_v1']) => {
   const f = createFakeState({
     currentMap: { layer: 'Narva_AAS_v1', level: 'Narva' },
   });
@@ -12,7 +12,7 @@ const setup = (mode = 'now') => {
     state: f.state,
     options: seed.optionsSchema!.parse({
       mode,
-      seedLayers: ['Sumari_Seed_v1'],
+      seedLayers,
       broadcastEnabled: false,
     }),
     logger: f.state.logger,
@@ -50,6 +50,14 @@ describe('seed safety', () => {
   afterEach(() => {
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+  it('recognizes a configured seed layer even without Seed in its name', () => {
+    const f = setup('now', ['Sumari_AAS_v1']);
+    f.state.currentMap = { level: 'Sumari', layer: 'Sumari_AAS_v1' };
+    f.low();
+    vi.advanceTimersByTime(30001);
+    f.sample();
+    expect(f.changes()).toEqual([]);
   });
   it('accepts frequent valid updates without counting duplicate bursts', () => {
     const f = setup();
@@ -93,6 +101,45 @@ describe('seed safety', () => {
     f.sample(100);
     expect(f.changes()).toEqual([]);
   });
+  it.each(['now', 'next'])(
+    'ignores a two-second zero on a 90-player server (%s)',
+    (mode) => {
+      const f = setup(mode);
+      vi.advanceTimersByTime(120000);
+      f.sample(90);
+      f.sample(0);
+      vi.advanceTimersByTime(2000);
+      f.sample(90);
+      vi.advanceTimersByTime(30000);
+      f.sample(90);
+      expect(
+        f.commands.filter((c) =>
+          /Admin(Change|SetNext)Layer|AdminBroadcast/.test(c),
+        ),
+      ).toEqual([]);
+    },
+  );
+  it.each(['now', 'next'])(
+    'never switches during repeated summary/loading cycles (%s)',
+    (mode) => {
+      const f = setup(mode);
+      vi.advanceTimersByTime(120000);
+      for (let round = 0; round < 4; round++) {
+        f.sample(90);
+        f.state.coreListener.emit(EVENTS.ROUND_ENDED);
+        for (let i = 0; i < 12; i++) {
+          f.sample(0);
+          vi.advanceTimersByTime(10000);
+        }
+        f.state.coreListener.emit(EVENTS.NEW_GAME);
+        f.sample(0);
+        vi.advanceTimersByTime(2000);
+        f.sample(90);
+        vi.advanceTimersByTime(120000);
+      }
+      expect(f.changes()).toEqual([]);
+    },
+  );
   it('never switches using stale data after polling stops', () => {
     const f = setup();
     f.low();
