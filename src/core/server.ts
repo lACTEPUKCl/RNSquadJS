@@ -1,5 +1,5 @@
 import { LogsReader, TLogReaderOptions } from 'squad-logs';
-import { Rcon } from 'squad-rcon';
+import { SquadRcon as Rcon } from './squad-rcon';
 import { TConfig, TLogs, TRcon } from '../types';
 
 const RCON_CONNECT_TIMEOUT = 120000;
