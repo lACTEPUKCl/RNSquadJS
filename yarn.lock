@@ -2376,19 +2376,18 @@ sparse-bitfield@^3.0.3:
   dependencies:
     memory-pager "^1.0.2"
 
-"squad-logs@github:lACTEPUKCl/squad-logs#master":
-  version "1.0.33"
-  resolved "https://codeload.github.com/lACTEPUKCl/squad-logs/tar.gz/c70ce0986616b4720ba010412c8e931afbb7f175"
+"squad-logs@github:lACTEPUKCl/squad-logs#f8f5917":
+  version "1.0.34-rns.1"
+  resolved "https://codeload.github.com/lACTEPUKCl/squad-logs/tar.gz/f8f5917432f4f084f8590a3027149c05b5316f14"
   dependencies:
     chalk "^5.3.0"
     date-fns "^2.30.0"
     ssh2-sftp-client "^9.1.0"
     tail "^2.2.6"
 
-squad-rcon@^1.1.8:
-  version "1.1.8"
-  resolved "https://registry.yarnpkg.com/squad-rcon/-/squad-rcon-1.1.8.tgz#d6514eb518fd87dfec469cfef0e14830bc4274f9"
-  integrity sha512-WLv3n3Vxf8uRLaVWwMCtilTWIURDGhkEPfNKZW+JA0n/kmZSwFCeZi2a5+rHrqca3fdn6D9LomevGg0Stkqw8g==
+"squad-rcon@github:lACTEPUKCl/squad-rcon#08b6356":
+  version "1.1.9-rns.1"
+  resolved "https://codeload.github.com/lACTEPUKCl/squad-rcon/tar.gz/08b6356dc7a2be2504d25b0254dc84ae261b132f"
   dependencies:
     chalk "^5.3.0"
     date-fns "^2.30.0"

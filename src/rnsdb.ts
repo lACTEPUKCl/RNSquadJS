@@ -448,6 +448,7 @@ export async function createUserIfNullableOrUpdateName(
   name: string,
   eosID?: string,
 ): Promise<void> {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
   await createUserOnHandle(h, steamID, name, eosID);
@@ -459,6 +460,7 @@ async function createUserOnHandle(
   name: string,
   eosID?: string,
 ): Promise<void> {
+  if (!steamID?.trim()) return;
   const collectionMain = h.main;
   const collectionTemp = h.temp;
 
@@ -577,6 +579,7 @@ export async function updateUserBonuses(
   steamID: string,
   count: number,
 ) {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
   const collectionMain = h.main;
@@ -643,6 +646,7 @@ export async function updateRoles(
   steamID: string,
   role: string,
 ) {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
 
@@ -656,6 +660,7 @@ export async function updateTimes(
   field: string,
   name: string,
 ) {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
   const user = { _id: steamID };
@@ -675,6 +680,7 @@ export async function updatePossess(
   steamID: string,
   field: string,
 ) {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
   if (field.toLowerCase().includes('soldier')) return;
@@ -1018,6 +1024,7 @@ export async function getUserDataWithSteamID(
   serverId: number,
   steamID: string,
 ) {
+  if (!steamID?.trim()) return null;
   const h = handle(serverId);
   if (!h) return null;
   return await h.main.findOne({ _id: steamID });
@@ -1081,6 +1088,7 @@ export async function updateGames(
   steamID: string,
   field: string,
 ) {
+  if (!steamID?.trim()) return;
   const h = handle(serverId);
   if (!h) return;
   const collectionMain = h.main;

@@ -33,6 +33,7 @@ export const adminWarn = async (
   steamID: string,
   reason: string,
 ) => {
+  if (!steamID?.trim()) return;
   await execute(`AdminWarn ${steamID} ${reason}`);
 };
 
@@ -41,6 +42,7 @@ export const adminKick = async (
   steamID: string,
   reason: string,
 ) => {
+  if (!steamID?.trim()) return;
   await execute(`AdminKick ${steamID} ${reason}`);
 };
 
@@ -50,6 +52,7 @@ export const adminBan = async (
   reason: string,
   length = '0',
 ) => {
+  if (!steamID?.trim()) return;
   await execute(`AdminBan ${steamID} "${length}" ${reason}`);
 };
 
@@ -57,6 +60,7 @@ export const adminForceTeamChange = async (
   execute: TExecute,
   steamID: string,
 ) => {
+  if (!steamID?.trim()) return;
   await execute(`AdminForceTeamChange ${steamID}`);
 };
 
@@ -68,6 +72,7 @@ export const adminRemovePlayerFromSquad = async (
   execute: TExecute,
   steamID: string,
 ) => {
+  if (!steamID?.trim()) return;
   await execute(`AdminRemovePlayerFromSquad ${steamID}`);
 };
 

@@ -14,7 +14,11 @@ describe('Squad 10.6 RCON compatibility', () => {
   it('keeps 10.5 and 10.6 players, including party members and vehicle occupants', () => {
     const legacy = parsePlayers(roster(oldPlayer));
     expect(legacy).toHaveLength(1);
-    expect(parsePlayers(roster(newPlayer))).toEqual(legacy);
+    expect(parsePlayers(roster(newPlayer))[0]).toEqual({
+      ...legacy[0],
+      partyID: '0',
+      vehicle: 'MEI_Technical-LOG (Driver)',
+    });
     expect(
       parsePlayers(
         roster(

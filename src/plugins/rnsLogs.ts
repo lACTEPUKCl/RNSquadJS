@@ -40,6 +40,7 @@ import {
   getPlayerByName,
   getPlayerBySteamID,
 } from './helpers';
+import { worldActivityEntry } from './worldActivity';
 
 interface LogData {
   eventId: string;
@@ -615,6 +616,13 @@ export const rnsLogs: TPluginProps = (state, options) => {
   }
 
   listener.on(EVENTS.PLAYER_CONNECTED, onPlayerConnected);
+  const onWorldActivity = (data: Parameters<typeof worldActivityEntry>[0]) => {
+    push(worldActivityEntry(data, now()));
+  };
+  listener.on(EVENTS.CAPTURE_ZONE_CAPTURED, onWorldActivity);
+  listener.on(EVENTS.CAPTURE_ZONE_NEUTRALIZED, onWorldActivity);
+  listener.on(EVENTS.MAP_MARKER_PLACED, onWorldActivity);
+  listener.on(EVENTS.DEPLOYABLE_SPAWNED, onWorldActivity);
   listener.on(EVENTS.PLAYER_DISCONNECTED, onPlayerDisconnected);
   listener.on(EVENTS.PLAYER_WOUNDED, onPlayerWounded);
   listener.on(EVENTS.PLAYER_DAMAGED, onPlayerDamaged);

@@ -12,8 +12,10 @@ export const updatePlayers = async (id: number) => {
       clearTimeout(timeout);
       const state = getServersState(id);
       state.players = data.map((player) => {
-        const playerFound = state.players?.find(
-          (p) => p.steamID === player.steamID,
+        const playerFound = state.players?.find((p) =>
+          player.steamID
+            ? p.steamID === player.steamID
+            : Boolean(player.eosID) && p.eosID === player.eosID,
         );
 
         if (playerFound) {

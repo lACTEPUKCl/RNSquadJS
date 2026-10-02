@@ -25,8 +25,8 @@
     "mariadb": "^3.4.5",
     "mongodb": "^6.5.0",
     "sequelize": "^6.37.7",
-    "squad-logs": "github:lACTEPUKCl/squad-logs#master",
-    "squad-rcon": "^1.1.8",
+    "squad-logs": "github:lACTEPUKCl/squad-logs#f8f5917",
+    "squad-rcon": "github:lACTEPUKCl/squad-rcon#08b6356",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
   },

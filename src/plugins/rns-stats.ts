@@ -436,7 +436,7 @@ export default definePlugin({
         lastDamageAttacker.get(trimmedVictim) ||
         null;
       const victim = getPlayerByName(state, victimName);
-      if (!victim) return;
+      if (!victim?.steamID) return;
 
       let weapon = lastDamageWeapon.get(trimmedVictim) || 'null';
       lastDamageWeapon.delete(trimmedVictim);
