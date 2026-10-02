@@ -139,3 +139,16 @@ describe('incidents/engine', () => {
     expect(openedOf('fob_grief')).toHaveLength(1);
   });
 });
+
+it('does not combine unidentified Epic attackers into a shared incident', () => {
+  const { eng, opened, appended } = setup();
+  for (let i = 0; i < 15; i++)
+    eng.onKill(
+      kill(i * 100, 'BP_AK74M', '2', {
+        attacker: { steamID: '', name: 'Epic ' + i, teamID: '1' },
+      }),
+    );
+  eng.onFobGrief({ steamID: '', name: 'Epic', teamID: '1' }, 2000, {});
+  expect(opened).toEqual([]);
+  expect(appended).toEqual([]);
+});

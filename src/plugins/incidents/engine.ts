@@ -351,6 +351,7 @@ export function createIncidentEngine(
   };
 
   const onKill = (k: KillInput) => {
+    if (!k.attacker.steamID?.trim()) return;
     const cls = weaponClass(k.weapon);
     const isTK = !!(
       k.attacker.teamID &&
@@ -394,6 +395,7 @@ export function createIncidentEngine(
     ts: number,
     info: { weapon?: string; damage?: number },
   ) => {
+    if (!p.steamID?.trim()) return;
     const kill: IncidentKill = {
       ts,
       victim: 'своя FOB',

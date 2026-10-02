@@ -8,6 +8,7 @@ export const convertObjToArrayEvents = (events: {
 
 export const chatCommandParser = (listener: EventEmitter) => {
   listener.on(EVENTS.CHAT_MESSAGE, (data: TChatMessage) => {
+    if (!data.steamID?.trim()) return;
     const command = data.message.match(/!([^ ]+) ?(.*)/);
     if (command)
       listener.emit(`CHAT_COMMAND:${command[1].toLowerCase()}`, {
