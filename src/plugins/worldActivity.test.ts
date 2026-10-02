@@ -64,3 +64,52 @@ it('carries all new parsed events with identical metadata into bridge and NDJSON
     deployable: 'BP_Ammocrate_C_214',
   });
 });
+
+it('snapshots map identity before delayed NEW_GAME forwarding and never backfills old coordinates', async () => {
+  vi.useFakeTimers();
+  const listener = new EventEmitter(),
+    coreListener = new EventEmitter();
+  const state = {
+    id: 1,
+    listener,
+    coreListener,
+    logger: { error: vi.fn(), log: vi.fn() },
+    currentMap: { level: 'Sumari', layer: 'Sumari_Seed_v1' },
+  } as unknown as Parameters<TPluginProps>[0];
+  rnsLogs(state, {
+    logPath: 'fixture',
+  } as unknown as Parameters<TPluginProps>[1]);
+  const prefix = '[2026.10.02-02.00.00:000][  1]LogSquad: ';
+  const spawn =
+    'Deployable AmmoCrate spawned for team 0 at location {1.0, 2.0, 3.0}';
+  parseLine(prefix + spawn, listener);
+  const newGame = {
+    layerClassname: 'Fallujah_RAAS_v1',
+    mapClassname: 'Fallujah',
+  };
+  coreListener.emit('NEW_GAME', newGame);
+  // RCON still returns old state, and local NEW_GAME has not been forwarded.
+  parseLine(prefix + spawn, listener);
+  state.currentMap = { level: 'Fallujah', layer: 'Fallujah_RAAS_v1' };
+  listener.emit('NEW_GAME', newGame);
+  coreListener.emit('NEW_GAME', {
+    layerClassname: 'Skorpo_RAAS_v1',
+    mapClassname: 'Skorpo',
+  });
+  // An earlier local NEW_GAME may finish late; it must not revert identity.
+  listener.emit('NEW_GAME', newGame);
+  parseLine(prefix + spawn, listener);
+  const worlds = mocks.enqueue.mock.calls
+    .map(([x]) => x)
+    .filter((x) => x.action === 'DeployableSpawned');
+  expect(worlds.map(({ layer, mapName }) => ({ layer, mapName }))).toEqual([
+    { layer: 'Sumari_Seed_v1', mapName: 'Sumari' },
+    { layer: 'Fallujah_RAAS_v1', mapName: 'Fallujah' },
+    { layer: 'Skorpo_RAAS_v1', mapName: 'Skorpo' },
+  ]);
+  await vi.advanceTimersByTimeAsync(60000);
+  const records = mocks.appendFile.mock.calls
+    .flatMap(([, p]) => p.trim().split('\n').map(JSON.parse))
+    .filter((x) => x.action === 'DeployableSpawned');
+  expect(records).toEqual(worlds);
+});

@@ -110,6 +110,21 @@ export const rnsLogs: TPluginProps = (state, options) => {
     activityBridge.enqueue(event);
   };
 
+  // NEW_GAME reaches the plugin listener only after asynchronous RCON refreshes.
+  // Observe the ordered log event before those waits so spawn/marker coordinates
+  // never inherit the previous round's map while the refresh is in flight.
+  let worldMap: { layer: string | null; mapName: string | null } | null = null;
+  state.coreListener?.on(EVENTS.NEW_GAME, (data: TNewGame) => {
+    worldMap = {
+      layer: data.layerClassname?.trim() || null,
+      mapName: data.mapClassname?.trim() || null,
+    };
+  });
+  const worldMapSnapshot = () => ({
+    layer: worldMap ? worldMap.layer : state.currentMap?.layer || null,
+    mapName: worldMap ? worldMap.mapName : state.currentMap?.level || null,
+  });
+
   let activitySeq = 0;
 
   let writeChain: Promise<void> = Promise.resolve();
@@ -617,7 +632,7 @@ export const rnsLogs: TPluginProps = (state, options) => {
 
   listener.on(EVENTS.PLAYER_CONNECTED, onPlayerConnected);
   const onWorldActivity = (data: Parameters<typeof worldActivityEntry>[0]) => {
-    push(worldActivityEntry(data, now()));
+    push({ ...worldActivityEntry(data, now()), ...worldMapSnapshot() });
   };
   listener.on(EVENTS.CAPTURE_ZONE_CAPTURED, onWorldActivity);
   listener.on(EVENTS.CAPTURE_ZONE_NEUTRALIZED, onWorldActivity);
