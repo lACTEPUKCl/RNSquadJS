@@ -49,11 +49,25 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
     }
   };
 
+  let mapUpdateInFlight = false;
+  const refreshMap = async () => {
+    if (mapUpdateInFlight) return;
+    mapUpdateInFlight = true;
+    try {
+      await updateCurrentMap(id);
+    } finally {
+      mapUpdateInFlight = false;
+    }
+  };
+
   // Exact role changes are consumed from the memory Reader by the site. Keep
   // RCON state as a low-frequency feed/fail-safe instead of polling every
   // configured server once per second.
   setInterval(
-    () => void Promise.all([refreshPlayers(), refreshSquads()]),
+    () =>
+      void refreshMap().then(() =>
+        Promise.all([refreshPlayers(), refreshSquads()]),
+      ),
     UPDATE_TIMEOUT,
   );
 
@@ -80,7 +94,7 @@ export const initState = async (id: number, getAdmins: TGetAdmins) => {
 
         if (event === EVENTS.NEW_GAME) {
           await updateAdmins(id, getAdmins);
-          await updateCurrentMap(id);
+          await refreshMap();
           await updateNextMap(id);
           await updateServerInfo(id);
         }
